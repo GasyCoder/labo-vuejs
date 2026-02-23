@@ -1,5 +1,7 @@
 let theme = [];
 let date = new Date();
+let themeToggleDelegatedBound = false;
+let directionToggleDelegatedBound = false;
 
 function setSettingsCookie(data, exdays) {
     let day = (exdays) ? exdays : 7;
@@ -63,50 +65,51 @@ function onPageLoad(theme){
 
 export default function Settings(defTheme){    
     onPageLoad(defTheme);
+    if (!themeToggleDelegatedBound) {
+        themeToggleDelegatedBound = true;
+        document.addEventListener('click', function(event){
+            const toggle = event.target.closest('.theme-toggle');
+            if (!toggle) {
+                return;
+            }
 
-    const themeToggle = document.querySelectorAll('.theme-toggle');
-    const directionToggle = document.querySelectorAll('.direction-toggle');
+            event.preventDefault();
 
-    // mode toggle
-    themeToggle.forEach((item)=> {
-        if (item.dataset.settingsThemeBound === '1') {
-            return;
-        }
-
-        item.dataset.settingsThemeBound = '1';
-        item.addEventListener('click', function(e){
-            e.preventDefault();
             if (!document.documentElement.classList.contains('dark')) {
                 setSettingsCookie(['skin', 'dark']);
                 window.localStorage.setItem('skin', 'dark');
                 document.documentElement.classList.add('dark');
-            } else {
-                setSettingsCookie(['skin', 'light']);
-                window.localStorage.setItem('skin', 'light');
-                document.documentElement.classList.remove('dark');
+
+                return;
             }
-        })
-    })
 
-    // direction toggle
-    directionToggle.forEach((item)=> {
-        if (item.dataset.settingsDirectionBound === '1') {
-            return;
-        }
+            setSettingsCookie(['skin', 'light']);
+            window.localStorage.setItem('skin', 'light');
+            document.documentElement.classList.remove('dark');
+        });
+    }
 
-        item.dataset.settingsDirectionBound = '1';
-        item.addEventListener('click', function(e){
-            e.preventDefault();
-            let dir = document.body.getAttribute('dir');
+    if (!directionToggleDelegatedBound) {
+        directionToggleDelegatedBound = true;
+        document.addEventListener('click', function(event){
+            const toggle = event.target.closest('.direction-toggle');
+            if (!toggle) {
+                return;
+            }
 
-            if (dir=='ltr') {
+            event.preventDefault();
+            const dir = document.body.getAttribute('dir');
+
+            if (dir === 'ltr') {
                 setSettingsCookie(['direction', 'rtl']);
                 document.body.setAttribute('dir', 'rtl');
-            } else {
-                setSettingsCookie(['direction', 'ltr']);
-                document.body.setAttribute('dir', 'ltr');
+
+                return;
             }
-        })
-    })
+
+            setSettingsCookie(['direction', 'ltr']);
+            document.body.setAttribute('dir', 'ltr');
+        });
+    }
 
 }

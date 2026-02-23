@@ -30,6 +30,7 @@ class PrescriptionController extends Controller
         $search = $request->input('search', '');
         $tab = $request->input('tab', 'actives');
         $perPage = $request->integer('perPage', 10);
+        $paymentFilter = $request->input('payment', '');
 
         $allowedTabs = ['actives', 'valide', 'archive', 'deleted'];
         if (! in_array($tab, $allowedTabs, true)) {
@@ -40,6 +41,7 @@ class PrescriptionController extends Controller
             ->with([
                 'patient:id,nom,prenom,telephone',
                 'prescripteur:id,nom',
+                'paiements:id,prescription_id,status,date_paiement',
             ])
             ->withCount('analyses');
 
@@ -66,6 +68,18 @@ class PrescriptionController extends Controller
             $prescriptionsQuery->whereIn('status', $statusMap[$tab]);
         }
 
+        if ($paymentFilter === 'paye') {
+            $prescriptionsQuery->whereHas('paiements', function ($query): void {
+                $query->where('status', true);
+            });
+        }
+
+        if ($paymentFilter === 'non_paye') {
+            $prescriptionsQuery->whereHas('paiements', function ($query): void {
+                $query->where('status', false);
+            });
+        }
+
         $prescriptions = $prescriptionsQuery
             ->latest()
             ->paginate($perPage)
@@ -86,6 +100,7 @@ class PrescriptionController extends Controller
                     },
                     'analyses_count' => $prescription->analyses_count,
                     'created_at' => $prescription->created_at?->format('d/m/Y H:i'),
+                    'created_at_relative' => $prescription->created_at?->diffForHumans(),
                     'deleted_at' => $prescription->deleted_at?->format('d/m/Y H:i'),
                     'patient' => $prescription->patient ? [
                         'nom_complet' => trim(sprintf('%s %s', $prescription->patient->nom, $prescription->patient->prenom ?? '')),
@@ -94,8 +109,21 @@ class PrescriptionController extends Controller
                     'prescripteur' => $prescription->prescripteur ? [
                         'nom' => $prescription->prescripteur->nom,
                     ] : null,
+                    'paiement' => $prescription->paiements->first() ? [
+                        'status' => (bool) $prescription->paiements->first()->status,
+                        'date_paiement' => $prescription->paiements->first()->date_paiement?->format('d/m/Y'),
+                    ] : null,
                 ];
             });
+
+        $countEnAttente = Prescription::where('status', 'EN_ATTENTE')->count();
+        $countEnCours = Prescription::where('status', 'EN_COURS')->count();
+        $countTermine = Prescription::where('status', 'TERMINE')->count();
+        $countValide = Prescription::where('status', 'VALIDE')->count();
+        $countArchive = Prescription::where('status', 'ARCHIVE')->count();
+        $countDeleted = Prescription::onlyTrashed()->count();
+        $countPaye = Paiement::where('status', true)->count();
+        $countNonPaye = Paiement::where('status', false)->count();
 
         return Inertia::render('Secretaire/Prescriptions/Index', [
             'prescriptions' => $prescriptions,
@@ -103,12 +131,22 @@ class PrescriptionController extends Controller
                 'search' => $search,
                 'tab' => $tab,
                 'perPage' => $perPage,
+                'payment' => $paymentFilter,
             ],
             'counts' => [
                 'actives' => Prescription::whereIn('status', ['EN_ATTENTE', 'EN_COURS', 'TERMINE', 'A_REFAIRE'])->count(),
-                'valide' => Prescription::where('status', 'VALIDE')->count(),
-                'archive' => Prescription::where('status', 'ARCHIVE')->count(),
-                'deleted' => Prescription::onlyTrashed()->count(),
+                'countActives' => $countEnAttente + $countEnCours + $countTermine,
+                'valide' => $countValide,
+                'archive' => $countArchive,
+                'deleted' => $countDeleted,
+                'countEnAttente' => $countEnAttente,
+                'countEnCours' => $countEnCours,
+                'countTermine' => $countTermine,
+                'countValide' => $countValide,
+                'countArchive' => $countArchive,
+                'countDeleted' => $countDeleted,
+                'countPaye' => $countPaye,
+                'countNonPaye' => $countNonPaye,
             ],
         ]);
     }

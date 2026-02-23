@@ -4,290 +4,792 @@
             <div class="mb-3">
                 <Link
                     :href="route('secretaire.prescription.index')"
-                    class="inline-flex items-center px-3 py-1.5 bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-slate-300 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors text-sm"
+                    class="inline-flex items-center rounded-lg bg-gray-50 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-100 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
                 >
-                    <em class="ni ni-arrow-left mr-1.5 text-xs"></em>
-                    Retour a la liste
+                    <em class="ni ni-arrow-left mr-1.5 text-xs"></em>Retour a la liste
                 </Link>
             </div>
 
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4">
-                <div class="flex items-center justify-between mb-4">
+            <div class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                <div class="mb-4 flex items-center justify-between">
                     <div>
-                        <h1 class="text-base font-semibold text-slate-800 dark:text-slate-100 flex items-center">
-                            <em class="ni ni-dashlite text-primary-500 mr-2 text-sm"></em>
-                            Nouvelle Prescription
+                        <h1 class="flex items-center text-base font-semibold text-slate-800 dark:text-slate-100">
+                            <em class="ni ni-dashlite mr-2 text-sm text-primary-500"></em>Nouvelle Prescription
                         </h1>
-                        <p class="text-slate-500 dark:text-slate-400 mt-1 text-xs">
+                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
                             Reference: <span class="font-semibold">{{ defaultReference }}</span>
                         </p>
                     </div>
-                    <div class="text-right">
-                        <div class="text-xs text-slate-500 dark:text-slate-400">{{ nowLabel }}</div>
-                        <div class="text-xxs text-slate-400 dark:text-slate-500">Cree par: {{ $page.props.auth.user?.name }}</div>
+
+                    <div class="flex items-center space-x-2">
+                        <div class="text-right">
+                            <div class="text-xs text-slate-500 dark:text-slate-400">{{ nowLabel }}</div>
+                            <div class="text-xxs text-slate-400 dark:text-slate-500">Cree par: {{ $page.props.auth.user?.name }}</div>
+                        </div>
+                        <button
+                            type="button"
+                            class="rounded-md bg-red-50 px-2.5 py-1.5 text-xs text-red-600 transition-colors hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
+                            @click="resetWorkflow"
+                        >
+                            <em class="ni ni-refresh mr-1 text-xs"></em>Reset
+                        </button>
                     </div>
                 </div>
 
                 <div class="relative">
-                    <div class="absolute top-4 left-4 right-4 h-0.5 bg-gray-100 dark:bg-slate-600 z-0">
+                    <div class="absolute left-4 right-4 top-4 z-0 h-0.5 bg-gray-100 dark:bg-slate-600">
                         <div class="h-full bg-gradient-to-r from-primary-400 to-green-400 transition-all duration-300" :style="{ width: `${progress}%` }"></div>
                     </div>
 
-                    <div class="flex items-center justify-between relative z-10">
+                    <div class="relative z-10 flex items-center justify-between">
                         <div v-for="step in steps" :key="step.key" class="flex flex-col items-center">
                             <button
                                 type="button"
-                                class="relative w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-all duration-200"
+                                class="relative mb-1.5 flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200"
                                 :class="stepClasses(step)"
                                 @click="goToStep(step.key)"
                             >
                                 <em :class="`ni ni-${step.icon} text-xs`"></em>
                             </button>
-                            <span class="text-xxs font-medium block" :class="stepLabelClasses(step)">
-                                {{ step.label }}
-                            </span>
+                            <span class="block text-xxs font-medium" :class="stepLabelClasses(step)">{{ step.label }}</span>
                         </div>
+                    </div>
+                </div>
+
+                <div class="mt-3 text-center">
+                    <div class="inline-flex items-center rounded-lg border border-primary-200 bg-primary-50 px-3 py-1.5 dark:border-primary-800 dark:bg-primary-900/20">
+                        <em :class="`ni ni-${steps[currentStepIndex].icon} mr-1.5 text-xs text-primary-600 dark:text-primary-400`"></em>
+                        <span class="text-xs font-medium text-primary-800 dark:text-primary-200">
+                            Etape {{ currentStepIndex + 1 }}/{{ steps.length }} : {{ steps[currentStepIndex].label }}
+                        </span>
                     </div>
                 </div>
             </div>
 
-            <section v-if="currentStep === 'patient'" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200/70 dark:border-slate-700/80 overflow-hidden">
-                <div class="px-5 py-4 border-b border-slate-200/60 dark:border-slate-700/70">
-                    <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Patient - Selection / creation</h2>
-                    <p class="text-xs text-slate-600 dark:text-slate-400 mt-1">Selectionnez un patient existant ou creez un nouveau dossier.</p>
-                </div>
+            <section v-if="currentStep === 'patient'" class="overflow-hidden rounded-xl border border-slate-200/70 bg-white shadow-sm dark:border-slate-700/80 dark:bg-slate-800">
+                <div class="border-b border-slate-200/60 px-5 py-4 dark:border-slate-700/70">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="flex min-w-0 items-start gap-3">
+                            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-600 shadow-sm">
+                                <em class="ni ni-user text-base text-white"></em>
+                            </div>
+                            <div class="min-w-0">
+                                <h2 class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                    Patient <span class="font-normal text-slate-600 dark:text-slate-400">- Selection / creation</span>
+                                </h2>
+                                <p class="mt-1 truncate text-xs text-slate-600 dark:text-slate-400">Selectionnez un patient existant ou creez un nouveau dossier.</p>
+                            </div>
+                        </div>
 
-                <div class="p-5 space-y-4">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <span v-if="patientResults.length > 0" class="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-emerald-200/70 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-900/15 dark:text-emerald-300">
+                            <em class="ni ni-check-circle"></em> {{ patientResults.length }}
+                        </span>
+                    </div>
+
+                    <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <button
                             type="button"
-                            class="w-full rounded-xl border-2 px-4 py-3 text-left transition"
-                            :class="!isNewPatient ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/15 text-primary-700 dark:text-primary-300' : 'border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-100'"
+                            class="w-full rounded-xl border-2 bg-transparent px-4 py-3 text-left transition focus:outline-none focus:ring-4 focus:ring-primary-600/15"
+                            :class="!isNewPatient ? 'border-primary-600 bg-primary-50 text-primary-700 shadow-sm dark:bg-primary-900/15 dark:text-primary-300' : 'border-slate-200 text-slate-800 hover:border-slate-300 dark:border-slate-600 dark:text-slate-100 dark:hover:border-slate-500'"
                             @click="setPatientMode(false)"
                         >
-                            <div class="text-sm font-semibold">Patient existant</div>
-                            <div class="text-xs text-slate-600 dark:text-slate-400">Rechercher et selectionner</div>
+                            <div class="flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-3">
+                                    <span class="flex h-10 w-10 items-center justify-center rounded-xl border border-primary-200 bg-white/60 dark:border-primary-800/40 dark:bg-primary-900/10">
+                                        <em class="ni ni-search text-base text-primary-600 dark:text-primary-300"></em>
+                                    </span>
+                                    <div>
+                                        <div class="text-sm font-semibold">Patient existant</div>
+                                        <div class="text-xs text-slate-600 dark:text-slate-400">Rechercher et selectionner</div>
+                                    </div>
+                                </div>
+                                <span v-if="!isNewPatient" class="inline-flex items-center gap-1.5 text-xs font-semibold">
+                                    <em class="ni ni-check"></em> Actif
+                                </span>
+                                <em v-else class="ni ni-arrow-right text-base text-slate-400 dark:text-slate-500"></em>
+                            </div>
                         </button>
+
                         <button
                             type="button"
-                            class="w-full rounded-xl border-2 px-4 py-3 text-left transition"
-                            :class="isNewPatient ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-900/15 text-emerald-700 dark:text-emerald-300' : 'border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-100'"
+                            class="w-full rounded-xl border-2 bg-transparent px-4 py-3 text-left transition focus:outline-none focus:ring-4 focus:ring-emerald-600/15"
+                            :class="isNewPatient ? 'border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm dark:bg-emerald-900/15 dark:text-emerald-300' : 'border-slate-200 text-slate-800 hover:border-slate-300 dark:border-slate-600 dark:text-slate-100 dark:hover:border-slate-500'"
                             @click="setPatientMode(true)"
                         >
-                            <div class="text-sm font-semibold">Nouveau patient</div>
-                            <div class="text-xs text-slate-600 dark:text-slate-400">Creer un dossier</div>
+                            <div class="flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-3">
+                                    <span class="flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-200 bg-white/60 dark:border-emerald-800/40 dark:bg-emerald-900/10">
+                                        <em class="ni ni-user-add text-base text-emerald-600 dark:text-emerald-300"></em>
+                                    </span>
+                                    <div>
+                                        <div class="text-sm font-semibold">Nouveau patient</div>
+                                        <div class="text-xs text-slate-600 dark:text-slate-400">Creer un dossier</div>
+                                    </div>
+                                </div>
+                                <span v-if="isNewPatient" class="inline-flex items-center gap-1.5 text-xs font-semibold">
+                                    <em class="ni ni-check"></em> Actif
+                                </span>
+                                <em v-else class="ni ni-arrow-right text-base text-slate-400 dark:text-slate-500"></em>
+                            </div>
                         </button>
                     </div>
 
-                    <div v-if="!isNewPatient" class="space-y-3">
-                        <div class="rounded-xl border border-slate-200/70 dark:border-slate-700/70 bg-white dark:bg-slate-800 p-4">
-                            <label class="block text-sm font-semibold text-slate-800 dark:text-slate-200 mb-2">Rechercher un patient</label>
-                            <input
-                                v-model="patientSearch"
-                                type="text"
-                                placeholder="Nom, prenom, reference ou telephone..."
-                                class="w-full px-4 py-2.5 text-sm rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100"
-                                @input="debouncedPatientSearch"
-                            >
+                    <div class="mt-3 text-xs text-slate-600 dark:text-slate-400">
+                        Mode actuel :
+                        <span v-if="isNewPatient" class="font-semibold text-emerald-700 dark:text-emerald-300">Nouveau patient</span>
+                        <span v-else class="font-semibold text-primary-700 dark:text-primary-300">Patient existant</span>
+                    </div>
+                </div>
+
+                <div class="space-y-4 p-5">
+                    <div v-if="!isNewPatient && !selectedPatient" class="space-y-3">
+                        <div class="rounded-xl border border-slate-200/70 bg-white p-4 dark:border-slate-700/70 dark:bg-slate-800">
+                            <label class="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                <em class="ni ni-search mr-1.5 text-primary-600 dark:text-primary-300"></em>
+                                Rechercher un patient
+                            </label>
+
+                            <div class="relative">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                                    <em class="ni ni-search text-base text-slate-400 dark:text-slate-500"></em>
+                                </div>
+                                <input
+                                    v-model="patientSearch"
+                                    type="text"
+                                    placeholder="Nom, prenom, reference ou telephone..."
+                                    class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-900 placeholder-slate-400 transition focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-500"
+                                    @input="debouncedPatientSearch"
+                                >
+                                <button
+                                    v-if="patientSearch"
+                                    type="button"
+                                    class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 transition hover:text-red-500 dark:hover:text-red-400"
+                                    @click="clearPatientSearch"
+                                >
+                                    <em class="ni ni-cross-circle text-lg"></em>
+                                </button>
+                            </div>
+
+                            <p v-if="patientSearch.length > 0 && patientSearch.length < 2" class="mt-2 flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-300">
+                                <em class="ni ni-info-circle"></em> Tapez au moins 2 caracteres.
+                            </p>
                         </div>
 
-                        <div v-if="patientResults.length > 0" class="rounded-xl border border-slate-200/70 dark:border-slate-700/70 bg-white dark:bg-slate-800 p-4">
-                            <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">Resultats</h3>
-                            <div class="space-y-2 max-h-72 overflow-auto">
+                        <div v-if="patientResults.length > 0" class="rounded-xl border border-slate-200/70 bg-white p-4 dark:border-slate-700/70 dark:bg-slate-800">
+                            <div class="mb-3 flex items-center justify-between">
+                                <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Resultats</h3>
+                                <span class="text-xs text-slate-600 dark:text-slate-400">Cliquez pour selectionner</span>
+                            </div>
+
+                            <div class="max-h-72 space-y-2.5 overflow-auto">
                                 <button
                                     v-for="result in patientResults"
                                     :key="result.id"
                                     type="button"
-                                    class="w-full text-left p-3 rounded-xl border transition"
-                                    :class="selectedPatient?.id === result.id ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/40'"
+                                    class="group w-full rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:bg-slate-50 hover:shadow-sm focus:outline-none focus:ring-4 focus:ring-primary-600/15 dark:border-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700/30"
                                     @click="selectPatient(result)"
                                 >
-                                    <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ result.nom_complet }}</p>
-                                    <p class="text-xs text-slate-500 dark:text-slate-400">
-                                        {{ result.numero_dossier || '-' }} | {{ result.telephone || 'Sans telephone' }}
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="flex min-w-0 flex-1 items-start gap-3">
+                                            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary-600 text-sm font-bold text-white shadow-sm">
+                                                {{ initials(result) }}
+                                            </div>
+
+                                            <div class="min-w-0 flex-1">
+                                                <div class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                                    {{ result.nom_complet }}
+                                                </div>
+
+                                                <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-600 dark:text-slate-400">
+                                                    <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 font-mono dark:bg-slate-700">
+                                                        <em class="ni ni-id-badge mr-1 text-xs text-primary-500"></em>
+                                                        {{ result.numero_dossier || '-' }}
+                                                    </span>
+
+                                                    <span v-if="result.telephone" class="inline-flex items-center">
+                                                        <em class="ni ni-call mr-1 text-xs text-emerald-600 dark:text-emerald-300"></em>
+                                                        {{ result.telephone }}
+                                                    </span>
+
+                                                    <span v-if="result.age" class="inline-flex items-center rounded-md border border-blue-200/60 bg-blue-50 px-2 py-0.5 text-blue-700 dark:border-blue-800/30 dark:bg-blue-900/15 dark:text-blue-300">
+                                                        <em class="ni ni-calendar mr-1 text-xs"></em>
+                                                        {{ result.age }} {{ result.unite_age || 'Ans' }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="shrink-0 flex items-center gap-1.5 text-primary-600 opacity-0 transition group-hover:opacity-100 dark:text-primary-300">
+                                            <span class="text-xs font-semibold">Selectionner</span>
+                                            <em class="ni ni-arrow-right text-base transition-transform group-hover:translate-x-0.5"></em>
+                                        </div>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div v-else-if="patientSearch.length >= 2" class="rounded-xl border border-amber-200/70 bg-amber-50 p-4 dark:border-amber-800/40 dark:bg-amber-900/10">
+                            <div class="flex items-start gap-3">
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/20">
+                                    <em class="ni ni-alert-circle text-lg text-amber-800 dark:text-amber-300"></em>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-semibold text-amber-900 dark:text-amber-200">Aucun patient trouve</h4>
+                                    <p class="mt-0.5 text-xs text-amber-800 dark:text-amber-300">
+                                        Aucun resultat pour "{{ patientSearch }}".
                                     </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="isNewPatient || selectedPatient" class="space-y-4">
+                        <div class="rounded-xl border border-slate-200/70 bg-white p-4 dark:border-slate-700/70 dark:bg-slate-800">
+                            <div class="mb-4 flex items-center justify-between">
+                                <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ selectedPatient ? 'Mettre a jour le dossier patient' : 'Creer un dossier patient' }}</h3>
+                                <span class="text-xs text-slate-600 dark:text-slate-400">* obligatoires</span>
+                            </div>
+
+                            <div class="rounded-xl border border-slate-200/70 p-4 dark:border-slate-700/70">
+                                <h4 class="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Identite</h4>
+                                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label class="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Nom <span class="text-red-500">*</span></label>
+                                        <input v-model="patientForm.nom" type="text" placeholder="Ex: RAJAONA" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 transition focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-500">
+                                    </div>
+                                    <div>
+                                        <label class="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Prenom(s)</label>
+                                        <input v-model="patientForm.prenom" type="text" placeholder="Ex: Miangaly" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 transition focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-500">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 rounded-xl border border-slate-200/70 p-4 dark:border-slate-700/70">
+                                <div class="mb-2.5 flex items-center justify-between gap-3">
+                                    <h4 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Civilite <span class="text-red-500">*</span></h4>
+                                    <span class="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700 dark:border-slate-600 dark:bg-slate-700/40 dark:text-slate-200">
+                                        Selectionne : <span class="font-semibold">{{ civiliteOptionLabel(patientForm.civilite) }}</span>
+                                    </span>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+                                    <label v-for="civilite in civilites" :key="civilite" class="cursor-pointer">
+                                        <input v-model="patientForm.civilite" type="radio" :value="civilite" class="peer sr-only">
+                                        <div class="relative rounded-xl border-2 border-slate-200 bg-white px-3 py-2.5 transition hover:border-slate-300 hover:shadow-sm peer-checked:border-primary-600 peer-checked:bg-primary-50 peer-focus-visible:ring-4 peer-focus-visible:ring-slate-900/5 dark:border-slate-600 dark:bg-slate-800 dark:hover:border-slate-500 dark:peer-checked:bg-primary-900/15 dark:peer-focus-visible:ring-white/10">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <div class="min-w-0">
+                                                    <div class="flex min-w-0 items-center gap-2">
+                                                        <div class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{{ civiliteOptionLabel(civilite) }}</div>
+                                                        <span class="hidden items-center gap-1 rounded-full border border-primary-200 bg-primary-50 px-2 py-0.5 text-[11px] font-semibold text-primary-700 peer-checked:inline-flex dark:border-primary-800/30 dark:bg-primary-900/15 dark:text-primary-200">
+                                                            <em class="ni ni-check text-[11px]"></em> Selectionne
+                                                        </span>
+                                                    </div>
+                                                    <div class="mt-0.5 text-[11px] text-slate-600 dark:text-slate-400">{{ civiliteOptionHint(civilite) }}</div>
+                                                </div>
+                                                <span class="flex h-6 w-6 shrink-0 scale-95 items-center justify-center rounded-full border border-slate-200 bg-white opacity-0 transition peer-checked:scale-100 peer-checked:opacity-100 dark:border-slate-600 dark:bg-slate-700">
+                                                    <em class="ni ni-check text-xs text-primary-600"></em>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 rounded-xl border border-slate-200/70 p-4 dark:border-slate-700/70">
+                                <h4 class="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Contact</h4>
+                                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label class="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Telephone</label>
+                                        <input v-model="patientForm.telephone" type="tel" placeholder="+261 34 12 345 67" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 transition focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-500">
+                                    </div>
+                                    <div>
+                                        <label class="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Email</label>
+                                        <input v-model="patientForm.email" type="email" placeholder="email@exemple.com" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 transition focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-500">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 rounded-xl border border-slate-200/70 p-4 dark:border-slate-700/70">
+                                <h4 class="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Adresse</h4>
+                                <label class="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Rue / Quartier / Lot</label>
+                                <input v-model="patientForm.adresse" type="text" placeholder="Ex: Lot II M 45 Bis Analakely" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 transition focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-500">
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl border border-slate-200/70 bg-white p-4 dark:border-slate-700/70 dark:bg-slate-800">
+                            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <button type="button" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 sm:w-auto dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" @click="backToPatientSelection">
+                                    <em class="ni ni-arrow-left"></em> Retour
+                                </button>
+
+                                <button type="button" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700 sm:w-auto" @click="goToStep('clinique')">
+                                    <em class="ni ni-check"></em> Valider et continuer
                                 </button>
                             </div>
                         </div>
                     </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input v-model="patientForm.nom" type="text" placeholder="Nom" class="w-full px-4 py-2.5 text-sm rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100">
-                        <input v-model="patientForm.prenom" type="text" placeholder="Prenom" class="w-full px-4 py-2.5 text-sm rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100">
-                        <select v-model="patientForm.civilite" class="w-full px-4 py-2.5 text-sm rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100">
-                            <option v-for="civilite in civilites" :key="civilite" :value="civilite">{{ civilite }}</option>
-                        </select>
-                        <input v-model="patientForm.date_naissance" type="date" class="w-full px-4 py-2.5 text-sm rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100" @change="syncAgeFromBirthDate">
-                        <input v-model="patientForm.telephone" type="text" placeholder="Telephone" class="w-full px-4 py-2.5 text-sm rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100">
-                        <input v-model="patientForm.email" type="email" placeholder="Email" class="w-full px-4 py-2.5 text-sm rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100">
-                        <input v-model="patientForm.adresse" type="text" placeholder="Adresse" class="w-full md:col-span-2 px-4 py-2.5 text-sm rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100">
-                    </div>
-
-                    <div class="flex justify-end">
-                        <button type="button" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors text-sm" @click="goToStep('clinique')">
-                            Clinique <em class="ni ni-arrow-right ml-1.5 text-xs"></em>
-                        </button>
-                    </div>
                 </div>
             </section>
 
-            <section v-if="currentStep === 'clinique'" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200/70 dark:border-slate-700/80 overflow-hidden">
-                <div class="px-5 py-4 border-b border-slate-200/60 dark:border-slate-700/70 bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-slate-800 dark:to-slate-800">
-                    <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Informations cliniques</h2>
+            <section v-if="currentStep === 'clinique'" class="overflow-hidden rounded-xl border border-slate-200/70 bg-white shadow-sm dark:border-slate-700/80 dark:bg-slate-800">
+                <div class="bg-gradient-to-r from-cyan-50 to-blue-50 px-5 py-4 dark:from-slate-800 dark:to-slate-800">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="flex min-w-0 items-start gap-3">
+                            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-600 shadow-sm">
+                                <em class="ni ni-notes text-base text-white"></em>
+                            </div>
+                            <div class="min-w-0">
+                                <h2 class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">Informations cliniques</h2>
+                                <p class="mt-1 truncate text-xs text-slate-600 dark:text-slate-400">Renseignements medicaux et prescription.</p>
+                            </div>
+                        </div>
+                        <div class="shrink-0 flex items-center gap-2">
+                            <span class="inline-flex items-center gap-1.5 rounded-lg border border-cyan-200 bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-cyan-800 dark:border-cyan-800/30 dark:bg-cyan-900/15 dark:text-cyan-200">
+                                <em class="ni ni-check-circle"></em> Clinique
+                            </span>
+                            <span class="hidden items-center gap-2 text-xs text-slate-500 sm:inline-flex dark:text-slate-400">
+                                <span class="inline-flex items-center gap-1">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                    <span class="h-1.5 w-1.5 rounded-full bg-cyan-500"></span>
+                                    <span class="h-1.5 w-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                                </span>
+                                Etape 2/7
+                            </span>
+                        </div>
+                    </div>
                 </div>
-                <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <select v-model="clinicalForm.prescripteur_id" class="w-full px-4 py-2.5 text-sm rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100">
-                        <option value="">Selectionner un prescripteur</option>
-                        <option v-for="prescripteur in prescripteurs" :key="prescripteur.id" :value="prescripteur.id">
-                            {{ prescripteur.nom_complet }}
-                        </option>
-                    </select>
-                    <select v-model="clinicalForm.patient_type" class="w-full px-4 py-2.5 text-sm rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100">
-                        <option value="EXTERNE">Externe</option>
-                        <option value="HOSPITALISE">Hospitalise</option>
-                        <option value="URGENCE-JOUR">Urgence Jour</option>
-                        <option value="URGENCE-NUIT">Urgence Nuit</option>
-                    </select>
-                    <input v-model.number="clinicalForm.age" type="number" min="0" max="150" placeholder="Age" class="w-full px-4 py-2.5 text-sm rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100">
-                    <select v-model="clinicalForm.unite_age" class="w-full px-4 py-2.5 text-sm rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100">
-                        <option value="Ans">Ans</option>
-                        <option value="Mois">Mois</option>
-                        <option value="Jours">Jours</option>
-                    </select>
-                    <input v-model.number="clinicalForm.poids" type="number" min="0" step="0.1" placeholder="Poids (kg)" class="w-full px-4 py-2.5 text-sm rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100">
-                    <textarea v-model="clinicalForm.renseignement_clinique" rows="3" placeholder="Renseignement clinique" class="w-full md:col-span-2 px-4 py-2.5 text-sm rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100"></textarea>
-                </div>
-                <div class="px-5 pb-5 flex justify-between">
-                    <button type="button" class="px-3 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors text-sm" @click="goToStep('patient')">
-                        <em class="ni ni-arrow-left mr-1.5 text-xs"></em>Patient
-                    </button>
-                    <button type="button" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors text-sm" @click="goToStep('analyses')">
-                        Analyses <em class="ni ni-arrow-right ml-1.5 text-xs"></em>
-                    </button>
-                </div>
-            </section>
 
-            <section v-if="currentStep === 'analyses'" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4">
-                <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100 mb-4">
-                    <em class="ni ni-test-tube text-green-500 text-sm mr-2"></em>Recherche Analyses
-                </h2>
-                <input
-                    v-model="analyseSearch"
-                    type="text"
-                    placeholder="Code ou designation..."
-                    class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
-                    @input="debouncedAnalysesSearch"
-                >
-                <div v-if="analyseResults.length > 0" class="mt-3 space-y-2 max-h-80 overflow-auto">
-                    <div v-for="analyse in analyseResults" :key="analyse.id" class="p-3 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ analyse.designation }}</p>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">
-                                {{ analyse.code }} | {{ formatCurrency(analyse.prix) }}
+                <div class="space-y-4 p-5">
+                    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                        <div class="rounded-xl border border-slate-200/70 bg-white p-4 dark:border-slate-700/70 dark:bg-slate-800">
+                            <label class="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                <em class="ni ni-user-md mr-1.5 text-cyan-600 dark:text-cyan-300"></em>
+                                Prescripteur <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                                    <em class="ni ni-user-md text-base text-slate-400 dark:text-slate-500"></em>
+                                </div>
+                                <select v-model="clinicalForm.prescripteur_id" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-900 transition hover:border-slate-300 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:hover:border-slate-500">
+                                    <option value="">Selectionner un prescripteur...</option>
+                                    <option v-for="prescripteur in prescripteurs" :key="prescripteur.id" :value="prescripteur.id">{{ prescripteur.nom_complet }}</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5">
+                                    <em class="ni ni-chevron-down text-xs text-slate-400 dark:text-slate-500"></em>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl border border-slate-200/70 bg-white p-4 dark:border-slate-700/70 dark:bg-slate-800">
+                            <label class="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                <em class="ni ni-building mr-1.5 text-blue-600 dark:text-blue-300"></em>
+                                Type de patient
+                            </label>
+                            <div class="relative">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                                    <em class="ni ni-building text-base text-slate-400 dark:text-slate-500"></em>
+                                </div>
+                                <select v-model="clinicalForm.patient_type" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-900 transition hover:border-slate-300 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:hover:border-slate-500">
+                                    <option value="EXTERNE">🏠 Externe</option>
+                                    <option value="HOSPITALISE">🏥 Hospitalise</option>
+                                    <option value="URGENCE-JOUR">🚨 Urgence Jour</option>
+                                    <option value="URGENCE-NUIT">🌙 Urgence Nuit</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5">
+                                    <em class="ni ni-chevron-down text-xs text-slate-400 dark:text-slate-500"></em>
+                                </div>
+                            </div>
+                            <p class="mt-2 flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                                <em class="ni ni-info-circle"></em> Utile pour le tri et la prise en charge.
                             </p>
                         </div>
-                        <button type="button" class="px-2.5 py-1.5 text-xs rounded bg-primary-500 hover:bg-primary-600 text-white" @click="addAnalyse(analyse)">
-                            Ajouter
-                        </button>
-                    </div>
-                </div>
-                <div class="mt-4 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/40">
-                    <p class="text-sm font-medium text-slate-800 dark:text-slate-100">Analyses selectionnees</p>
-                    <div v-if="selectedAnalyses.length === 0" class="text-xs text-slate-500 dark:text-slate-400 mt-1">Aucune analyse selectionnee</div>
-                    <div v-else class="mt-2 space-y-2">
-                        <div v-for="analyse in selectedAnalyses" :key="analyse.id" class="flex items-center justify-between text-sm">
-                            <span class="text-slate-700 dark:text-slate-300">{{ analyse.designation }}</span>
-                            <button type="button" class="text-red-600 hover:text-red-700 text-xs" @click="removeAnalyse(analyse.id)">Retirer</button>
+
+                        <div class="rounded-xl border border-slate-200/70 bg-white p-4 dark:border-slate-700/70 dark:bg-slate-800">
+                            <div class="mb-2.5 flex items-center justify-between gap-3">
+                                <label class="block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                    <em class="ni ni-activity mr-1.5 text-orange-600 dark:text-orange-300"></em>
+                                    Poids
+                                </label>
+                                <span class="text-xs text-slate-500 dark:text-slate-400">kg</span>
+                            </div>
+                            <div class="relative">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                                    <em class="ni ni-activity text-base text-slate-400 dark:text-slate-500"></em>
+                                </div>
+                                <input v-model.number="clinicalForm.poids" type="number" min="0" step="0.1" placeholder="Ex: 65.5" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-12 text-sm text-slate-900 placeholder-slate-400 transition focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-500">
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5">
+                                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">kg</span>
+                                </div>
+                            </div>
+                            <p class="mt-2 flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                                <em class="ni ni-info-circle"></em> Optionnel - utile pour le calcul des doses.
+                            </p>
                         </div>
                     </div>
-                </div>
-                <div class="mt-4 flex justify-between">
-                    <button type="button" class="px-3 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors text-sm" @click="goToStep('clinique')">
-                        <em class="ni ni-arrow-left mr-1.5 text-xs"></em>Clinique
-                    </button>
-                    <button type="button" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors text-sm" @click="goToStep('prelevements')">
-                        Prelevements <em class="ni ni-arrow-right ml-1.5 text-xs"></em>
-                    </button>
+
+                    <div class="rounded-xl border border-slate-200/70 bg-white p-4 dark:border-slate-700/70 dark:bg-slate-800">
+                        <div class="mb-3 flex items-center justify-between gap-3">
+                            <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                <span class="flex h-8 w-8 items-center justify-center rounded-xl border border-emerald-200/70 bg-emerald-50 dark:border-emerald-800/30 dark:bg-emerald-900/15">
+                                    <em class="ni ni-calendar text-sm text-emerald-700 dark:text-emerald-300"></em>
+                                </span>
+                                Naissance et age
+                            </h3>
+                            <span class="text-xs text-slate-500 dark:text-slate-400">Recommande</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 items-start gap-4 md:grid-cols-3">
+                            <div class="md:col-span-2">
+                                <label class="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Date de naissance</label>
+                                <input
+                                    v-model="patientForm.date_naissance"
+                                    type="date"
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 transition focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                                    @change="syncAgeFromBirthDate"
+                                >
+                            </div>
+
+                            <div>
+                                <label class="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Age <span v-if="!patientForm.date_naissance" class="text-red-500">*</span></label>
+                                <div v-if="patientForm.date_naissance" class="rounded-xl border border-blue-200/70 bg-blue-50 px-4 py-2.5 dark:border-blue-800/30 dark:bg-blue-900/15">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <span class="text-sm font-bold text-blue-800 dark:text-blue-200">{{ clinicalForm.age }} {{ clinicalForm.unite_age }}</span>
+                                        <em class="ni ni-check-circle text-emerald-600 dark:text-emerald-300"></em>
+                                    </div>
+                                </div>
+                                <div v-else class="flex gap-2">
+                                    <div class="relative flex-1">
+                                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                                            <em class="ni ni-hash text-base text-slate-400 dark:text-slate-500"></em>
+                                        </div>
+                                        <input v-model.number="clinicalForm.age" type="number" min="0" max="150" placeholder="Ex: 32" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 transition focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100">
+                                    </div>
+                                    <select v-model="clinicalForm.unite_age" class="w-24 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 transition focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100">
+                                        <option value="Ans">Ans</option>
+                                        <option value="Mois">Mois</option>
+                                        <option value="Jours">Jours</option>
+                                    </select>
+                                </div>
+                                <p v-if="patientForm.date_naissance" class="mt-1.5 flex items-center gap-1.5 text-xs text-blue-700 dark:text-blue-300">
+                                    <em class="ni ni-info-circle"></em> Calcul auto.
+                                </p>
+                                <p v-else class="mt-1.5 flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-300">
+                                    <em class="ni ni-info-circle"></em> Ajoutez une date pour calcul auto.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-xl border border-slate-200/70 bg-white p-4 dark:border-slate-700/70 dark:bg-slate-800">
+                        <div class="mb-2.5 flex items-center justify-between gap-3">
+                            <label class="block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                <em class="ni ni-clipboard mr-1.5 text-purple-600 dark:text-purple-300"></em>
+                                Renseignements cliniques
+                            </label>
+                            <span class="text-xs text-slate-500 dark:text-slate-400">{{ String(clinicalForm.renseignement_clinique || '').length }} caracteres</span>
+                        </div>
+                        <div class="relative">
+                            <textarea v-model="clinicalForm.renseignement_clinique" rows="4" placeholder="Decrivez les symptomes, antecedents medicaux, indications speciales, allergies connues..." class="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 transition focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-500"></textarea>
+                            <div class="pointer-events-none absolute right-3 top-3 text-slate-400 dark:text-slate-500">
+                                <em class="ni ni-edit text-sm"></em>
+                            </div>
+                        </div>
+                        <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600 dark:text-slate-400">
+                            <span class="inline-flex items-center gap-1.5">
+                                <em class="ni ni-shield-check text-emerald-600 dark:text-emerald-300"></em> Informations confidentielles
+                            </span>
+                            <span class="inline-flex items-center gap-1.5">
+                                <em class="ni ni-lock text-blue-600 dark:text-blue-300"></em> Donnees securisees
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="rounded-xl border border-indigo-200/60 bg-indigo-50/70 p-4 dark:border-indigo-800/40 dark:bg-indigo-900/10">
+                        <div class="flex items-start gap-3">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 shadow-sm">
+                                <em class="ni ni-bulb text-sm text-white"></em>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-semibold text-indigo-900 dark:text-indigo-200">Conseils pour une prescription optimale</h4>
+                                <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-indigo-800 dark:text-indigo-300">
+                                    <span class="inline-flex items-center gap-1.5"><em class="ni ni-check-circle text-emerald-600 dark:text-emerald-300"></em>Naissance -> age calcule</span>
+                                    <span class="inline-flex items-center gap-1.5"><em class="ni ni-check-circle text-emerald-600 dark:text-emerald-300"></em>Verifier les allergies connues</span>
+                                    <span class="inline-flex items-center gap-1.5"><em class="ni ni-check-circle text-emerald-600 dark:text-emerald-300"></em>Noter les traitements en cours</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col items-center justify-between gap-3 border-t border-slate-200/60 pt-4 sm:flex-row dark:border-slate-700/70">
+                        <button type="button" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 sm:w-auto dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" @click="goToStep('patient')">
+                            <em class="ni ni-arrow-left"></em> Retour patient
+                        </button>
+
+                        <span class="hidden items-center gap-2 text-xs text-slate-500 sm:inline-flex dark:text-slate-400">
+                            <span class="inline-flex items-center gap-1">
+                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                <span class="h-1.5 w-1.5 rounded-full bg-cyan-500"></span>
+                                <span class="h-1.5 w-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                            </span>
+                            Etape 2/7
+                        </span>
+
+                        <button type="button" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700 sm:w-auto" @click="goToStep('analyses')">
+                            Continuer vers analyses <em class="ni ni-arrow-right"></em>
+                        </button>
+                    </div>
                 </div>
             </section>
 
-            <section v-if="currentStep === 'prelevements'" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4">
-                <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100">
-                    <em class="ni ni-package text-yellow-500 text-sm mr-2"></em>Prelevements
-                </h2>
-                <div class="mt-3">
-                    <input
-                        v-model="prelevementSearch"
-                        type="text"
-                        placeholder="Rechercher un prelevement..."
-                        class="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
-                        @input="debouncedPrelevementsSearch"
-                    >
-                </div>
-                <div v-if="prelevementResults.length > 0" class="mt-3 space-y-2 max-h-72 overflow-auto">
-                    <div v-for="prelevement in prelevementResults" :key="prelevement.id" class="p-3 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ prelevement.denomination }}</p>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">{{ formatCurrency(prelevement.prix) }}</p>
+            <section v-if="currentStep === 'analyses'" class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                <div class="grid grid-cols-1 gap-4 p-4 lg:grid-cols-3">
+                    <div class="space-y-4 lg:col-span-2">
+                        <div class="rounded-xl border border-gray-100 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+                            <div class="mb-4 flex items-center justify-between">
+                                <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100">
+                                    <em class="ni ni-test-tube mr-2 text-sm text-green-500"></em>Recherche Analyses
+                                </h2>
+                                <span v-if="selectedAnalyses.length > 0" class="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-200">
+                                    {{ selectedAnalyses.length }} selectionnees
+                                </span>
+                            </div>
+
+                            <input
+                                v-model="analyseSearch"
+                                type="text"
+                                placeholder="Code ou designation..."
+                                class="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                                @input="debouncedAnalysesSearch"
+                            >
+
+                            <div v-if="analyseResults.length > 0" class="mt-3 max-h-80 space-y-2 overflow-auto">
+                                <div v-for="analyse in analyseResults" :key="analyse.id" class="flex items-center justify-between rounded-lg border border-slate-200 p-3 transition-colors hover:bg-gray-50 dark:border-slate-700 dark:hover:bg-slate-700/40">
+                                    <div>
+                                        <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ analyse.designation }}</p>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ analyse.code }} | {{ formatCurrency(analyse.prix) }}</p>
+                                    </div>
+                                    <button type="button" class="rounded bg-primary-500 px-2.5 py-1.5 text-xs text-white transition-colors hover:bg-primary-600" @click="addAnalyse(analyse)">
+                                        Ajouter
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <button type="button" class="px-2.5 py-1.5 text-xs rounded bg-primary-500 hover:bg-primary-600 text-white" @click="addPrelevement(prelevement)">
-                            Ajouter
-                        </button>
+
+                        <div class="flex justify-between">
+                            <button type="button" class="rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600" @click="goToStep('clinique')">
+                                <em class="ni ni-arrow-left mr-1.5 text-xs"></em>Clinique
+                            </button>
+                            <button type="button" class="rounded-lg bg-primary-500 px-4 py-2 text-sm text-white transition-colors hover:bg-primary-600" @click="goToStep('prelevements')">
+                                Prelevements <em class="ni ni-arrow-right ml-1.5 text-xs"></em>
+                            </button>
+                        </div>
                     </div>
-                </div>
-                <div class="mt-4 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/40">
-                    <p class="text-sm font-medium text-slate-800 dark:text-slate-100">Prelevements selectionnes</p>
-                    <div v-if="selectedPrelevements.length === 0" class="text-xs text-slate-500 dark:text-slate-400 mt-1">Aucun prelevement selectionne</div>
-                    <div v-else class="mt-2 space-y-2">
-                        <div v-for="prelevement in selectedPrelevements" :key="prelevement.id" class="flex items-center justify-between gap-2">
-                            <span class="text-sm text-slate-700 dark:text-slate-300">{{ prelevement.denomination }}</span>
-                            <div class="flex items-center gap-2">
-                                <input v-model.number="prelevement.quantite" type="number" min="1" max="10" class="w-16 px-2 py-1 text-xs rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100">
-                                <button type="button" class="text-red-600 hover:text-red-700 text-xs" @click="removePrelevement(prelevement.id)">Retirer</button>
+
+                    <div class="space-y-4">
+                        <div class="rounded-xl bg-slate-50 p-4 dark:bg-slate-700/50">
+                            <h3 class="mb-3 text-sm font-medium text-slate-800 dark:text-slate-100">
+                                <em class="ni ni-bag mr-1.5 text-xs"></em>Analyses selectionnees
+                            </h3>
+
+                            <div v-if="selectedAnalyses.length === 0" class="py-4 text-center text-xs text-slate-500 dark:text-slate-400">
+                                Aucune analyse selectionnee
+                            </div>
+
+                            <div v-else class="space-y-2">
+                                <div v-for="analyse in selectedAnalyses" :key="analyse.id" class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800">
+                                    <div class="flex items-start justify-between gap-2">
+                                        <div>
+                                            <p class="text-xs font-medium text-slate-800 dark:text-slate-100">{{ analyse.designation }}</p>
+                                            <p class="mt-1 text-xxs text-slate-500 dark:text-slate-400">{{ analyse.code }} | {{ formatCurrency(analyse.prix) }}</p>
+                                        </div>
+                                        <button type="button" class="text-xs text-red-600 hover:text-red-700" @click="removeAnalyse(analyse.id)">
+                                            <em class="ni ni-cross"></em>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="rounded-lg bg-green-50/70 p-3 text-sm dark:bg-green-900/15">
+                            <div class="flex items-center justify-between">
+                                <span class="font-medium text-green-800 dark:text-green-200">Sous-total analyses</span>
+                                <span class="font-semibold text-green-700 dark:text-green-300">{{ formatCurrency(analysesSubtotal) }}</span>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="mt-4 flex justify-between">
-                    <button type="button" class="px-3 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors text-sm" @click="goToStep('analyses')">
-                        <em class="ni ni-arrow-left mr-1.5 text-xs"></em>Analyses
-                    </button>
-                    <button type="button" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors text-sm" @click="goToStep('paiement')">
-                        Paiement <em class="ni ni-arrow-right ml-1.5 text-xs"></em>
-                    </button>
+            </section>
+
+            <section v-if="currentStep === 'prelevements'" class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                <div class="bg-gradient-to-r from-yellow-50 to-orange-50 px-4 py-3 dark:from-slate-700 dark:to-slate-800">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-500">
+                                <em class="ni ni-package text-sm text-white"></em>
+                            </div>
+                            <div class="ml-3">
+                                <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100">Prelevements</h2>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Selection optionnelle des prelevements requis</p>
+                            </div>
+                        </div>
+                        <span v-if="selectedPrelevements.length > 0" class="rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-200">
+                            {{ selectedPrelevements.length }} selectionnes
+                        </span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-4 p-4 xl:grid-cols-3">
+                    <div class="space-y-4 xl:col-span-2">
+                        <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-700/50">
+                            <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                                <em class="ni ni-search mr-1.5 text-xs text-yellow-500"></em>Rechercher un prelevement
+                            </label>
+                            <input
+                                v-model="prelevementSearch"
+                                type="text"
+                                placeholder="Tapez le nom du prelevement..."
+                                class="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                                @input="debouncedPrelevementsSearch"
+                            >
+                        </div>
+
+                        <div v-if="prelevementResults.length > 0" class="space-y-2">
+                            <div v-for="prelevement in prelevementResults" :key="prelevement.id" class="flex items-center justify-between rounded-lg border border-slate-200 p-3 transition-colors hover:bg-yellow-50/50 dark:border-slate-700 dark:hover:bg-slate-700/40">
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ prelevement.denomination }}</p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">{{ formatCurrency(prelevement.prix) }}</p>
+                                </div>
+                                <button type="button" class="rounded bg-yellow-500 px-2.5 py-1.5 text-xs text-white transition-colors hover:bg-yellow-600" @click="addPrelevement(prelevement)">
+                                    Ajouter
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between border-t border-gray-100 pt-3 dark:border-slate-700">
+                            <button type="button" class="rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600" @click="goToStep('analyses')">
+                                <em class="ni ni-arrow-left mr-1.5 text-xs"></em>Analyses
+                            </button>
+                            <button type="button" class="rounded-lg bg-primary-500 px-4 py-2 text-sm text-white transition-colors hover:bg-primary-600" @click="goToStep('paiement')">
+                                Paiement <em class="ni ni-arrow-right ml-1.5 text-xs"></em>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-700/50">
+                        <h3 class="mb-3 text-sm font-medium text-slate-800 dark:text-slate-100">
+                            <em class="ni ni-package mr-1.5 text-xs text-yellow-500"></em>Prelevements selectionnes
+                        </h3>
+
+                        <div v-if="selectedPrelevements.length === 0" class="py-4 text-center text-xs text-slate-500 dark:text-slate-400">
+                            Aucun prelevement selectionne
+                        </div>
+
+                        <div v-else class="space-y-2">
+                            <div v-for="prelevement in selectedPrelevements" :key="prelevement.id" class="rounded-lg border border-yellow-200 bg-white p-3 dark:border-yellow-700 dark:bg-slate-800">
+                                <div class="mb-2 flex items-start justify-between gap-2">
+                                    <div>
+                                        <p class="text-xs font-medium text-slate-800 dark:text-slate-100">{{ prelevement.denomination }}</p>
+                                        <p class="mt-1 text-xxs text-slate-500 dark:text-slate-400">{{ formatCurrency(prelevement.prix) }}</p>
+                                    </div>
+                                    <button type="button" class="text-xs text-red-600 hover:text-red-700" @click="removePrelevement(prelevement.id)">
+                                        <em class="ni ni-cross"></em>
+                                    </button>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label class="text-xxs text-slate-600 dark:text-slate-400">Quantite</label>
+                                    <input v-model.number="prelevement.quantite" type="number" min="1" max="10" class="w-16 rounded border border-slate-300 bg-white px-2 py-1 text-center text-xs text-slate-900 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 border-t border-slate-200 pt-2 dark:border-slate-600">
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="font-medium text-slate-800 dark:text-slate-100">Total prelevements</span>
+                                <span class="font-semibold text-yellow-700 dark:text-yellow-300">{{ formatCurrency(prelevementsSubtotal) }}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
-            <section v-if="currentStep === 'paiement'" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4">
-                <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100">
-                    <em class="ni ni-coin text-red-500 text-sm mr-2"></em>Paiement & Facturation
-                </h2>
-                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <select v-model="paymentForm.payment_method" class="w-full px-4 py-2.5 text-sm rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100">
-                        <option value="">Mode de paiement</option>
-                        <option v-for="method in paymentMethods" :key="method.code" :value="method.code">{{ method.label }}</option>
-                    </select>
-                    <input v-model.number="paymentForm.remise" type="number" min="0" max="100" placeholder="Remise (%)" class="w-full px-4 py-2.5 text-sm rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100">
-                    <label class="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                        <input v-model="paymentForm.paiement_statut" type="checkbox" class="rounded border-slate-300 dark:border-slate-600">
-                        Marquer comme paye
-                    </label>
-                </div>
-                <div class="mt-4 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/40 text-sm">
-                    <div class="flex justify-between"><span>Sous-total analyses</span><span>{{ formatCurrency(analysesSubtotal) }}</span></div>
-                    <div class="flex justify-between"><span>Sous-total prelevements</span><span>{{ formatCurrency(prelevementsSubtotal) }}</span></div>
-                    <div class="flex justify-between"><span>Frais urgence</span><span>{{ formatCurrency(urgencyFee) }}</span></div>
-                    <div class="flex justify-between"><span>Remise</span><span>- {{ formatCurrency(remiseAmount) }}</span></div>
-                    <div class="flex justify-between font-semibold border-t border-slate-300 dark:border-slate-600 mt-2 pt-2">
-                        <span>Total</span>
-                        <span>{{ formatCurrency(totalDue) }}</span>
+            <section v-if="currentStep === 'paiement'" class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                <div class="bg-gradient-to-r from-red-50 to-pink-50 px-4 py-3 dark:from-slate-700 dark:to-slate-800">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500">
+                                <em class="ni ni-coin text-sm text-white"></em>
+                            </div>
+                            <div class="ml-3">
+                                <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100">Paiement & Facturation</h2>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Finalisation de la prescription</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-lg font-bold text-red-600 dark:text-red-400">{{ formatCurrency(totalDue) }}</div>
+                            <div class="text-xs text-slate-500 dark:text-slate-400">Total a payer</div>
+                        </div>
                     </div>
                 </div>
-                <div class="mt-4 flex justify-between">
-                    <button type="button" class="px-3 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors text-sm" @click="goToStep('prelevements')">
+
+                <div class="grid grid-cols-1 gap-4 p-4 xl:grid-cols-3">
+                    <div class="space-y-4 xl:col-span-2">
+                        <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-700/50">
+                            <h3 class="mb-3 text-sm font-medium text-slate-800 dark:text-slate-100">
+                                <em class="ni ni-calculator mr-1.5 text-xs text-green-500"></em>Resume financier
+                            </h3>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between border-b border-slate-200 py-1.5 dark:border-slate-600">
+                                    <span class="text-slate-600 dark:text-slate-400">Sous-total analyses</span>
+                                    <span class="font-medium text-slate-800 dark:text-slate-100">{{ formatCurrency(analysesSubtotal) }}</span>
+                                </div>
+                                <div class="flex justify-between border-b border-slate-200 py-1.5 dark:border-slate-600">
+                                    <span class="text-slate-600 dark:text-slate-400">Sous-total prelevements</span>
+                                    <span class="font-medium text-slate-800 dark:text-slate-100">{{ formatCurrency(prelevementsSubtotal) }}</span>
+                                </div>
+                                <div class="flex justify-between border-b border-slate-200 py-1.5 dark:border-slate-600">
+                                    <span class="text-slate-600 dark:text-slate-400">Frais urgence</span>
+                                    <span class="font-medium text-slate-800 dark:text-slate-100">{{ formatCurrency(urgencyFee) }}</span>
+                                </div>
+                                <div class="flex justify-between border-b border-slate-200 py-1.5 dark:border-slate-600">
+                                    <span class="text-slate-600 dark:text-slate-400">Remise</span>
+                                    <span class="font-medium text-red-600 dark:text-red-400">- {{ formatCurrency(remiseAmount) }}</span>
+                                </div>
+                                <div class="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-semibold text-red-800 dark:text-red-200">Total final</span>
+                                        <span class="text-base font-bold text-red-600 dark:text-red-400">{{ formatCurrency(totalDue) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+                            <label class="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">Mode de paiement</label>
+                            <select v-model="paymentForm.payment_method" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100">
+                                <option value="">Selectionner</option>
+                                <option v-for="method in paymentMethods" :key="method.code" :value="method.code">{{ method.label }}</option>
+                            </select>
+                        </div>
+
+                        <div class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+                            <label class="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">Remise (%)</label>
+                            <input v-model.number="paymentForm.remise" type="number" min="0" max="100" placeholder="0" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100">
+                        </div>
+
+                        <label class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                            <input v-model="paymentForm.paiement_statut" type="checkbox" class="rounded border-slate-300 dark:border-slate-600">
+                            Marquer comme paye
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex justify-between border-t border-gray-100 px-4 pb-4 pt-3 dark:border-slate-700">
+                    <button type="button" class="rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600" @click="goToStep('prelevements')">
                         <em class="ni ni-arrow-left mr-1.5 text-xs"></em>Prelevements
                     </button>
-                    <button type="button" class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors text-sm" :disabled="isSubmitting" @click="submitPrescription">
+                    <button type="button" class="rounded-lg bg-green-600 px-4 py-2 text-sm text-white transition-colors hover:bg-green-700 disabled:opacity-50" :disabled="isSubmitting" @click="submitPrescription">
                         <span v-if="isSubmitting">Enregistrement...</span>
                         <span v-else>Terminer <em class="ni ni-check-circle ml-1.5 text-xs"></em></span>
                     </button>
@@ -476,6 +978,49 @@ const setPatientMode = (newMode) => {
     }
 };
 
+const backToPatientSelection = () => {
+    isNewPatient.value = false;
+    selectedPatient.value = null;
+    patientResults.value = [];
+    patientSearch.value = '';
+};
+
+const clearPatientSearch = () => {
+    patientSearch.value = '';
+    patientResults.value = [];
+};
+
+const civiliteOptionLabel = (civilite) => {
+    return String(civilite || '').trim() || '-';
+};
+
+const civiliteOptionHint = (civilite) => {
+    const normalized = String(civilite || '').toLowerCase();
+
+    if (normalized.includes('monsieur') || normalized.includes('homme')) {
+        return 'Homme';
+    }
+
+    if (normalized.includes('madame') || normalized.includes('femme')) {
+        return 'Femme';
+    }
+
+    if (normalized.includes('enfant') || normalized.includes('garcon') || normalized.includes('fille')) {
+        return 'Enfant';
+    }
+
+    return 'Autre';
+};
+
+const initials = (record) => {
+    const fullName = String(record?.nom_complet || `${record?.nom || ''} ${record?.prenom || ''}` || 'NA').trim();
+    const parts = fullName.split(/\s+/).filter(Boolean);
+    const first = parts[0]?.charAt(0) || 'N';
+    const second = parts[1]?.charAt(0) || 'A';
+
+    return `${first}${second}`.toUpperCase();
+};
+
 const selectPatient = (patient) => {
     selectedPatient.value = patient;
     isNewPatient.value = false;
@@ -545,6 +1090,47 @@ const goToStep = async (stepKey) => {
     if (stepKey === 'prelevements' && prelevementResults.value.length === 0) {
         await fetchPrelevements('');
     }
+};
+
+const resetWorkflow = () => {
+    currentStep.value = 'patient';
+    isNewPatient.value = false;
+    isSubmitting.value = false;
+
+    patientSearch.value = '';
+    patientResults.value = [];
+    selectedPatient.value = null;
+    analyseSearch.value = '';
+    analyseResults.value = [];
+    selectedAnalyses.value = [];
+    prelevementSearch.value = '';
+    prelevementResults.value = [];
+    selectedPrelevements.value = [];
+
+    patientForm.value = {
+        nom: '',
+        prenom: '',
+        civilite: props.civilites[0] || 'Monsieur',
+        date_naissance: '',
+        telephone: '',
+        email: '',
+        adresse: '',
+    };
+
+    clinicalForm.value = {
+        prescripteur_id: '',
+        patient_type: 'EXTERNE',
+        age: 0,
+        unite_age: 'Ans',
+        poids: '',
+        renseignement_clinique: '',
+    };
+
+    paymentForm.value = {
+        payment_method: props.paymentMethods[0]?.code || '',
+        remise: 0,
+        paiement_statut: true,
+    };
 };
 
 const fetchPatients = async (term) => {
