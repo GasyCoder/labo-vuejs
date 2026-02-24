@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -102,6 +103,7 @@ class PrescriptionController extends Controller
                     'created_at' => $prescription->created_at?->format('d/m/Y H:i'),
                     'created_at_relative' => $prescription->created_at?->diffForHumans(),
                     'deleted_at' => $prescription->deleted_at?->format('d/m/Y H:i'),
+                    'notified_at' => $prescription->notified_at?->format('d/m/Y'),
                     'patient' => $prescription->patient ? [
                         'nom_complet' => trim(sprintf('%s %s', $prescription->patient->nom, $prescription->patient->prenom ?? '')),
                         'telephone' => $prescription->patient->telephone,
@@ -125,6 +127,8 @@ class PrescriptionController extends Controller
         $countPaye = Paiement::where('status', true)->count();
         $countNonPaye = Paiement::where('status', false)->count();
 
+        $user = Auth::user();
+
         return Inertia::render('Secretaire/Prescriptions/Index', [
             'prescriptions' => $prescriptions,
             'filters' => [
@@ -147,6 +151,14 @@ class PrescriptionController extends Controller
                 'countDeleted' => $countDeleted,
                 'countPaye' => $countPaye,
                 'countNonPaye' => $countNonPaye,
+            ],
+            'permissions' => [
+                'canCreate' => $user->hasPermission('prescriptions.creer'),
+                'canEdit' => $user->hasPermission('prescriptions.modifier'),
+                'canDelete' => $user->hasPermission('prescriptions.supprimer'),
+                'canAccessTrash' => $user->hasPermission('corbeille.acceder'),
+                'canAccessArchive' => $user->hasPermission('archives.acceder'),
+                'canViewPrescription' => $user->hasPermission('prescriptions.voir'),
             ],
         ]);
     }
@@ -229,41 +241,134 @@ class PrescriptionController extends Controller
             return response()->json(['data' => []]);
         }
 
-        $analyses = Analyse::query()
+        $resultats = collect();
+
+        // 1. CHILD/NORMAL with price > 0 that directly match the term
+        $childDirectes = Analyse::query()
             ->where('status', true)
-            ->whereIn('level', ['PARENT', 'NORMAL', 'CHILD'])
+            ->whereIn('level', ['CHILD', 'NORMAL'])
+            ->where('prix', '>', 0)
             ->where(function ($query) use ($term): void {
                 $query->whereRaw('UPPER(code) LIKE ?', ["%{$term}%"])
                     ->orWhereRaw('UPPER(designation) LIKE ?', ["%{$term}%"]);
             })
-            ->with(['parent:id,designation,prix', 'enfants:id,parent_id,designation'])
-            ->limit(30)
+            ->with('parent:id,designation,prix')
+            ->get();
+
+        foreach ($childDirectes as $analyse) {
+            $analyse->setAttribute('recherche_directe', true);
+        }
+
+        $resultats = $resultats->concat($childDirectes);
+
+        // 2. PARENT with price > 0 matching the term (panels)
+        $parentsPayants = Analyse::query()
+            ->where('status', true)
+            ->where('level', 'PARENT')
+            ->where('prix', '>', 0)
+            ->where(function ($query) use ($term): void {
+                $query->whereRaw('UPPER(code) LIKE ?', ["%{$term}%"])
+                    ->orWhereRaw('UPPER(designation) LIKE ?', ["%{$term}%"]);
+            })
+            ->with(['enfants' => function ($query): void {
+                $query->where('status', true);
+            }])
+            ->get();
+
+        foreach ($parentsPayants as $analyse) {
+            $analyse->setAttribute('recherche_directe', false);
+        }
+
+        $resultats = $resultats->concat($parentsPayants);
+
+        // 3. Free PARENTs matching term → expand to their paying children
+        $parentsGratuits = Analyse::query()
+            ->where('status', true)
+            ->where('level', 'PARENT')
+            ->where(function ($query): void {
+                $query->where('prix', 0)->orWhereNull('prix');
+            })
+            ->where(function ($query) use ($term): void {
+                $query->whereRaw('UPPER(code) LIKE ?', ["%{$term}%"])
+                    ->orWhereRaw('UPPER(designation) LIKE ?', ["%{$term}%"]);
+            })
+            ->with(['enfants' => function ($query): void {
+                $query->where('status', true);
+            }])
+            ->get();
+
+        foreach ($parentsGratuits as $parentGratuit) {
+            if ($parentGratuit->enfants->count() > 0) {
+                $enfantsPayants = $parentGratuit->enfants
+                    ->where('prix', '>', 0);
+
+                foreach ($enfantsPayants as $enfant) {
+                    $enfant->setAttribute('recherche_directe', false);
+                }
+
+                $resultats = $resultats->concat($enfantsPayants);
+            }
+        }
+
+        // 4. NORMAL orphans (no parent or parent has no price)
+        $individuelles = Analyse::query()
+            ->where('status', true)
+            ->where('level', 'NORMAL')
+            ->where('prix', '>', 0)
+            ->where(function ($query) use ($term): void {
+                $query->whereRaw('UPPER(code) LIKE ?', ["%{$term}%"])
+                    ->orWhereRaw('UPPER(designation) LIKE ?', ["%{$term}%"]);
+            })
+            ->with('parent:id,designation,prix')
             ->get()
-            ->sortBy([
-                function (Analyse $analyse) use ($term): int {
-                    if (strtoupper((string) $analyse->code) === $term) {
-                        return 0;
-                    }
+            ->filter(function (Analyse $analyse): bool {
+                return ! $analyse->parent
+                    || ($analyse->parent && (float) $analyse->parent->prix <= 0);
+            });
 
-                    if (str_starts_with(strtoupper((string) $analyse->code), $term)) {
-                        return 1;
-                    }
+        foreach ($individuelles as $analyse) {
+            $analyse->setAttribute('recherche_directe', false);
+        }
 
-                    if (str_contains(strtoupper((string) $analyse->designation), $term)) {
-                        return 2;
-                    }
+        $resultats = $resultats->concat($individuelles);
 
+        // Deduplicate and sort by relevance
+        $resultatsUniques = $resultats->unique('id')->values();
+
+        $sorted = $resultatsUniques->sortBy([
+            function (Analyse $analyse): int {
+                return $analyse->getAttribute('recherche_directe') ? 0 : 1;
+            },
+            function (Analyse $analyse) use ($term): int {
+                if (strtoupper((string) $analyse->code) === $term) {
+                    return 1;
+                }
+
+                if (str_starts_with(strtoupper((string) $analyse->code), $term)) {
+                    return 2;
+                }
+
+                if (str_contains(strtoupper((string) $analyse->designation), $term)) {
                     return 3;
-                },
-                function (Analyse $analyse): string {
-                    return (string) $analyse->designation;
-                },
-            ])
-            ->values()
-            ->take(20);
+                }
+
+                return 4;
+            },
+        ])->take(20);
 
         return response()->json([
-            'data' => $analyses->map(function (Analyse $analyse): array {
+            'data' => $sorted->values()->map(function (Analyse $analyse): array {
+                $isParent = $analyse->level === 'PARENT';
+
+                $parentNom = 'Analyse individuelle';
+                if ($isParent) {
+                    $parentNom = 'Panel complet';
+                } elseif ($analyse->parent && (float) $analyse->parent->prix > 0) {
+                    $parentNom = $analyse->parent->designation.' (partie)';
+                } elseif ($analyse->parent) {
+                    $parentNom = $analyse->parent->designation;
+                }
+
                 return [
                     'id' => $analyse->id,
                     'code' => $analyse->code,
@@ -276,9 +381,10 @@ class PrescriptionController extends Controller
                         'designation' => $analyse->parent->designation,
                         'prix' => (float) $analyse->parent->prix,
                     ] : null,
-                    'is_parent' => $analyse->level === 'PARENT',
-                    'enfants_inclus' => $analyse->level === 'PARENT'
-                        ? $analyse->enfants->pluck('designation')->values()
+                    'is_parent' => $isParent,
+                    'parent_nom' => $parentNom,
+                    'enfants_inclus' => $isParent
+                        ? ($analyse->enfants ?? collect())->pluck('designation')->values()
                         : [],
                 ];
             }),
@@ -421,25 +527,169 @@ class PrescriptionController extends Controller
         });
 
         return redirect()
-            ->route('secretaire.prescription.edit', $prescription->id)
+            ->route('secretaire.prescription.edit', ['prescriptionId' => $prescription->id, 'step' => 'tubes'])
             ->with('success', 'Prescription enregistrée avec succès.');
     }
 
     public function edit(int $prescriptionId): Response
     {
-        $prescription = Prescription::with(['patient:id,nom,prenom,telephone', 'prescripteur:id,nom'])
-            ->findOrFail($prescriptionId);
+        $prescription = Prescription::with([
+            'patient',
+            'prescripteur:id,nom,prenom',
+            'analyses.parent',
+            'prelevements',
+            'paiements.paymentMethod',
+            'tubes',
+        ])->findOrFail($prescriptionId);
 
         return Inertia::render('Secretaire/Prescriptions/Edit', [
-            'prescription' => [
-                'id' => $prescription->id,
-                'reference' => $prescription->reference,
-                'status' => $prescription->status,
-                'patient' => $prescription->patient ? trim(sprintf('%s %s', $prescription->patient->nom, $prescription->patient->prenom ?? '')) : null,
-                'prescripteur' => $prescription->prescripteur?->nom,
-                'created_at' => $prescription->created_at?->format('d/m/Y H:i'),
+            'prescription' => $prescription,
+            'prescripteurs' => Prescripteur::query()->where('is_active', true)->get(['id', 'nom', 'prenom']),
+            'paymentMethods' => PaymentMethod::query()->where('is_active', true)->get(['id', 'code', 'label']),
+            'urgenceFees' => [
+                'jour' => Setting::getTarifUrgenceJour(),
+                'nuit' => Setting::getTarifUrgenceNuit(),
             ],
+            'civilites' => Patient::CIVILITES,
         ]);
+    }
+
+    public function destroy(int $id): RedirectResponse
+    {
+        $user = Auth::user();
+        if (! $user->hasPermission('prescriptions.supprimer')) {
+            return back()->with('error', 'Vous n\'avez pas la permission de supprimer des prescriptions.');
+        }
+
+        try {
+            Prescription::findOrFail($id)->delete();
+
+            return back()->with('success', 'Prescription mise en corbeille.');
+        } catch (\Exception $e) {
+            Log::error('Erreur suppression prescription', ['error' => $e->getMessage()]);
+
+            return back()->with('error', 'Erreur lors de la suppression.');
+        }
+    }
+
+    public function restore(int $id): RedirectResponse
+    {
+        $user = Auth::user();
+        if (! $user->hasPermission('corbeille.acceder')) {
+            return back()->with('error', 'Vous n\'avez pas la permission d\'accéder à la corbeille.');
+        }
+
+        try {
+            Prescription::withTrashed()->findOrFail($id)->restore();
+
+            return back()->with('success', 'Prescription restaurée.');
+        } catch (\Exception $e) {
+            Log::error('Erreur restauration prescription', ['error' => $e->getMessage()]);
+
+            return back()->with('error', 'Erreur lors de la restauration.');
+        }
+    }
+
+    public function forceDelete(int $id): RedirectResponse
+    {
+        $user = Auth::user();
+        if (! $user->hasPermission('corbeille.acceder')) {
+            return back()->with('error', 'Vous n\'avez pas la permission de supprimer définitivement.');
+        }
+
+        try {
+            Prescription::withTrashed()->findOrFail($id)->forceDelete();
+
+            return back()->with('success', 'Prescription supprimée définitivement.');
+        } catch (\Exception $e) {
+            Log::error('Erreur suppression définitive prescription', ['error' => $e->getMessage()]);
+
+            return back()->with('error', 'Erreur lors de la suppression définitive.');
+        }
+    }
+
+    public function archive(int $id): RedirectResponse
+    {
+        $user = Auth::user();
+        if (! $user->hasPermission('archives.acceder')) {
+            return back()->with('error', 'Vous n\'avez pas la permission d\'archiver des prescriptions.');
+        }
+
+        try {
+            $prescription = Prescription::findOrFail($id);
+
+            if ($prescription->status !== 'VALIDE') {
+                return back()->with('error', 'Seules les prescriptions validées peuvent être archivées.');
+            }
+
+            $prescription->update(['status' => 'ARCHIVE']);
+
+            return back()->with('success', 'Prescription archivée.');
+        } catch (\Exception $e) {
+            Log::error('Erreur archivage prescription', ['error' => $e->getMessage()]);
+
+            return back()->with('error', 'Erreur lors de l\'archivage.');
+        }
+    }
+
+    public function unarchive(int $id): RedirectResponse
+    {
+        $user = Auth::user();
+        if (! $user->hasPermission('archives.acceder')) {
+            return back()->with('error', 'Vous n\'avez pas la permission de désarchiver des prescriptions.');
+        }
+
+        try {
+            Prescription::findOrFail($id)->update(['status' => 'VALIDE']);
+
+            return back()->with('success', 'Prescription désarchivée.');
+        } catch (\Exception $e) {
+            Log::error('Erreur désarchivage prescription', ['error' => $e->getMessage()]);
+
+            return back()->with('error', 'Erreur lors du désarchivage.');
+        }
+    }
+
+    public function togglePayment(int $id): RedirectResponse
+    {
+        $user = Auth::user();
+        if (! $user->hasPermission('prescriptions.modifier')) {
+            return back()->with('error', 'Vous n\'avez pas la permission de modifier le paiement.');
+        }
+
+        try {
+            $paiement = Paiement::whereHas(
+                'prescription',
+                fn ($q) => $q->where('id', $id)
+            )->firstOrFail();
+
+            $nouveauStatut = ! $paiement->status;
+            $paiement->update([
+                'status' => $nouveauStatut,
+                'date_paiement' => $nouveauStatut ? now() : null,
+            ]);
+
+            $message = $nouveauStatut ? 'Paiement marqué comme payé.' : 'Paiement marqué comme non payé.';
+
+            return back()->with('success', $message);
+        } catch (\Exception $e) {
+            Log::error('Erreur toggle paiement', ['error' => $e->getMessage()]);
+
+            return back()->with('error', 'Erreur lors de la modification du paiement.');
+        }
+    }
+
+    public function notify(int $id): RedirectResponse
+    {
+        $user = Auth::user();
+        if (! $user->hasPermission('prescriptions.modifier')) {
+            return back()->with('error', 'Autorisation refusée.');
+        }
+
+        $prescription = Prescription::findOrFail($id);
+        $prescription->update(['notified_at' => now()]);
+
+        return back()->with('success', 'Patient notifié (simulation).');
     }
 
     private function resolveOrCreatePatient(array $validated): Patient

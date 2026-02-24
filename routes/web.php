@@ -80,6 +80,13 @@ Route::middleware(['auth', 'verified', 'role:secretaire,superadmin'])->prefix('s
         Route::get('prescription/workspace/lookup/prelevements', 'searchPrelevements')->name('prescription.lookup.prelevements');
         Route::post('prescription/workspace/store', 'store')->name('prescription.store');
         Route::get('prescription/edit/{prescriptionId}', 'edit')->name('prescription.edit');
+        Route::delete('prescription/{id}', 'destroy')->name('prescription.destroy');
+        Route::post('prescription/{id}/restore', 'restore')->name('prescription.restore');
+        Route::delete('prescription/{id}/force-delete', 'forceDelete')->name('prescription.forceDelete');
+        Route::post('prescription/{id}/archive', 'archive')->name('prescription.archive');
+        Route::post('prescription/{id}/unarchive', 'unarchive')->name('prescription.unarchive');
+        Route::post('prescription/{id}/toggle-payment', 'togglePayment')->name('prescription.togglePayment');
+        Route::post('prescription/{id}/notify', 'notify')->name('prescription.notify');
     });
 
     Route::get('/prescription/{prescription}/facture', function (Prescription $prescription) {
@@ -114,10 +121,23 @@ Route::middleware(['auth', 'verified', 'role:secretaire,superadmin'])->prefix('s
     Route::get('/journal-caisse/export', [\App\Http\Controllers\JournalCaisseController::class, 'exportPdf'])->name('journal-caisse.export');
     Route::get('/journal-decaissement', [\App\Http\Controllers\JournalDecaissementController::class, 'index'])->name('journal-decaissement');
     Route::get('/journal-decaissement/export', [\App\Http\Controllers\JournalDecaissementController::class, 'exportPdf'])->name('journal-decaissement.export');
-    // Route pour afficher la page de recettage / gestion des étiquettes
-    Route::get('/secretaire/etiquettes', [\App\Http\Controllers\Secretaire\Tubes\GestionEtiquettesController::class, 'index'])->name('etiquettes');
-    Route::get('/secretaire/etiquettes/export', [\App\Http\Controllers\Secretaire\Tubes\GestionEtiquettesController::class, 'exportPdf'])->name('etiquettes.export');
-    Route::post('/secretaire/etiquettes/{id}/receptionner', [\App\Http\Controllers\Secretaire\Tubes\GestionEtiquettesController::class, 'marquerReceptionne'])->name('etiquettes.marquer.reception');
+    Route::controller(\App\Http\Controllers\Secretaire\Tubes\GestionEtiquettesController::class)->group(function () {
+        Route::get('/secretaire/etiquettes', 'index')->name('etiquettes');
+        Route::get('/secretaire/etiquettes/export', 'exportPdf')->name('etiquettes.export');
+        Route::post('/secretaire/etiquettes/{id}/receptionner', 'marquerReceptionne')->name('etiquettes.marquer.reception');
+    });
+
+    // Paiements
+    Route::controller(\App\Http\Controllers\Secretaire\PaiementController::class)->group(function () {
+        Route::post('/paiements/{paiement}/pay', 'markAsPaid')->name('paiement.mark-paid');
+        Route::post('/paiements/{paiement}/unpay', 'markAsUnpaid')->name('paiement.mark-unpaid');
+    });
+
+    // Notifications
+    Route::controller(\App\Http\Controllers\Secretaire\NotificationController::class)->group(function () {
+        Route::post('/prescriptions/{prescription}/sms', 'sendSms')->name('prescription.send-sms');
+        Route::post('/prescriptions/{prescription}/email', 'sendEmail')->name('prescription.send-email');
+    });
 });
 
 // ============================================ Résultats PDF prescriptions

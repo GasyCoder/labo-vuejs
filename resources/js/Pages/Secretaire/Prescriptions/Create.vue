@@ -565,11 +565,30 @@
                             <div v-if="analyseResults.length > 0" class="mt-3 max-h-80 space-y-2 overflow-auto">
                                 <div v-for="analyse in analyseResults" :key="analyse.id" class="flex items-center justify-between rounded-lg border border-slate-200 p-3 transition-colors hover:bg-gray-50 dark:border-slate-700 dark:hover:bg-slate-700/40">
                                     <div>
-                                        <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ analyse.designation }}</p>
-                                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ analyse.code }} | {{ formatCurrency(analyse.prix) }}</p>
+                                        <div class="flex items-center gap-2">
+                                            <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ analyse.designation }}</p>
+                                            <span v-if="analyse.is_parent" class="rounded-full bg-indigo-100 px-2 py-0.5 text-xxs font-semibold text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
+                                                Panel ({{ analyse.enfants_inclus?.length || 0 }})
+                                            </span>
+                                        </div>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">
+                                            {{ analyse.code }} | {{ formatCurrency(analyse.prix) }}
+                                            <span v-if="analyse.parent_nom && !analyse.is_parent" class="ml-1 text-blue-600 dark:text-blue-400">· {{ analyse.parent_nom }}</span>
+                                        </p>
+                                        <p v-if="analyse.is_parent && analyse.enfants_inclus?.length > 0" class="mt-1 text-xxs text-indigo-600 dark:text-indigo-400">
+                                            Inclut : {{ analyse.enfants_inclus.join(', ') }}
+                                        </p>
                                     </div>
-                                    <button type="button" class="rounded bg-primary-500 px-2.5 py-1.5 text-xs text-white transition-colors hover:bg-primary-600" @click="addAnalyse(analyse)">
-                                        Ajouter
+                                    <button
+                                        type="button"
+                                        class="shrink-0 rounded px-2 py-1 text-xs transition-colors"
+                                        :class="isAnalyseInCart(analyse.id)
+                                            ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 cursor-not-allowed'
+                                            : 'bg-green-500 hover:bg-green-600 text-white'"
+                                        :disabled="isAnalyseInCart(analyse.id)"
+                                        @click="addAnalyse(analyse)"
+                                    >
+                                        <em class="ni text-xs" :class="isAnalyseInCart(analyse.id) ? 'ni-check' : 'ni-plus'"></em>
                                     </button>
                                 </div>
                             </div>
@@ -595,15 +614,28 @@
                                 Aucune analyse selectionnee
                             </div>
 
-                            <div v-else class="space-y-2">
-                                <div v-for="analyse in selectedAnalyses" :key="analyse.id" class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800">
-                                    <div class="flex items-start justify-between gap-2">
-                                        <div>
-                                            <p class="text-xs font-medium text-slate-800 dark:text-slate-100">{{ analyse.designation }}</p>
-                                            <p class="mt-1 text-xxs text-slate-500 dark:text-slate-400">{{ analyse.code }} | {{ formatCurrency(analyse.prix) }}</p>
+                            <div v-else class="mb-3 space-y-2">
+                                <div v-for="analyse in selectedAnalyses" :key="analyse.id" class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="mb-0.5 flex items-center space-x-1.5">
+                                            <span class="rounded bg-blue-100 px-1.5 py-0.5 font-mono text-xxs font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-200">
+                                                {{ analyse.code }}
+                                            </span>
+                                            <div class="text-xs font-medium text-slate-800 dark:text-slate-100">{{ analyse.designation }}</div>
                                         </div>
-                                        <button type="button" class="text-xs text-red-600 hover:text-red-700" @click="removeAnalyse(analyse.id)">
-                                            <em class="ni ni-cross"></em>
+                                        <div class="text-xxs text-slate-500 dark:text-slate-400">
+                                            {{ analyse.parent_nom || (analyse.parent ? 'Analyse individuelle' : 'Analyse individuelle') }}
+                                        </div>
+                                        <span v-if="analyse.is_parent" class="mt-0.5 inline-block rounded-full bg-purple-100 px-1.5 py-0.5 text-xxs text-purple-700 dark:bg-purple-900/30 dark:text-purple-200">
+                                            Panel complet
+                                        </span>
+                                    </div>
+                                    <div class="ml-2 text-right">
+                                        <div class="text-xs font-medium text-slate-700 dark:text-slate-300">
+                                            {{ (analyse.prix_effectif || analyse.prix) > 0 ? formatCurrency(analyse.prix_effectif || analyse.prix) : 'Inclus' }}
+                                        </div>
+                                        <button type="button" class="text-xxs text-red-500 transition-colors hover:text-red-600" @click="removeAnalyse(analyse.id)">
+                                            <em class="ni ni-cross text-xs"></em>
                                         </button>
                                     </div>
                                 </div>
@@ -653,14 +685,33 @@
                             >
                         </div>
 
-                        <div v-if="prelevementResults.length > 0" class="space-y-2">
-                            <div v-for="prelevement in prelevementResults" :key="prelevement.id" class="flex items-center justify-between rounded-lg border border-slate-200 p-3 transition-colors hover:bg-yellow-50/50 dark:border-slate-700 dark:hover:bg-slate-700/40">
-                                <div>
-                                    <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ prelevement.denomination }}</p>
-                                    <p class="text-xs text-slate-500 dark:text-slate-400">{{ formatCurrency(prelevement.prix) }}</p>
+                        <div v-if="prelevementResults.length > 0" class="grid grid-cols-1 gap-2 lg:grid-cols-2">
+                            <div v-for="prelevement in prelevementResults" :key="prelevement.id" class="flex items-start justify-between rounded-lg border border-slate-200 p-2.5 transition-colors hover:border-yellow-300 hover:bg-yellow-50/50 dark:border-slate-700 dark:hover:border-yellow-500 dark:hover:bg-slate-700/40" :class="isPrelevementInCart(prelevement.id) ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-600' : ''">
+                                <div class="flex items-start gap-2.5 flex-1">
+                                    <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-gradient-to-br from-yellow-500 to-orange-600 text-white">
+                                        <em class="ni ni-flask text-xs"></em>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-xs font-medium text-slate-800 dark:text-slate-100">{{ prelevement.denomination }}</p>
+                                        <div class="mt-1 flex items-center gap-2">
+                                            <span class="inline-flex items-center rounded-full bg-yellow-100 px-1.5 py-0.5 text-xxs font-medium text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200">
+                                                <em class="ni ni-money mr-0.5 text-xs"></em>
+                                                {{ formatCurrency(prelevement.prix) }}
+                                            </span>
+                                            <span v-if="isPrelevementInCart(prelevement.id)" class="text-xxs font-medium text-green-600 dark:text-green-400">✓ Ajouté</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <button type="button" class="rounded bg-yellow-500 px-2.5 py-1.5 text-xs text-white transition-colors hover:bg-yellow-600" @click="addPrelevement(prelevement)">
-                                    Ajouter
+                                <button
+                                    type="button"
+                                    class="ml-2 shrink-0 rounded px-2 py-1 text-xs font-medium transition-colors"
+                                    :class="isPrelevementInCart(prelevement.id)
+                                        ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 cursor-not-allowed'
+                                        : 'bg-yellow-500 hover:bg-yellow-600 text-white'"
+                                    :disabled="isPrelevementInCart(prelevement.id)"
+                                    @click="addPrelevement(prelevement)"
+                                >
+                                    <em class="ni text-xs" :class="isPrelevementInCart(prelevement.id) ? 'ni-check' : 'ni-plus'"></em>
                                 </button>
                             </div>
                         </div>
@@ -818,6 +869,8 @@ const steps = [
     { key: 'analyses', icon: 'filter', label: 'Analyses' },
     { key: 'prelevements', icon: 'package', label: 'Prelevements' },
     { key: 'paiement', icon: 'coin-alt', label: 'Paiement' },
+    { key: 'tubes', icon: 'scan', label: 'Etiquettes' },
+    { key: 'confirmation', icon: 'check-circle', label: 'Fini' },
 ];
 
 const currentStep = ref('patient');
@@ -875,32 +928,9 @@ const progress = computed(() => {
 });
 
 const analysesSubtotal = computed(() => {
-    let total = 0;
-    const countedParents = new Set();
-
-    selectedAnalyses.value.forEach((analyse) => {
-        if (analyse.level === 'PARENT') {
-            total += Number(analyse.prix || 0);
-            countedParents.add(analyse.id);
-
-            return;
-        }
-
-        if (analyse.parent_id && countedParents.has(analyse.parent_id)) {
-            return;
-        }
-
-        if (analyse.parent_id && analyse.parent && Number(analyse.parent.prix || 0) > 0) {
-            total += Number(analyse.parent.prix || 0);
-            countedParents.add(analyse.parent_id);
-
-            return;
-        }
-
-        total += Number(analyse.prix || 0);
-    });
-
-    return total;
+    return selectedAnalyses.value.reduce((total, analyse) => {
+        return total + Number(analyse.prix_effectif || analyse.prix || 0);
+    }, 0);
 });
 
 const prelevementsSubtotal = computed(() => {
@@ -1194,20 +1224,92 @@ const debouncedPrelevementsSearch = () => {
     }, 250);
 };
 
+const isAnalyseInCart = (analyseId) => {
+    return selectedAnalyses.value.some((item) => item.id === analyseId);
+};
+
 const addAnalyse = (analyse) => {
-    if (selectedAnalyses.value.some((item) => item.id === analyse.id)) {
+    if (isAnalyseInCart(analyse.id)) {
         return;
     }
 
-    selectedAnalyses.value.push(analyse);
+    if (analyse.is_parent) {
+        // Adding a PARENT panel: check if any of its children are already in cart
+        const enfantsDejaPresents = selectedAnalyses.value.filter(
+            (item) => item.parent_id === analyse.id,
+        );
+
+        if (enfantsDejaPresents.length > 0) {
+            alert(`Certaines analyses de ce panel sont déjà sélectionnées: ${enfantsDejaPresents.map((e) => e.designation).join(', ')}`);
+
+            return;
+        }
+
+        if (Number(analyse.prix || 0) <= 0) {
+            alert('Ce panel n\'a pas de prix défini');
+
+            return;
+        }
+
+        selectedAnalyses.value.push({
+            id: analyse.id,
+            designation: analyse.designation,
+            code: analyse.code,
+            level: analyse.level,
+            prix: Number(analyse.prix || 0),
+            prix_effectif: Number(analyse.prix || 0),
+            parent_id: null,
+            parent_nom: 'Panel complet',
+            is_parent: true,
+            enfants_inclus: analyse.enfants_inclus || [],
+        });
+    } else {
+        // Adding a CHILD or NORMAL: check if parent panel already in cart
+        if (analyse.parent_id) {
+            const parentInCart = selectedAnalyses.value.find(
+                (item) => item.id === analyse.parent_id && item.is_parent,
+            );
+
+            if (parentInCart) {
+                alert(`Cette analyse est déjà incluse dans le panel « ${parentInCart.designation} »`);
+
+                return;
+            }
+        }
+
+        let parentNom = 'Analyse individuelle';
+        if (analyse.parent_nom) {
+            parentNom = analyse.parent_nom;
+        } else if (analyse.parent && Number(analyse.parent.prix || 0) > 0) {
+            parentNom = `${analyse.parent.designation} (partie)`;
+        } else if (analyse.parent) {
+            parentNom = analyse.parent.designation;
+        }
+
+        selectedAnalyses.value.push({
+            id: analyse.id,
+            designation: analyse.designation,
+            code: analyse.code,
+            level: analyse.level,
+            prix: Number(analyse.prix || 0),
+            prix_effectif: Number(analyse.prix || 0),
+            parent_id: analyse.parent_id,
+            parent_nom: parentNom,
+            is_parent: false,
+        });
+    }
 };
 
 const removeAnalyse = (analyseId) => {
     selectedAnalyses.value = selectedAnalyses.value.filter((analyse) => analyse.id !== analyseId);
 };
 
+const isPrelevementInCart = (prelevementId) => {
+    return selectedPrelevements.value.some((item) => item.id === prelevementId);
+};
+
 const addPrelevement = (prelevement) => {
-    if (selectedPrelevements.value.some((item) => item.id === prelevement.id)) {
+    if (isPrelevementInCart(prelevement.id)) {
         return;
     }
 
