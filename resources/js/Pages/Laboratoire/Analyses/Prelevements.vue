@@ -45,6 +45,7 @@
                         <tr>
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Dénomination</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Prix</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Prix Promo</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Quantité</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Type tube</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Statut</th>
@@ -55,6 +56,7 @@
                         <tr v-for="p in prelevements.data" :key="p.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                             <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{{ p.denomination }}</td>
                             <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{{ formatNumber(p.prix) }} Ar</td>
+                            <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{{ p.prix_promotion ? formatNumber(p.prix_promotion) + ' Ar' : '-' }}</td>
                             <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{{ p.quantite }}</td>
                             <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{{ p.type_tube_recommande?.code || '-' }}</td>
                             <td class="px-6 py-4">
@@ -68,7 +70,7 @@
                                 </div>
                             </td>
                         </tr>
-                        <tr v-if="prelevements.data.length === 0"><td colspan="6" class="px-6 py-16 text-center text-gray-500 dark:text-gray-400">Aucun prélèvement trouvé</td></tr>
+                        <tr v-if="prelevements.data.length === 0"><td colspan="7" class="px-6 py-16 text-center text-gray-500 dark:text-gray-400">Aucun prélèvement trouvé</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -76,25 +78,38 @@
         </div>
 
         <!-- Modal Create/Edit -->
-        <div v-if="showModalState" class="fixed inset-0 z-50 overflow-y-auto">
+        <div v-if="showModalState" class="fixed inset-0 z-[1040] overflow-y-auto">
             <div class="flex items-center justify-center min-h-screen px-4">
                 <div class="fixed inset-0 bg-black/50" @click="showModalState = false"></div>
                 <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full p-6 z-10">
                     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">{{ formData.id ? 'Modifier' : 'Nouveau' }} prélèvement</h3>
                     <form @submit.prevent="submitForm">
                         <div class="space-y-4">
-                            <div><label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dénomination</label><input v-model="formData.denomination" type="text" required class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dénomination <span class="text-red-500">*</span></label><input v-model="formData.denomination" type="text" required placeholder="Dénomination détaillée du prélèvement" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"></div>
                             <div class="grid grid-cols-2 gap-4">
-                                <div><label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Prix</label><input v-model="formData.prix" type="number" min="0" required class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"></div>
-                                <div><label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Quantité</label><input v-model="formData.quantite" type="number" min="1" required class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"></div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Prix Standard (Ar) <span class="text-red-500">*</span></label>
+                                    <input v-model="formData.prix" type="number" min="0" required class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Prix Promotion (Ar) <span class="text-xs text-blue-500">- Si Qté > 1</span></label>
+                                    <input v-model="formData.prix_promotion" type="number" min="0" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                </div>
                             </div>
-                            <div><label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type de tube</label>
-                                <select v-model="formData.type_tube_id" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
-                                    <option value="">Aucun</option>
-                                    <option v-for="tt in typesTubes" :key="tt.id" :value="tt.id">{{ tt.code }} - {{ tt.couleur || '' }}</option>
-                                </select>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type de Tube Recommandé</label>
+                                    <select v-model="formData.type_tube_id" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                        <option value="">-- Sélectionner un type de tube --</option>
+                                        <option v-for="tt in typesTubes" :key="tt.id" :value="tt.id">{{ tt.code }} - {{ tt.couleur || '' }}</option>
+                                    </select>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Le type de tube sera suggéré automatiquement selon le type de prélèvement</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Quantité par défaut <span class="text-red-500">*</span></label>
+                                    <input v-model="formData.quantite" type="number" min="1" required class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                </div>
                             </div>
-                            <div class="flex items-center"><input v-model="formData.is_active" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"><label class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">Actif</label></div>
+                            <div class="flex items-center"><input v-model="formData.is_active" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"><label class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">Prélèvement actif</label></div>
                         </div>
                         <div class="flex justify-end space-x-3 mt-6">
                             <button type="button" @click="showModalState = false" class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg">Annuler</button>
@@ -106,7 +121,7 @@
         </div>
 
         <!-- Modal Delete -->
-        <div v-if="showDeleteModalState" class="fixed inset-0 z-50 overflow-y-auto">
+        <div v-if="showDeleteModalState" class="fixed inset-0 z-[1040] overflow-y-auto">
             <div class="flex items-center justify-center min-h-screen px-4">
                 <div class="fixed inset-0 bg-black/50" @click="showDeleteModalState = false"></div>
                 <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-sm w-full p-6 z-10">

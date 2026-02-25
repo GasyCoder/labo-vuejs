@@ -74,7 +74,7 @@
                         class="w-full py-3 px-4 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-primary-500 dark:focus:border-primary-400 transition-all">
                         <option value="">Tous</option>
                         <option v-for="prescripteur in prescripteurs" :key="prescripteur.id" :value="prescripteur.id">
-                            {{ prescripteur.nom_complet || prescripteur.name }}
+                            {{ prescripteur.nom }} {{ prescripteur.prenom || '' }}
                         </option>
                     </select>
                 </div>

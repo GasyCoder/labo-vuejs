@@ -179,14 +179,6 @@
                             <span v-if="form.tab === 'valide'" class="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-primary-600 dark:bg-primary-400"></span>
                         </button>
 
-                        <button v-if="perm.canAccessArchive" type="button" class="relative px-4 py-3 text-sm font-medium transition-colors" :class="tabClass('archive')" @click="changeTab('archive')">
-                            <span class="flex items-center gap-2">
-                                Archives
-                                <span v-if="Number(counts.countArchive || counts.archive || 0) > 0" class="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-xs font-semibold" :class="form.tab === 'archive' ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'">{{ number(counts.countArchive || counts.archive) }}</span>
-                            </span>
-                            <span v-if="form.tab === 'archive'" class="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-primary-600 dark:bg-primary-400"></span>
-                        </button>
-
                         <button v-if="canAccessTrash" type="button" class="relative px-4 py-3 text-sm font-medium transition-colors" :class="tabClass('deleted')" @click="changeTab('deleted')">
                             <span class="flex items-center gap-2">
                                 Corbeille
@@ -273,8 +265,8 @@
                                 </td>
                                 <td class="px-4 py-3.5">
                                     <div class="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                                        <!-- Edit + Delete: Available in Active AND Valide tabs -->
-                                        <template v-if="form.tab === 'actives' || form.tab === 'valide'">
+                                        <!-- Edit + Delete: Only on Active tab -->
+                                        <template v-if="form.tab === 'actives'">
                                             <Link v-if="perm.canEdit" :href="route('secretaire.prescription.edit', prescription.id)" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/40 transition-colors" title="Modifier">
                                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/></svg>
                                             </Link>
@@ -282,23 +274,21 @@
                                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
                                             </button>
                                         </template>
+                                        <!-- Valide tab: PDF + Notify only -->
                                         <template v-if="form.tab === 'valide'">
-                                            <a v-if="perm.canViewPrescription" :href="route('laboratoire.prescription.pdf', prescription.id)" target="_blank" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 transition-colors" title="Voir PDF">
+                                            <a v-if="perm.canViewPrescription" :href="route('laboratoire.prescription.pdf', prescription.id)" target="_blank" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 transition-colors" title="Résultats PDF">
                                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m.75 12l3 3m0 0l3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
                                             </a>
-                                            <button v-if="perm.canAccessArchive" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 transition-colors" title="Archiver" @click="openModal('archive', prescription.id)">
-                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
-                                            </button>
-                                            <button v-if="perm.canEdit" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors" :class="prescription.notified_at ? 'bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400' : 'bg-slate-50 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-500'" :title="prescription.notified_at ? 'Notifie le ' + prescription.notified_at : 'Notifier le patient'" @click="openModal('notify', prescription.id)">
+
+                                            <button v-if="perm.canEdit" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors" :class="prescription.notified_at ? 'bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400' : 'bg-slate-50 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-500'" :title="prescription.notified_at ? 'Notifié le ' + prescription.notified_at : 'Notifier le patient'" @click="openNotifyModal(prescription)">
                                                 <svg class="h-4 w-4" :fill="prescription.notified_at ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
                                             </button>
-                                        </template>
-                                        <!-- Archive: unarchive -->
-                                        <template v-else-if="form.tab === 'archive'">
-                                            <button v-if="perm.canAccessArchive" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/40 transition-colors" title="Desarchiver" @click="openModal('unarchive', prescription.id)">
-                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/></svg>
+
+                                            <button v-if="perm.canAccessArchive" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-50 text-slate-500 hover:bg-slate-100 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-slate-600 transition-colors" title="Archiver" @click="openModal('archive', prescription.id)">
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
                                             </button>
                                         </template>
+
                                         <!-- Deleted: restore + permanent delete -->
                                         <template v-else-if="form.tab === 'deleted'">
                                             <button v-if="perm.canAccessTrash" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/40 transition-colors" title="Restaurer" @click="openModal('restore', prescription.id)">
@@ -355,8 +345,8 @@
                                 <span>{{ prescription.created_at }}</span>
                             </div>
                             <div class="flex items-center gap-1">
-                                <!-- Edit + Delete: Available in Active AND Valide tabs -->
-                                <template v-if="form.tab === 'actives' || form.tab === 'valide'">
+                                <!-- Edit + Delete: Only on Active tab -->
+                                <template v-if="form.tab === 'actives'">
                                     <Link v-if="perm.canEdit" :href="route('secretaire.prescription.edit', prescription.id)" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/40 transition-colors" title="Modifier">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/></svg>
                                     </Link>
@@ -364,23 +354,21 @@
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
                                     </button>
                                 </template>
+                                <!-- Valide tab: PDF + Notify only -->
                                 <template v-if="form.tab === 'valide'">
-                                    <a v-if="perm.canViewPrescription" :href="route('laboratoire.prescription.pdf', prescription.id)" target="_blank" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 transition-colors" title="Voir PDF">
+                                    <a v-if="perm.canViewPrescription" :href="route('laboratoire.prescription.pdf', prescription.id)" target="_blank" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 transition-colors" title="Résultats PDF">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m.75 12l3 3m0 0l3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
                                     </a>
-                                    <button v-if="perm.canAccessArchive" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 transition-colors" title="Archiver" @click="openModal('archive', prescription.id)">
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
-                                    </button>
-                                    <button v-if="perm.canEdit" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors" :class="prescription.notified_at ? 'bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400' : 'bg-slate-50 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-500'" :title="prescription.notified_at ? 'Notifie le ' + prescription.notified_at : 'Notifier le patient'" @click="openModal('notify', prescription.id)">
+
+                                    <button v-if="perm.canEdit" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors" :class="prescription.notified_at ? 'bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400' : 'bg-slate-50 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-500'" :title="prescription.notified_at ? 'Notifié le ' + prescription.notified_at : 'Notifier le patient'" @click="openNotifyModal(prescription)">
                                         <svg class="h-4 w-4" :fill="prescription.notified_at ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
                                     </button>
-                                </template>
-                                <!-- Archive: unarchive -->
-                                <template v-else-if="form.tab === 'archive'">
-                                    <button v-if="perm.canAccessArchive" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/40 transition-colors" title="Desarchiver" @click="openModal('unarchive', prescription.id)">
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/></svg>
+
+                                    <button v-if="perm.canAccessArchive" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-50 text-slate-500 hover:bg-slate-100 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-slate-600 transition-colors" title="Archiver" @click="openModal('archive', prescription.id)">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
                                     </button>
                                 </template>
+
                                 <!-- Deleted: restore + permanent delete -->
                                 <template v-else-if="form.tab === 'deleted'">
                                     <button v-if="perm.canAccessTrash" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/40 transition-colors" title="Restaurer" @click="openModal('restore', prescription.id)">
@@ -412,7 +400,7 @@
             </div>
         </div>
 
-        <!-- Confirmation Modal -->
+        <!-- Confirmation Modal (delete, restore, payment, etc.) -->
         <Teleport to="body">
             <div v-if="modal.show" class="fixed inset-0 z-[60] overflow-y-auto">
                 <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" @click="closeModal"></div>
@@ -440,6 +428,116 @@
                         <div class="flex gap-3 px-6 pb-6">
                             <button type="button" class="flex-1 rounded-lg bg-slate-100 px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600" @click="closeModal">Annuler</button>
                             <button type="button" class="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors" :class="btnColor(modalConfig.color)" :disabled="modal.processing" @click="executeModalAction">{{ modal.processing ? '...' : modalConfig.btn }}</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
+
+        <!-- Notification Modal (SMS / Email) -->
+        <Teleport to="body">
+            <div v-if="notify.show" class="fixed inset-0 z-[60] overflow-y-auto">
+                <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" @click="closeNotifyModal"></div>
+                <div class="flex min-h-full items-end sm:items-center justify-center p-0 sm:p-4">
+                    <div class="relative w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl bg-white shadow-xl dark:bg-slate-800" @click.stop>
+                        <!-- Drag handle mobile -->
+                        <div class="sm:hidden flex justify-center pt-3">
+                            <div class="w-10 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+                        </div>
+
+                        <div class="p-5 sm:p-6">
+                            <!-- Header -->
+                            <div class="flex items-start gap-3 mb-5">
+                                <div class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+                                </div>
+                                <div class="min-w-0">
+                                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Notifier le patient</h3>
+                                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                                        {{ notify.prescription?.reference }} — {{ notify.prescription?.patient?.nom_complet || 'Patient' }}
+                                    </p>
+                                </div>
+                                <button type="button" class="ml-auto flex-shrink-0 p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-300 dark:hover:bg-slate-700 transition-colors" @click="closeNotifyModal">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+
+                            <!-- No contact info -->
+                            <div v-if="!hasAnyContact" class="text-center py-6">
+                                <div class="mx-auto w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center mb-3">
+                                    <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                </div>
+                                <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Aucun moyen de contact</p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Ce patient n'a ni téléphone ni email enregistré.</p>
+                            </div>
+
+                            <template v-else>
+                                <!-- Channel radio -->
+                                <div class="mb-4">
+                                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Canal d'envoi</label>
+                                    <div class="flex gap-2" :class="hasPhone && hasEmail ? 'grid grid-cols-2' : ''">
+                                        <label v-if="hasPhone" class="relative flex items-center gap-3 rounded-xl border-2 p-3 cursor-pointer transition-all" :class="notify.channel === 'sms' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400' : 'border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500'">
+                                            <input type="radio" v-model="notify.channel" value="sms" class="sr-only" @change="setDefaultMessage">
+                                            <div class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center" :class="notify.channel === 'sms' ? 'bg-blue-500 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                                            </div>
+                                            <p class="text-sm font-semibold text-slate-900 dark:text-white">SMS</p>
+                                            <div v-if="notify.channel === 'sms'" class="absolute top-2 right-2">
+                                                <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                            </div>
+                                        </label>
+
+                                        <label v-if="hasEmail" class="relative flex items-center gap-3 rounded-xl border-2 p-3 cursor-pointer transition-all" :class="notify.channel === 'email' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400' : 'border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500'">
+                                            <input type="radio" v-model="notify.channel" value="email" class="sr-only" @change="setDefaultMessage">
+                                            <div class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center" :class="notify.channel === 'email' ? 'bg-blue-500 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+                                            </div>
+                                            <p class="text-sm font-semibold text-slate-900 dark:text-white">Email</p>
+                                            <div v-if="notify.channel === 'email'" class="absolute top-2 right-2">
+                                                <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Message -->
+                                <div class="mb-4">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Message</label>
+                                        <span v-if="notify.channel === 'sms'" class="text-[11px] font-medium" :class="notify.message.length > 160 ? 'text-red-500' : 'text-slate-400'">{{ notify.message.length }}/160</span>
+                                    </div>
+                                    <textarea
+                                        v-model="notify.message"
+                                        :rows="notify.channel === 'sms' ? 3 : 6"
+                                        :maxlength="notify.channel === 'sms' ? 160 : undefined"
+                                        class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-700/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none transition-colors"
+                                        placeholder="Saisissez votre message..."
+                                    ></textarea>
+                                </div>
+
+                                <!-- Notified badge -->
+                                <div v-if="notify.prescription?.notified_at" class="mb-4 flex items-center gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2">
+                                    <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                                    <span class="text-xs text-amber-700 dark:text-amber-300">Patient déjà notifié le {{ notify.prescription.notified_at }}</span>
+                                </div>
+                            </template>
+
+                            <!-- Buttons -->
+                            <div class="flex items-center justify-end gap-3" :class="{ 'mt-4': !hasAnyContact }">
+                                <button type="button" class="h-10 px-5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors" @click="closeNotifyModal">
+                                    {{ hasAnyContact ? 'Annuler' : 'Fermer' }}
+                                </button>
+                                <button
+                                    v-if="hasAnyContact"
+                                    type="button"
+                                    class="h-10 px-5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                    :disabled="!notify.message.trim() || notify.processing || !notify.channel || (notify.channel === 'sms' && notify.message.length > 160)"
+                                    @click="sendNotification"
+                                >
+                                    <svg v-if="notify.processing" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                    <span>{{ notify.processing ? 'Envoi...' : (notify.channel === 'sms' ? 'Envoyer SMS' : 'Envoyer Email') }}</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -493,6 +591,7 @@ const modal = reactive({
 });
 
 const openModal = (type, id) => {
+    if (type === 'notify') return; // handled by openNotifyModal now
     modal.type = type;
     modal.prescriptionId = id;
     modal.show = true;
@@ -515,7 +614,6 @@ const modalConfig = computed(() => {
         unarchive: { title: 'Desarchiver cette prescription ?', desc: 'Elle sera remise dans les prescriptions validees.', color: 'amber', btn: 'Desarchiver', routeName: 'secretaire.prescription.unarchive', method: 'post' },
         pay: { title: 'Confirmer le paiement', desc: 'Marquer comme paye ? La date sera enregistree automatiquement.', color: 'emerald', btn: 'Confirmer', routeName: 'secretaire.prescription.togglePayment', method: 'post' },
         unpay: { title: 'Annuler le paiement', desc: 'Marquer comme non paye ? La date de paiement sera supprimee.', color: 'red', btn: 'Confirmer', routeName: 'secretaire.prescription.togglePayment', method: 'post' },
-        notify: { title: 'Notifier le patient', desc: 'Envoyer un SMS au patient pour cette prescription ?', color: 'blue', btn: 'Envoyer', routeName: 'secretaire.prescription.notify', method: 'post' },
     };
     return configs[modal.type] || {};
 });
@@ -531,6 +629,76 @@ const executeModalAction = () => {
     });
 };
 
+// Notification modal state
+const patientName = (p) => {
+    if (!p?.patient) return '';
+    return (p.patient.nom_complet || `${p.patient.nom || ''} ${p.patient.prenom || ''}`).trim().split(/\s+/)[0] || 'Patient';
+};
+
+const DEFAULT_SMS = (prescription) => {
+    const nom = patientName(prescription);
+    return `Bonjour ${nom}, vos résultats d'analyses (${prescription.reference}) sont disponibles au laboratoire. Merci de passer les récupérer. - Lareference`;
+};
+
+const DEFAULT_EMAIL = (prescription) => {
+    const nom = patientName(prescription);
+    const pdfUrl = route('laboratoire.prescription.pdf', prescription.id);
+    return `Bonjour ${nom},\n\nNous avons le plaisir de vous informer que les résultats de vos analyses (${prescription.reference}) sont désormais disponibles.\n\nVous pouvez les consulter et télécharger via le lien suivant :\n${pdfUrl}\n\nOu passer les récupérer directement au laboratoire.\n\nCordialement,\nLaboratoire Lareference`;
+};
+
+const notify = reactive({
+    show: false,
+    prescription: null,
+    channel: '',
+    message: '',
+    processing: false,
+});
+
+const hasPhone = computed(() => !!notify.prescription?.patient?.telephone);
+const hasEmail = computed(() => !!notify.prescription?.patient?.email);
+const hasAnyContact = computed(() => hasPhone.value || hasEmail.value);
+
+const openNotifyModal = (prescription) => {
+    notify.prescription = prescription;
+    // Auto-select first available channel
+    const phone = !!prescription.patient?.telephone;
+    const email = !!prescription.patient?.email;
+    notify.channel = phone ? 'sms' : (email ? 'email' : '');
+    notify.message = phone ? DEFAULT_SMS(prescription) : (email ? DEFAULT_EMAIL(prescription) : '');
+    notify.processing = false;
+    notify.show = true;
+};
+
+const closeNotifyModal = () => {
+    notify.show = false;
+    notify.prescription = null;
+    notify.processing = false;
+};
+
+const setDefaultMessage = () => {
+    if (!notify.prescription) return;
+    notify.message = notify.channel === 'sms' ? DEFAULT_SMS(notify.prescription) : DEFAULT_EMAIL(notify.prescription);
+};
+
+const sendNotification = () => {
+    if (!notify.prescription || notify.processing || !notify.message.trim() || !notify.channel) return;
+    notify.processing = true;
+
+    const routeName = notify.channel === 'sms' ? 'secretaire.prescription.send-sms' : 'secretaire.prescription.send-email';
+    const data = { message: notify.message };
+
+    if (notify.channel === 'email') {
+        data.lien_pdf = route('laboratoire.prescription.pdf', notify.prescription.id);
+    }
+
+    router.post(route(routeName, notify.prescription.id), data, {
+        preserveScroll: true,
+        onSuccess: () => closeNotifyModal(),
+        onError: () => { notify.processing = false; },
+        onFinish: () => { notify.processing = false; },
+    });
+};
+
 const handlePaymentToggle = (prescription) => {
     if (!prescription.paiement) return;
     openModal(prescription.paiement.status ? 'unpay' : 'pay', prescription.id);
@@ -539,7 +707,6 @@ const handlePaymentToggle = (prescription) => {
 const totalCount = computed(() => {
     return Number(props.counts.countActives || props.counts.actives || 0)
         + Number(props.counts.countValide || props.counts.valide || 0)
-        + Number(props.counts.countArchive || props.counts.archive || 0)
         + Number(props.counts.countDeleted || props.counts.deleted || 0);
 });
 

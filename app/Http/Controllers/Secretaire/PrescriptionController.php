@@ -40,11 +40,12 @@ class PrescriptionController extends Controller
 
         $prescriptionsQuery = Prescription::query()
             ->with([
-                'patient:id,nom,prenom,telephone',
+                'patient:id,nom,prenom,telephone,email',
                 'prescripteur:id,nom',
                 'paiements:id,prescription_id,status,date_paiement',
             ])
-            ->withCount('analyses');
+            ->withCount('analyses')
+            ->whereHas('patient', fn ($q) => $q->whereNull('deleted_at'));
 
         if ($search !== '') {
             $prescriptionsQuery->where(function ($query) use ($search): void {
@@ -57,7 +58,15 @@ class PrescriptionController extends Controller
             });
         }
 
-        if ($tab === 'deleted') {
+        // Payment filter overrides tab/status filters (legacy behavior)
+        if ($paymentFilter) {
+            match ($paymentFilter) {
+                'paye' => $prescriptionsQuery->whereHas('paiements', fn ($q) => $q->where('status', true)),
+                'non_paye' => $prescriptionsQuery->whereHas('paiements', fn ($q) => $q->where('status', false)),
+                'sans_paiement' => $prescriptionsQuery->doesntHave('paiements'),
+                default => null,
+            };
+        } elseif ($tab === 'deleted') {
             $prescriptionsQuery->onlyTrashed();
         } else {
             $statusMap = [
@@ -67,18 +76,6 @@ class PrescriptionController extends Controller
             ];
 
             $prescriptionsQuery->whereIn('status', $statusMap[$tab]);
-        }
-
-        if ($paymentFilter === 'paye') {
-            $prescriptionsQuery->whereHas('paiements', function ($query): void {
-                $query->where('status', true);
-            });
-        }
-
-        if ($paymentFilter === 'non_paye') {
-            $prescriptionsQuery->whereHas('paiements', function ($query): void {
-                $query->where('status', false);
-            });
         }
 
         $prescriptions = $prescriptionsQuery
@@ -107,6 +104,7 @@ class PrescriptionController extends Controller
                     'patient' => $prescription->patient ? [
                         'nom_complet' => trim(sprintf('%s %s', $prescription->patient->nom, $prescription->patient->prenom ?? '')),
                         'telephone' => $prescription->patient->telephone,
+                        'email' => $prescription->patient->email,
                     ] : null,
                     'prescripteur' => $prescription->prescripteur ? [
                         'nom' => $prescription->prescripteur->nom,
@@ -124,8 +122,14 @@ class PrescriptionController extends Controller
         $countValide = Prescription::where('status', 'VALIDE')->count();
         $countArchive = Prescription::where('status', 'ARCHIVE')->count();
         $countDeleted = Prescription::onlyTrashed()->count();
-        $countPaye = Paiement::where('status', true)->count();
-        $countNonPaye = Paiement::where('status', false)->count();
+        $countPaye = Paiement::query()
+            ->whereHas('prescription', fn ($q) => $q->whereNull('deleted_at'))
+            ->where('status', true)
+            ->count();
+        $countNonPaye = Paiement::query()
+            ->whereHas('prescription', fn ($q) => $q->whereNull('deleted_at'))
+            ->where('status', false)
+            ->count();
 
         $user = Auth::user();
 

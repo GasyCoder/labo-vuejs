@@ -4,13 +4,13 @@
             <div class="mb-3">
                 <Link
                     :href="route('secretaire.prescription.index')"
-                    class="inline-flex items-center rounded-lg bg-gray-50 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-100 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
+                    class="inline-flex items-center rounded-lg bg-slate-50 px-3 py-1.5 text-sm text-slate-600 transition-colors hover:bg-slate-100 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
                 >
                     <em class="ni ni-arrow-left mr-1.5 text-xs"></em>Retour a la liste
                 </Link>
             </div>
 
-            <div class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <div class="rounded-xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-slate-700/80 dark:bg-slate-800">
                 <div class="mb-4 flex items-center justify-between">
                     <div>
                         <h1 class="flex items-center text-base font-semibold text-slate-800 dark:text-slate-100">
@@ -37,7 +37,7 @@
                 </div>
 
                 <div class="relative">
-                    <div class="absolute left-4 right-4 top-4 z-0 h-0.5 bg-gray-100 dark:bg-slate-600">
+                    <div class="absolute left-4 right-4 top-4 z-0 h-0.5 bg-slate-200 dark:bg-slate-600">
                         <div class="h-full bg-gradient-to-r from-primary-400 to-green-400 transition-all duration-300" :style="{ width: `${progress}%` }"></div>
                     </div>
 
@@ -374,29 +374,60 @@
                 </div>
             </section>
 
-            <section v-if="currentStep === 'analyses'" class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
-                <div class="grid grid-cols-1 gap-4 p-4 lg:grid-cols-3">
+            <section v-if="currentStep === 'analyses'" class="overflow-hidden rounded-xl border border-slate-200/70 bg-white shadow-sm dark:border-slate-700/80 dark:bg-slate-800">
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 px-5 py-4 dark:from-slate-800 dark:to-slate-800">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="flex min-w-0 items-start gap-3">
+                            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-green-600 shadow-sm">
+                                <em class="ni ni-filter text-base text-white"></em>
+                            </div>
+                            <div class="min-w-0">
+                                <h2 class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">Analyses</h2>
+                                <p class="mt-1 truncate text-xs text-slate-600 dark:text-slate-400">Recherchez et selectionnez les analyses prescrites.</p>
+                            </div>
+                        </div>
+                        <div class="shrink-0 flex items-center gap-2">
+                            <span v-if="selectedAnalyses.length > 0" class="inline-flex items-center gap-1.5 rounded-lg border border-green-200/70 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 dark:border-green-800/40 dark:bg-green-900/15 dark:text-green-300">
+                                <em class="ni ni-check-circle"></em> {{ selectedAnalyses.length }} selectionnees
+                            </span>
+                            <span class="hidden items-center gap-2 text-xs text-slate-500 sm:inline-flex dark:text-slate-400">
+                                Etape 3/7
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-4 p-5 lg:grid-cols-3">
                     <div class="space-y-4 lg:col-span-2">
-                        <div class="rounded-xl border border-gray-100 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
-                            <div class="mb-4 flex items-center justify-between">
-                                <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100">
-                                    <em class="ni ni-test-tube mr-2 text-sm text-green-500"></em>Recherche Analyses
-                                </h2>
-                                <span v-if="selectedAnalyses.length > 0" class="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-200">
-                                    {{ selectedAnalyses.length }} selectionnees
-                                </span>
+                        <div class="rounded-xl border border-slate-200/70 bg-white p-4 dark:border-slate-700/70 dark:bg-slate-800">
+                            <label class="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                <em class="ni ni-search mr-1.5 text-green-600 dark:text-green-300"></em>
+                                Rechercher une analyse
+                            </label>
+
+                            <div class="relative">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                                    <em class="ni ni-search text-base text-slate-400 dark:text-slate-500"></em>
+                                </div>
+                                <input
+                                    v-model="analyseSearch"
+                                    type="text"
+                                    placeholder="Code ou designation..."
+                                    class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-900 placeholder-slate-400 transition focus:border-green-500 focus:outline-none focus:ring-4 focus:ring-green-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-500"
+                                    @input="debouncedAnalysesSearch"
+                                >
+                                <button
+                                    v-if="analyseSearch"
+                                    type="button"
+                                    class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 transition hover:text-red-500 dark:hover:text-red-400"
+                                    @click="analyseSearch = ''; analyseResults = []"
+                                >
+                                    <em class="ni ni-cross-circle text-lg"></em>
+                                </button>
                             </div>
 
-                            <input
-                                v-model="analyseSearch"
-                                type="text"
-                                placeholder="Code ou designation..."
-                                class="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
-                                @input="debouncedAnalysesSearch"
-                            >
-
                             <div v-if="analyseResults.length > 0" class="mt-3 max-h-80 space-y-2 overflow-auto">
-                                <div v-for="analyse in analyseResults" :key="analyse.id" class="flex items-center justify-between rounded-lg border border-slate-200 p-3 transition-colors hover:bg-gray-50 dark:border-slate-700 dark:hover:bg-slate-700/40">
+                                <div v-for="analyse in analyseResults" :key="analyse.id" class="flex items-center justify-between rounded-xl border border-slate-200 p-3 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700/40">
                                     <div>
                                         <div class="flex items-center gap-2">
                                             <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ analyse.designation }}</p>
@@ -414,7 +445,7 @@
                                     </div>
                                     <button
                                         type="button"
-                                        class="shrink-0 rounded px-2 py-1 text-xs transition-colors"
+                                        class="shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
                                         :class="isAnalyseInCart(analyse.id)
                                             ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 cursor-not-allowed'
                                             : 'bg-green-500 hover:bg-green-600 text-white'"
@@ -427,19 +458,19 @@
                             </div>
                         </div>
 
-                        <div class="flex justify-between">
-                            <button type="button" class="rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600" @click="goToStep('clinique')">
-                                <em class="ni ni-arrow-left mr-1.5 text-xs"></em>Clinique
+                        <div class="flex flex-col items-center justify-between gap-3 border-t border-slate-200/60 pt-4 sm:flex-row dark:border-slate-700/70">
+                            <button type="button" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 sm:w-auto dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" @click="goToStep('clinique')">
+                                <em class="ni ni-arrow-left"></em> Retour clinique
                             </button>
-                            <button type="button" class="rounded-lg bg-primary-500 px-4 py-2 text-sm text-white transition-colors hover:bg-primary-600" @click="goToStep('prelevements')">
-                                Prelevements <em class="ni ni-arrow-right ml-1.5 text-xs"></em>
+                            <button type="button" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700 sm:w-auto" @click="goToStep('prelevements')">
+                                Continuer vers prelevements <em class="ni ni-arrow-right"></em>
                             </button>
                         </div>
                     </div>
 
                     <div class="space-y-4">
-                        <div class="rounded-xl bg-slate-50 p-4 dark:bg-slate-700/50">
-                            <h3 class="mb-3 text-sm font-medium text-slate-800 dark:text-slate-100">
+                        <div class="rounded-xl border border-slate-200/70 bg-slate-50 p-4 dark:border-slate-700/70 dark:bg-slate-700/50">
+                            <h3 class="mb-3 text-sm font-semibold text-slate-800 dark:text-slate-100">
                                 <em class="ni ni-bag mr-1.5 text-xs"></em>Analyses selectionnees
                             </h3>
 
@@ -485,43 +516,62 @@
                 </div>
             </section>
 
-            <section v-if="currentStep === 'prelevements'" class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
-                <div class="bg-gradient-to-r from-yellow-50 to-orange-50 px-4 py-3 dark:from-slate-700 dark:to-slate-800">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-500">
-                                <em class="ni ni-package text-sm text-white"></em>
+            <section v-if="currentStep === 'prelevements'" class="overflow-hidden rounded-xl border border-slate-200/70 bg-white shadow-sm dark:border-slate-700/80 dark:bg-slate-800">
+                <div class="bg-gradient-to-r from-yellow-50 to-orange-50 px-5 py-4 dark:from-slate-800 dark:to-slate-800">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="flex min-w-0 items-start gap-3">
+                            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-yellow-500 shadow-sm">
+                                <em class="ni ni-package text-base text-white"></em>
                             </div>
-                            <div class="ml-3">
-                                <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100">Prelevements</h2>
-                                <p class="text-xs text-slate-500 dark:text-slate-400">Selection optionnelle des prelevements requis</p>
+                            <div class="min-w-0">
+                                <h2 class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">Prelevements</h2>
+                                <p class="mt-1 truncate text-xs text-slate-600 dark:text-slate-400">Selection optionnelle des prelevements requis.</p>
                             </div>
                         </div>
-                        <span v-if="selectedPrelevements.length > 0" class="rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-200">
-                            {{ selectedPrelevements.length }} selectionnes
-                        </span>
+                        <div class="shrink-0 flex items-center gap-2">
+                            <span v-if="selectedPrelevements.length > 0" class="inline-flex items-center gap-1.5 rounded-lg border border-yellow-200/70 bg-yellow-50 px-2.5 py-1 text-xs font-semibold text-yellow-700 dark:border-yellow-800/40 dark:bg-yellow-900/15 dark:text-yellow-300">
+                                <em class="ni ni-check-circle"></em> {{ selectedPrelevements.length }} selectionnes
+                            </span>
+                            <span class="hidden items-center gap-2 text-xs text-slate-500 sm:inline-flex dark:text-slate-400">
+                                Etape 4/7
+                            </span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 gap-4 p-4 xl:grid-cols-3">
+                <div class="grid grid-cols-1 gap-4 p-5 xl:grid-cols-3">
                     <div class="space-y-4 xl:col-span-2">
-                        <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-700/50">
-                            <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                <em class="ni ni-search mr-1.5 text-xs text-yellow-500"></em>Rechercher un prelevement
+                        <div class="rounded-xl border border-slate-200/70 bg-white p-4 dark:border-slate-700/70 dark:bg-slate-800">
+                            <label class="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                <em class="ni ni-search mr-1.5 text-yellow-600 dark:text-yellow-300"></em>
+                                Rechercher un prelevement
                             </label>
-                            <input
-                                v-model="prelevementSearch"
-                                type="text"
-                                placeholder="Tapez le nom du prelevement..."
-                                class="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
-                                @input="debouncedPrelevementsSearch"
-                            >
+                            <div class="relative">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                                    <em class="ni ni-search text-base text-slate-400 dark:text-slate-500"></em>
+                                </div>
+                                <input
+                                    v-model="prelevementSearch"
+                                    type="text"
+                                    placeholder="Tapez le nom du prelevement..."
+                                    class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-900 placeholder-slate-400 transition focus:border-yellow-500 focus:outline-none focus:ring-4 focus:ring-yellow-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-500"
+                                    @input="debouncedPrelevementsSearch"
+                                >
+                                <button
+                                    v-if="prelevementSearch"
+                                    type="button"
+                                    class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 transition hover:text-red-500 dark:hover:text-red-400"
+                                    @click="prelevementSearch = ''; prelevementResults = []"
+                                >
+                                    <em class="ni ni-cross-circle text-lg"></em>
+                                </button>
+                            </div>
                         </div>
 
                         <div v-if="prelevementResults.length > 0" class="grid grid-cols-1 gap-2 lg:grid-cols-2">
-                            <div v-for="prelevement in prelevementResults" :key="prelevement.id" class="flex items-start justify-between rounded-lg border border-slate-200 p-2.5 transition-colors hover:border-yellow-300 hover:bg-yellow-50/50 dark:border-slate-700 dark:hover:border-yellow-500 dark:hover:bg-slate-700/40" :class="isPrelevementInCart(prelevement.id) ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-600' : ''">
+                            <div v-for="prelevement in prelevementResults" :key="prelevement.id" class="flex items-start justify-between rounded-xl border border-slate-200 p-2.5 transition-colors hover:border-yellow-300 hover:bg-yellow-50/50 dark:border-slate-700 dark:hover:border-yellow-500 dark:hover:bg-slate-700/40" :class="isPrelevementInCart(prelevement.id) ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-600' : ''">
                                 <div class="flex items-start gap-2.5 flex-1">
-                                    <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-gradient-to-br from-yellow-500 to-orange-600 text-white">
+                                    <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-yellow-500 to-orange-600 text-white">
                                         <em class="ni ni-flask text-xs"></em>
                                     </div>
                                     <div class="flex-1 min-w-0">
@@ -537,7 +587,7 @@
                                 </div>
                                 <button
                                     type="button"
-                                    class="ml-2 shrink-0 rounded px-2 py-1 text-xs font-medium transition-colors"
+                                    class="ml-2 shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
                                     :class="isPrelevementInCart(prelevement.id)
                                         ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 cursor-not-allowed'
                                         : 'bg-yellow-500 hover:bg-yellow-600 text-white'"
@@ -549,18 +599,18 @@
                             </div>
                         </div>
 
-                        <div class="flex justify-between border-t border-gray-100 pt-3 dark:border-slate-700">
-                            <button type="button" class="rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600" @click="goToStep('analyses')">
-                                <em class="ni ni-arrow-left mr-1.5 text-xs"></em>Analyses
+                        <div class="flex flex-col items-center justify-between gap-3 border-t border-slate-200/60 pt-4 sm:flex-row dark:border-slate-700/70">
+                            <button type="button" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 sm:w-auto dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" @click="goToStep('analyses')">
+                                <em class="ni ni-arrow-left"></em> Retour analyses
                             </button>
-                            <button type="button" class="rounded-lg bg-primary-500 px-4 py-2 text-sm text-white transition-colors hover:bg-primary-600" @click="goToStep('paiement')">
-                                Paiement <em class="ni ni-arrow-right ml-1.5 text-xs"></em>
+                            <button type="button" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700 sm:w-auto" @click="goToStep('paiement')">
+                                Continuer vers paiement <em class="ni ni-arrow-right"></em>
                             </button>
                         </div>
                     </div>
 
-                    <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-700/50">
-                        <h3 class="mb-3 text-sm font-medium text-slate-800 dark:text-slate-100">
+                    <div class="rounded-xl border border-slate-200/70 bg-slate-50 p-4 dark:border-slate-700/70 dark:bg-slate-700/50">
+                        <h3 class="mb-3 text-sm font-semibold text-slate-800 dark:text-slate-100">
                             <em class="ni ni-package mr-1.5 text-xs text-yellow-500"></em>Prelevements selectionnes
                         </h3>
 
@@ -569,7 +619,7 @@
                         </div>
 
                         <div v-else class="space-y-2">
-                            <div v-for="prelevement in selectedPrelevements" :key="prelevement.id" class="rounded-lg border border-yellow-200 bg-white p-3 dark:border-yellow-700 dark:bg-slate-800">
+                            <div v-for="prelevement in selectedPrelevements" :key="prelevement.id" class="rounded-xl border border-yellow-200 bg-white p-3 dark:border-yellow-700 dark:bg-slate-800">
                                 <div class="mb-2 flex items-start justify-between gap-2">
                                     <div>
                                         <p class="text-xs font-medium text-slate-800 dark:text-slate-100">{{ prelevement.denomination }}</p>
@@ -581,7 +631,7 @@
                                 </div>
                                 <div class="flex items-center justify-between">
                                     <label class="text-xxs text-slate-600 dark:text-slate-400">Quantite</label>
-                                    <input v-model.number="prelevement.quantite" type="number" min="1" max="10" class="w-16 rounded border border-slate-300 bg-white px-2 py-1 text-center text-xs text-slate-900 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100">
+                                    <input v-model.number="prelevement.quantite" type="number" min="1" max="10" class="w-16 rounded-lg border border-slate-300 bg-white px-2 py-1 text-center text-xs text-slate-900 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100">
                                 </div>
                             </div>
                         </div>
@@ -596,49 +646,49 @@
                 </div>
             </section>
 
-            <section v-if="currentStep === 'paiement'" class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
-                <div class="bg-gradient-to-r from-red-50 to-pink-50 px-4 py-3 dark:from-slate-700 dark:to-slate-800">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500">
-                                <em class="ni ni-coin text-sm text-white"></em>
+            <section v-if="currentStep === 'paiement'" class="overflow-hidden rounded-xl border border-slate-200/70 bg-white shadow-sm dark:border-slate-700/80 dark:bg-slate-800">
+                <div class="bg-gradient-to-r from-red-50 to-pink-50 px-5 py-4 dark:from-slate-800 dark:to-slate-800">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="flex min-w-0 items-start gap-3">
+                            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-500 shadow-sm">
+                                <em class="ni ni-coin text-base text-white"></em>
                             </div>
-                            <div class="ml-3">
-                                <h2 class="text-base font-semibold text-slate-800 dark:text-slate-100">Paiement & Facturation</h2>
-                                <p class="text-xs text-slate-500 dark:text-slate-400">Finalisation de la prescription</p>
+                            <div class="min-w-0">
+                                <h2 class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">Paiement & Facturation</h2>
+                                <p class="mt-1 truncate text-xs text-slate-600 dark:text-slate-400">Finalisation de la prescription.</p>
                             </div>
                         </div>
-                        <div class="text-right">
+                        <div class="shrink-0 text-right">
                             <div class="text-lg font-bold text-red-600 dark:text-red-400">{{ formatCurrency(totalDue) }}</div>
                             <div class="text-xs text-slate-500 dark:text-slate-400">Total a payer</div>
                         </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 gap-4 p-4 xl:grid-cols-3">
+                <div class="grid grid-cols-1 gap-4 p-5 xl:grid-cols-3">
                     <div class="space-y-4 xl:col-span-2">
-                        <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-700/50">
-                            <h3 class="mb-3 text-sm font-medium text-slate-800 dark:text-slate-100">
+                        <div class="rounded-xl border border-slate-200/70 bg-white p-4 dark:border-slate-700/70 dark:bg-slate-800">
+                            <h3 class="mb-3 text-sm font-semibold text-slate-800 dark:text-slate-100">
                                 <em class="ni ni-calculator mr-1.5 text-xs text-green-500"></em>Resume financier
                             </h3>
                             <div class="space-y-2 text-sm">
-                                <div class="flex justify-between border-b border-slate-200 py-1.5 dark:border-slate-600">
+                                <div class="flex justify-between border-b border-slate-200/60 py-1.5 dark:border-slate-700/70">
                                     <span class="text-slate-600 dark:text-slate-400">Sous-total analyses</span>
                                     <span class="font-medium text-slate-800 dark:text-slate-100">{{ formatCurrency(analysesSubtotal) }}</span>
                                 </div>
-                                <div class="flex justify-between border-b border-slate-200 py-1.5 dark:border-slate-600">
+                                <div class="flex justify-between border-b border-slate-200/60 py-1.5 dark:border-slate-700/70">
                                     <span class="text-slate-600 dark:text-slate-400">Sous-total prelevements</span>
                                     <span class="font-medium text-slate-800 dark:text-slate-100">{{ formatCurrency(prelevementsSubtotal) }}</span>
                                 </div>
-                                <div class="flex justify-between border-b border-slate-200 py-1.5 dark:border-slate-600">
+                                <div class="flex justify-between border-b border-slate-200/60 py-1.5 dark:border-slate-700/70">
                                     <span class="text-slate-600 dark:text-slate-400">Frais urgence</span>
                                     <span class="font-medium text-slate-800 dark:text-slate-100">{{ formatCurrency(urgencyFee) }}</span>
                                 </div>
-                                <div class="flex justify-between border-b border-slate-200 py-1.5 dark:border-slate-600">
+                                <div class="flex justify-between border-b border-slate-200/60 py-1.5 dark:border-slate-700/70">
                                     <span class="text-slate-600 dark:text-slate-400">Remise</span>
                                     <span class="font-medium text-red-600 dark:text-red-400">- {{ formatCurrency(remiseAmount) }}</span>
                                 </div>
-                                <div class="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
+                                <div class="rounded-xl border border-red-200/70 bg-red-50 p-3 dark:border-red-800/40 dark:bg-red-900/15">
                                     <div class="flex items-center justify-between">
                                         <span class="text-sm font-semibold text-red-800 dark:text-red-200">Total final</span>
                                         <span class="text-base font-bold text-red-600 dark:text-red-400">{{ formatCurrency(totalDue) }}</span>
@@ -649,37 +699,62 @@
                     </div>
 
                     <div class="space-y-4">
-                        <div class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
-                            <label class="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">Mode de paiement</label>
-                            <select v-model="paymentForm.payment_method" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100">
-                                <option value="">Selectionner</option>
-                                <option v-for="method in paymentMethods" :key="method.code" :value="method.code">{{ method.label }}</option>
-                            </select>
+                        <div class="rounded-xl border border-slate-200/70 bg-white p-4 dark:border-slate-700/70 dark:bg-slate-800">
+                            <label class="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                <em class="ni ni-wallet mr-1.5 text-red-600 dark:text-red-300"></em>
+                                Mode de paiement
+                            </label>
+                            <div class="relative">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                                    <em class="ni ni-wallet text-base text-slate-400 dark:text-slate-500"></em>
+                                </div>
+                                <select v-model="paymentForm.payment_method" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-900 transition hover:border-slate-300 focus:border-red-500 focus:outline-none focus:ring-4 focus:ring-red-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:hover:border-slate-500">
+                                    <option value="">Selectionner...</option>
+                                    <option v-for="method in paymentMethods" :key="method.code" :value="method.code">{{ method.label }}</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5">
+                                    <em class="ni ni-chevron-down text-xs text-slate-400 dark:text-slate-500"></em>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
-                            <label class="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">Remise (%)</label>
-                            <input v-model.number="paymentForm.remise" type="number" min="0" max="100" placeholder="0" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100">
+                        <div class="rounded-xl border border-slate-200/70 bg-white p-4 dark:border-slate-700/70 dark:bg-slate-800">
+                            <label class="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                <em class="ni ni-percent mr-1.5 text-orange-600 dark:text-orange-300"></em>
+                                Remise (%)
+                            </label>
+                            <div class="relative">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                                    <em class="ni ni-percent text-base text-slate-400 dark:text-slate-500"></em>
+                                </div>
+                                <input v-model.number="paymentForm.remise" type="number" min="0" max="100" placeholder="0" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-12 text-sm text-slate-900 placeholder-slate-400 transition focus:border-red-500 focus:outline-none focus:ring-4 focus:ring-red-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-500">
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5">
+                                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">%</span>
+                                </div>
+                            </div>
                         </div>
 
-                        <label class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                            <input v-model="paymentForm.paiement_statut" type="checkbox" class="rounded border-slate-300 dark:border-slate-600">
-                            Marquer comme paye
+                        <label class="flex w-full cursor-pointer items-center gap-3 rounded-xl border-2 border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:hover:border-slate-500" :class="paymentForm.paiement_statut ? 'border-emerald-500 bg-emerald-50 dark:border-emerald-600 dark:bg-emerald-900/15' : ''">
+                            <input v-model="paymentForm.paiement_statut" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 dark:border-slate-600">
+                            <div>
+                                <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">Marquer comme paye</span>
+                                <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">La date de paiement sera enregistree automatiquement.</p>
+                            </div>
                         </label>
                     </div>
                 </div>
 
-                <div class="flex justify-between border-t border-gray-100 px-4 pb-4 pt-3 dark:border-slate-700">
-                    <button type="button" class="rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600" @click="goToStep('prelevements')">
-                        <em class="ni ni-arrow-left mr-1.5 text-xs"></em>Prelevements
+                <div class="flex flex-col items-center justify-between gap-3 border-t border-slate-200/60 px-5 pb-5 pt-4 sm:flex-row dark:border-slate-700/70">
+                    <button type="button" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 sm:w-auto dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600" @click="goToStep('prelevements')">
+                        <em class="ni ni-arrow-left"></em> Retour prelevements
                     </button>
-                    <button type="button" class="rounded-lg bg-green-600 px-4 py-2 text-sm text-white transition-colors hover:bg-green-700 disabled:opacity-50" :disabled="isSubmitting" @click="submitPrescription">
+                    <button type="button" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50 sm:w-auto" :disabled="isSubmitting" @click="submitPrescription">
                         <span v-if="isSubmitting">Enregistrement...</span>
-                        <span v-else>Terminer <em class="ni ni-check-circle ml-1.5 text-xs"></em></span>
+                        <span v-else class="flex items-center gap-2"><em class="ni ni-check-circle"></em> Terminer et enregistrer</span>
                     </button>
                 </div>
             </section>
-            <section v-if="currentStep === 'tubes'" class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <section v-if="currentStep === 'tubes'" class="overflow-hidden rounded-xl border border-slate-200/70 bg-white shadow-sm dark:border-slate-700/80 dark:bg-slate-800">
                 <div class="bg-gradient-to-r from-teal-50 to-emerald-50 px-4 py-3 dark:from-slate-700 dark:to-slate-800">
                     <div class="flex items-center">
                         <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-500">
@@ -709,24 +784,124 @@
                 </div>
             </section>
 
-            <section v-if="currentStep === 'confirmation'" class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
-                <div class="bg-gradient-to-r from-emerald-50 to-green-50 px-4 py-3 dark:from-slate-700 dark:to-slate-800">
-                    <div class="flex items-center text-emerald-700 dark:text-emerald-400">
-                        <em class="ni ni-check-circle text-xl mr-3"></em>
-                        <h2 class="text-base font-semibold">Prescription finalisee</h2>
+            <section v-if="currentStep === 'confirmation'" class="mx-auto max-w-md">
+                <!-- Success header -->
+                <div class="rounded-t-xl border border-orange-200 bg-white p-5 text-center shadow-sm dark:border-orange-800 dark:bg-slate-800">
+                    <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-orange-50 dark:bg-orange-900/20">
+                        <em class="ni ni-edit text-xl text-orange-500 dark:text-orange-400"></em>
+                    </div>
+                    <h2 class="mb-2 text-lg font-semibold text-orange-900 dark:text-orange-100">
+                        Prescription modifiee avec succes !
+                    </h2>
+                    <p class="text-sm text-slate-600 dark:text-slate-300">
+                        Les modifications ont ete sauvegardees.
+                    </p>
+                    <div v-if="prescription?.reference" class="mt-2 inline-flex items-center rounded-full bg-slate-100 px-2 py-1 dark:bg-slate-700">
+                        <em class="ni ni-tag mr-1 text-xs text-slate-500"></em>
+                        <span class="text-xs font-medium text-slate-700 dark:text-slate-300">{{ prescription.reference }}</span>
                     </div>
                 </div>
-                <div class="p-6 text-center space-y-4">
-                    <p class="text-slate-600 dark:text-slate-400">
-                        La prescription a bien ete enregistree et le processus est complet.
-                    </p>
-                    <div class="flex justify-center gap-3">
-                        <a :href="route('prescription.facture', prescription?.id)" target="_blank" class="inline-flex rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700">
-                            <em class="ni ni-file-pdf mr-2 text-base"></em> Voir Ticket / Facture
+
+                <!-- Ticket-style recap -->
+                <div class="rounded-b-xl border border-t-0 border-orange-200 bg-white p-4 shadow-sm dark:border-orange-800 dark:bg-slate-800">
+                    <!-- Ticket header -->
+                    <div class="mb-3 border-b border-dashed border-slate-200 pb-2 text-center dark:border-slate-700">
+                        <h3 class="font-medium text-slate-800 dark:text-slate-100">
+                            Reference: {{ prescription?.reference || '—' }}
+                        </h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ nowLabel }}</p>
+                    </div>
+
+                    <!-- Recap body -->
+                    <div class="mb-4 space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="font-medium text-slate-700 dark:text-slate-300">Patient:</span>
+                            <span class="text-slate-900 dark:text-slate-100">
+                                {{ patientForm.nom }} {{ patientForm.prenom }}
+                                <span v-if="clinicalForm.age"> ({{ clinicalForm.age }} {{ clinicalForm.unite_age }})</span>
+                            </span>
+                        </div>
+
+                        <div v-if="clinicalForm.prescripteur_id" class="flex justify-between">
+                            <span class="font-medium text-slate-700 dark:text-slate-300">Prescripteur:</span>
+                            <span class="text-slate-900 dark:text-slate-100">{{ prescripteurName }}</span>
+                        </div>
+
+                        <div class="flex justify-between">
+                            <span class="font-medium text-slate-700 dark:text-slate-300">Analyses:</span>
+                            <span class="text-slate-900 dark:text-slate-100">{{ selectedAnalyses.length }}</span>
+                        </div>
+
+                        <div v-if="selectedPrelevements.length > 0" class="flex justify-between">
+                            <span class="font-medium text-slate-700 dark:text-slate-300">Prelevements:</span>
+                            <span class="text-slate-900 dark:text-slate-100">{{ selectedPrelevements.length }}</span>
+                        </div>
+
+                        <div v-if="prescription?.tubes?.length > 0" class="flex justify-between">
+                            <span class="font-medium text-slate-700 dark:text-slate-300">Tubes:</span>
+                            <span class="text-slate-900 dark:text-slate-100">{{ prescription.tubes.length }}</span>
+                        </div>
+
+                        <!-- Total -->
+                        <div class="mt-2 border-t border-dashed border-slate-200 pt-2 dark:border-slate-700">
+                            <div class="flex justify-between font-bold">
+                                <span class="text-slate-800 dark:text-slate-200">MONTANT TOTAL:</span>
+                                <span class="text-orange-600 dark:text-orange-400">{{ formatCurrency(totalDue) }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="mt-4 space-y-3">
+                        <!-- Primary: Facture -->
+                        <a v-if="prescription?.id" :href="route('secretaire.prescription.facture', prescription.id)" target="_blank" class="flex w-full items-center justify-center rounded-lg bg-blue-500 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-blue-600 hover:shadow-md">
+                            <em class="ni ni-file-docs mr-2 text-base"></em>
+                            Voir Facture
                         </a>
-                        <Link :href="route('secretaire.prescription.index')" class="inline-flex rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600">
-                            Retour a la liste
-                        </Link>
+                        <div v-else class="flex w-full cursor-not-allowed items-center justify-center rounded-xl bg-slate-400 px-4 py-3 text-sm font-medium text-white opacity-70">
+                            <em class="ni ni-file-docs mr-2 text-base"></em>
+                            Facture non disponible
+                        </div>
+
+                        <!-- Secondary actions -->
+                        <div class="grid grid-cols-3 gap-2">
+                            <Link :href="route('secretaire.prescription.create')" class="flex items-center justify-center rounded-lg bg-primary-500 px-3 py-2 text-sm text-white transition-colors hover:bg-primary-600">
+                                <em class="ni ni-plus mr-1 text-xs"></em> Nouvelle
+                            </Link>
+                            <a v-if="prescription?.id" :href="route('secretaire.prescription.facture', prescription.id) + '?print=1'" target="_blank" class="flex items-center justify-center rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600">
+                                <em class="ni ni-printer mr-1 text-xs"></em> Imprimer
+                            </a>
+                            <div v-else class="flex cursor-not-allowed items-center justify-center rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-700 opacity-50 dark:bg-slate-700 dark:text-slate-300">
+                                <em class="ni ni-printer mr-1 text-xs"></em> Imprimer
+                            </div>
+                            <Link :href="route('secretaire.prescription.index')" class="flex items-center justify-center rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600">
+                                <em class="ni ni-list mr-1 text-xs"></em> Liste
+                            </Link>
+                        </div>
+
+                        <!-- Back to previous step -->
+                        <div class="border-t border-slate-200/60 pt-2 dark:border-slate-600">
+                            <button type="button" class="flex w-full items-center justify-center gap-2 text-xs text-slate-500 transition-colors hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300" @click="goToStep('tubes')">
+                                <em class="ni ni-arrow-left text-xs"></em> Retour aux etiquettes
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Footer info -->
+                    <div class="mt-4 space-y-1 border-t border-slate-200/60 pt-3 text-xs text-slate-500 dark:border-slate-600 dark:text-slate-400">
+                        <div class="flex items-center justify-between">
+                            <span class="flex items-center">
+                                <em class="ni ni-clock mr-1 text-xs"></em>
+                                {{ nowLabel }}
+                            </span>
+                            <span class="rounded-full bg-orange-100 px-2 py-0.5 text-xxs font-medium text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                                Modifie
+                            </span>
+                        </div>
+                        <div v-if="prescription?.reference" class="flex items-center">
+                            <em class="ni ni-tag mr-1 text-xs"></em>
+                            Reference: <code class="ml-1 rounded bg-slate-100 px-1 text-xxs dark:bg-slate-700">{{ prescription.reference }}</code>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -930,7 +1105,7 @@ const stepClasses = (step) => {
         return 'bg-primary-500 text-white shadow-md scale-110';
     }
 
-    return 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600';
+    return 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600';
 };
 
 const stepLabelClasses = (step) => {
@@ -947,72 +1122,12 @@ const stepLabelClasses = (step) => {
     return 'text-slate-500 dark:text-slate-400';
 };
 
-const setPatientMode = (newMode) => {
-    isNewPatient.value = newMode;
-    if (newMode) {
-        selectedPatient.value = null;
-        patientResults.value = [];
-    }
-};
-
-const backToPatientSelection = () => {
-    isNewPatient.value = false;
-    selectedPatient.value = null;
-    patientResults.value = [];
-    patientSearch.value = '';
-};
-
-const clearPatientSearch = () => {
-    patientSearch.value = '';
-    patientResults.value = [];
-};
 
 const civiliteOptionLabel = (civilite) => {
     return String(civilite || '').trim() || '-';
 };
 
-const civiliteOptionHint = (civilite) => {
-    const normalized = String(civilite || '').toLowerCase();
 
-    if (normalized.includes('monsieur') || normalized.includes('homme')) {
-        return 'Homme';
-    }
-
-    if (normalized.includes('madame') || normalized.includes('femme')) {
-        return 'Femme';
-    }
-
-    if (normalized.includes('enfant') || normalized.includes('garcon') || normalized.includes('fille')) {
-        return 'Enfant';
-    }
-
-    return 'Autre';
-};
-
-const initials = (record) => {
-    const fullName = String(record?.nom_complet || `${record?.nom || ''} ${record?.prenom || ''}` || 'NA').trim();
-    const parts = fullName.split(/\s+/).filter(Boolean);
-    const first = parts[0]?.charAt(0) || 'N';
-    const second = parts[1]?.charAt(0) || 'A';
-
-    return `${first}${second}`.toUpperCase();
-};
-
-const selectPatient = (patient) => {
-    selectedPatient.value = patient;
-    isNewPatient.value = false;
-    patientForm.value = {
-        nom: patient.nom || '',
-        prenom: patient.prenom || '',
-        civilite: patient.civilite || (props.civilites[0] || 'Monsieur'),
-        date_naissance: patient.date_naissance || '',
-        telephone: patient.telephone || '',
-        email: patient.email || '',
-        adresse: patient.adresse || '',
-    };
-    clinicalForm.value.age = Number(patient.age || 0);
-    clinicalForm.value.unite_age = patient.unite_age || 'Ans';
-};
 
 const syncAgeFromBirthDate = () => {
     const date = patientForm.value.date_naissance;
@@ -1071,12 +1186,8 @@ const goToStep = async (stepKey) => {
 
 const resetWorkflow = () => {
     currentStep.value = 'patient';
-    isNewPatient.value = false;
     isSubmitting.value = false;
 
-    patientSearch.value = '';
-    patientResults.value = [];
-    selectedPatient.value = null;
     analyseSearch.value = '';
     analyseResults.value = [];
     selectedAnalyses.value = [];
@@ -1110,13 +1221,7 @@ const resetWorkflow = () => {
     };
 };
 
-const fetchPatients = async (term) => {
-    const response = await fetch(`${route('secretaire.prescription.lookup.patients')}?q=${encodeURIComponent(term)}`, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-    });
-    const payload = await response.json();
-    patientResults.value = payload.data || [];
-};
+
 
 const fetchAnalyses = async (term) => {
     const response = await fetch(`${route('secretaire.prescription.lookup.analyses')}?q=${encodeURIComponent(term)}`, {
@@ -1134,19 +1239,7 @@ const fetchPrelevements = async (term) => {
     prelevementResults.value = payload.data || [];
 };
 
-const debouncedPatientSearch = () => {
-    if (patientSearchTimer) {
-        window.clearTimeout(patientSearchTimer);
-    }
-    patientSearchTimer = window.setTimeout(async () => {
-        if (patientSearch.value.trim().length < 2) {
-            patientResults.value = [];
 
-            return;
-        }
-        await fetchPatients(patientSearch.value.trim());
-    }, 300);
-};
 
 const debouncedAnalysesSearch = () => {
     if (analysesSearchTimer) {

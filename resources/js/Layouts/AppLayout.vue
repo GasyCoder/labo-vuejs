@@ -7,7 +7,7 @@
 
                 <Header />
 
-                <div id="pagecontent" class="nk-content mt-8 px-1.5 py-6 sm:px-5 sm:py-8 bg-slate-50 dark:bg-slate-900">
+                <div id="pagecontent" class="nk-content mt-8 px-1.5 py-6 sm:px-5 sm:py-8 bg-slate-50 dark:bg-transparent">
                     <div :class="['container', container ? '' : 'max-w-none']">
                         <slot />
                     </div>

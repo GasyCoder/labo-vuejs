@@ -163,7 +163,7 @@
 
                         <template v-if="hasPermission('prescripteurs.voir')">
                             <li
-                                :class="['nk-menu-item py-0 group/item', { 'active': route().current('secretaire.prescripteurs') }]">
+                                :class="['nk-menu-item py-0 group/item', { 'active': route().current('secretaire.prescripteurs.*') }]">
                                 <Link :href="route('secretaire.prescripteurs.index')"
                                     class="nk-menu-link flex relative items-center align-middle py-2 ps-5 pe-8 font-heading font-bold tracking-snug group">
                                     <span
@@ -181,7 +181,7 @@
                     <!-- Technicien -->
                     <template v-if="$page.props.auth.user && hasPermission('analyses.effectuer')">
                         <li
-                            :class="['nk-menu-item py-0 group/item', { 'active': route().current('technicien.index') }]">
+                            :class="['nk-menu-item py-0 group/item', { 'active': route().current('technicien.*') }]">
                             <Link :href="route('technicien.index')"
                                 class="nk-menu-link flex relative items-center align-middle py-2 ps-5 pe-8 font-heading font-bold tracking-snug group">
                                 <span
@@ -200,7 +200,7 @@
                     <!-- Biologiste -->
                     <template v-if="$page.props.auth.user && hasPermission('analyses.valider')">
                         <li
-                            :class="['nk-menu-item py-0 group/item', { 'active': route().current('biologiste.analyse.index') }]">
+                            :class="['nk-menu-item py-0 group/item', { 'active': route().current('biologiste.*') }]">
                             <Link :href="route('biologiste.analyse.index')"
                                 class="nk-menu-link flex relative items-center align-middle py-2 ps-5 pe-8 font-heading font-bold tracking-snug group">
                                 <span

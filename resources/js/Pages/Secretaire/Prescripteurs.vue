@@ -377,9 +377,13 @@ const props = defineProps({
 });
 
 const page = usePage();
-// Basic roles check matching the blade view
+// Permission check using Spatie permissions shared via HandleInertiaRequests
 const canManagePrescripteurs = computed(() => {
-    return page.props.auth.user.role === 'Secretaire' || page.props.auth.user.role === 'Admin';
+    const user = page.props.auth.user;
+    if (!user) return false;
+    if (user.isAdmin) return true;
+    const perms = user.permissions || [];
+    return perms.includes('prescripteurs.gerer');
 });
 
 const form = ref({

@@ -152,8 +152,32 @@ Route::middleware(['auth', 'verified', 'role:secretaire,biologiste,superadmin'])
 // ROUTES SPÉCIFIQUES AUX TECHNICIENS
 // ============================================
 Route::middleware(['auth', 'verified', 'role:technicien'])->prefix('technicien')->name('technicien.')->group(function () {
-    Route::get('traitement', [RoleWorklistController::class, 'technicien'])->name('index');
+    Route::get('traitement', [\App\Http\Controllers\Technicien\TechnicienController::class, 'index'])->name('index');
+    Route::post('prescription/{id}/start', [\App\Http\Controllers\Technicien\TechnicienController::class, 'startAnalysis'])->name('prescription.start');
+    Route::post('prescription/{id}/continue', [\App\Http\Controllers\Technicien\TechnicienController::class, 'continueAnalysis'])->name('prescription.continue');
+    Route::post('prescription/{id}/redo', [\App\Http\Controllers\Technicien\TechnicienController::class, 'redoAnalysis'])->name('prescription.redo');
     Route::get('/technicien/prescription/{prescription}', [PrescriptionWorkspaceController::class, 'showTechnicien'])->name('prescription.show');
+    Route::get('prescription/{prescription}/progression', [PrescriptionWorkspaceController::class, 'getProgression'])->name('prescription.progression');
+
+    // API endpoints pour la saisie des résultats
+    Route::post('resultats/save', [\App\Http\Controllers\Technicien\ResultatController::class, 'save'])->name('resultats.save');
+    Route::post('resultats/save-all', [\App\Http\Controllers\Technicien\ResultatController::class, 'saveAll'])->name('resultats.saveAll');
+
+    // Nouveaux endpoints pour les notes et conclusions
+    Route::post('resultats/group-conclusion', [\App\Http\Controllers\Technicien\ResultatController::class, 'saveGroupConclusion'])->name('resultats.groupConclusion');
+    Route::post('resultats/notes', [\App\Http\Controllers\Technicien\ResultatController::class, 'addConclusionNote'])->name('resultats.addNote');
+    Route::put('resultats/notes/{id}', [\App\Http\Controllers\Technicien\ResultatController::class, 'updateConclusionNote'])->name('resultats.updateNote');
+    Route::delete('resultats/notes/{id}', [\App\Http\Controllers\Technicien\ResultatController::class, 'deleteConclusionNote'])->name('resultats.deleteNote');
+
+    // Nouveaux endpoints pour Antibiogrammes (Germe/Culture)
+    Route::post('resultats/antibiogrammes/sync', [\App\Http\Controllers\Technicien\ResultatController::class, 'syncAntibiogrammes'])->name('resultats.antibiogrammes.sync');
+    Route::post('resultats/antibiogrammes/data', [\App\Http\Controllers\Technicien\ResultatController::class, 'getAntibiogrammesData'])->name('resultats.antibiogrammes.data');
+    Route::post('resultats/antibiogrammes', [\App\Http\Controllers\Technicien\ResultatController::class, 'addAntibiotique'])->name('resultats.antibiogrammes.add');
+    Route::put('resultats/antibiogrammes/{id}', [\App\Http\Controllers\Technicien\ResultatController::class, 'updateResultatAntibiotique'])->name('resultats.antibiogrammes.update');
+    Route::delete('resultats/antibiogrammes/{id}', [\App\Http\Controllers\Technicien\ResultatController::class, 'deleteResultatAntibiotique'])->name('resultats.antibiogrammes.delete');
+
+    Route::post('analyse/{id}/complete', [\App\Http\Controllers\Technicien\ResultatController::class, 'completeAnalyse'])->name('analyse.complete');
+    Route::post('prescription/{id}/complete', [\App\Http\Controllers\Technicien\ResultatController::class, 'completePrescription'])->name('prescription.finalize');
 });
 
 // ============================================
@@ -164,6 +188,10 @@ Route::middleware(['auth', 'verified', 'role:biologiste'])->prefix('biologiste')
     Route::get('/analyse-valide', [RoleWorklistController::class, 'biologiste'])->name('analyse.index');
     Route::get('/prescription/{prescription}', [PrescriptionWorkspaceController::class, 'showBiologiste'])->name('prescription.show');
     Route::get('/valide/{prescription}/analyse', [PrescriptionWorkspaceController::class, 'showBiologisteValidation'])->name('valide.show');
+
+    // Validation actions
+    Route::post('/prescription/{id}/validate', [\App\Http\Controllers\Biologiste\BiologisteController::class, 'validatePrescription'])->name('prescription.validate');
+    Route::post('/prescription/{id}/reject', [\App\Http\Controllers\Biologiste\BiologisteController::class, 'rejectPrescription'])->name('prescription.reject');
 });
 
 // ============================================

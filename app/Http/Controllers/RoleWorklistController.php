@@ -8,12 +8,12 @@ class RoleWorklistController extends Controller
 {
     public function technicien(): RedirectResponse
     {
-        return redirect()->route('laboratoire.analyses.listes');
+        return redirect()->route('dashboard');
     }
 
-    public function biologiste(): RedirectResponse
+    public function biologiste(): mixed
     {
-        return redirect()->route('laboratoire.analyses.listes');
+        return app(\App\Http\Controllers\Biologiste\BiologisteController::class)->index(request());
     }
 
     public function adminGestionAnalyses(): RedirectResponse

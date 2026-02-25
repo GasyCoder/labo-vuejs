@@ -15,7 +15,7 @@ class SettingsSeeder extends Seeder
         Setting::updateOrCreate(
             ['id' => 1], // Critère de recherche
             [
-                'nom_entreprise' => 'CTB NOSY BE',
+                'nom_entreprise' => 'LABO',
                 'nif' => '1234567890',
                 'statut' => 'SARL',
                 'format_unite_argent' => 'MGA',

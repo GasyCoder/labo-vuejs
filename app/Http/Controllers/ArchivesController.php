@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Prescription;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -57,11 +56,10 @@ class ArchivesController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $prescripteurs = User::where('type', 'prescripteur')
-            ->whereHas('prescriptions', function (Builder $query) {
-                $query->archivees();
-            })
-            ->get(['id', 'name', 'nom_complet']);
+        $prescripteurs = \App\Models\Prescripteur::whereHas('prescriptions', function (Builder $query) {
+            $query->archivees();
+        })
+            ->get(['id', 'nom', 'prenom']);
 
         // Stats for the top cards
         $archivesMoisActuel = Prescription::archivees()
