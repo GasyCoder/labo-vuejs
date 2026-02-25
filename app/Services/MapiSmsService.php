@@ -57,11 +57,15 @@ class MapiSmsService implements SmsDriverInterface
     public function logout(string $token = ''): void
     {
         try {
-            $headers = [];
             if ($token) {
-                $headers['Authorization'] = $token;
+                Http::withHeaders(['Authorization' => $token])
+                    ->post($this->apiUrl.'/authentication/logout');
+            } else {
+                Http::asMultipart()->post($this->apiUrl.'/authentication/logout', [
+                    ['name' => 'Username', 'contents' => $this->username],
+                    ['name' => 'Password', 'contents' => $this->password],
+                ]);
             }
-            Http::withHeaders($headers)->post($this->apiUrl.'/authentication/logout');
         } catch (\Exception $e) {
             // Ignorer les erreurs de logout
         }
@@ -106,19 +110,8 @@ class MapiSmsService implements SmsDriverInterface
             isset($data['status']) && $data['status'] === false
             && isset($data['message']) && str_contains($data['message'], 'en cours de session')
         ) {
-            Log::info('MAPI SMS - Session active detectee, logout puis reconnexion');
-            $this->logout();
-
-            try {
-                $response = Http::asMultipart()->post($this->apiUrl.'/authentication/login', [
-                    ['name' => 'Username', 'contents' => $this->username],
-                    ['name' => 'Password', 'contents' => $this->password],
-                ]);
-            } catch (\Exception $e) {
-                throw new \Exception('Erreur de connexion au service SMS.');
-            }
-
-            $data = $response->json();
+            Log::info('MAPI SMS - Session active détectée mais impossible à clore sans le jeton actuel. Veuillez patienter la fin de session (environ 1 heure) ou contacter le support MAPI.');
+            throw new \Exception('Session SMS MAPI verrouillée par une autre connexion. Veuillez réessayer plus tard.');
         }
 
         if (! $response->successful() || empty($data['status']) || $data['status'] !== true) {
@@ -128,7 +121,9 @@ class MapiSmsService implements SmsDriverInterface
         }
 
         $token = $data['token'];
-        Cache::put($cacheKey, $token, 840);
+        // Cache le token pendant 24 heures. Laissons le service MAPI décider quand la session expire vraiment.
+        // Si elle expire, le serveur renverra 401 et notre bloc sendSms réessaiera automatiquement.
+        Cache::put($cacheKey, $token, 86400);
 
         return $token;
     }
@@ -150,7 +145,7 @@ class MapiSmsService implements SmsDriverInterface
     /**
      * Envoyer un SMS via l'API MAPI
      */
-    public function sendSms(string $phoneNumber, string $message): array
+    public function sendSms(string $phoneNumber, string $message, bool $isRetry = false): array
     {
         $recipient = $this->formatPhone($phoneNumber);
         $token = $this->getToken();
@@ -180,7 +175,14 @@ class MapiSmsService implements SmsDriverInterface
 
             if ($response->status() === 401 || str_contains(strtolower($msg), 'unauthorized') || str_contains(strtolower($msg), 'token')) {
                 Cache::forget('mapi_sms_token');
-                throw new \Exception('Session SMS expiree. Reessayez l\'envoi.');
+
+                if (! $isRetry) {
+                    Log::info('MAPI SMS - Session expiree, tentative de reconnexion automatique...');
+
+                    return $this->sendSms($phoneNumber, $message, true);
+                }
+
+                throw new \Exception('Session SMS expiree et impossible de se reconnecter. Attendez quelques minutes que MAPI ferme la session.');
             }
 
             throw new \Exception('Erreur envoi SMS : '.$msg);
