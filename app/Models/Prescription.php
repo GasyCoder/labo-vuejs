@@ -44,6 +44,7 @@ class Prescription extends Model
         'date_debut_traitement',
         'date_reprise_traitement',
         'notified_at',
+        'commentaire_biologiste',
     ];
 
     protected $casts = [
