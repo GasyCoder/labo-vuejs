@@ -17,6 +17,11 @@ export default defineConfig({
             },
         }),
     ],
+    server: {
+        watch: {
+            ignored: ['**/.env'],
+        },
+    },
     resolve: {
         alias: {
             '@': '/resources/js',

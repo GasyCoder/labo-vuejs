@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\SmsDriverInterface;
 use App\Mail\ResultatDisponible;
 use App\Models\NotificationLog;
 use App\Models\Prescription;
@@ -11,7 +12,7 @@ use Illuminate\Support\Facades\Mail;
 
 class NotificationService
 {
-    public function __construct(protected MapiSmsService $smsService) {}
+    public function __construct(protected SmsDriverInterface $smsService) {}
 
     /**
      * Envoyer une notification (E-mail ou SMS)

@@ -2,11 +2,12 @@
 
 namespace App\Services;
 
+use App\Contracts\SmsDriverInterface;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class MapiSmsService
+class MapiSmsService implements SmsDriverInterface
 {
     protected string $username;
 
@@ -14,38 +15,35 @@ class MapiSmsService
 
     protected string $apiUrl;
 
-    public function __construct()
+    /**
+     * @param  array<string, string>  $config
+     */
+    public function __construct(array $config = [])
     {
-        $config = config('services.mapi_sms');
-
-        $this->username = $config['username'] ?? '';
-        $this->password = $config['password'] ?? '';
-        $this->apiUrl = $config['api_url'] ?? 'https://messaging.mapi.mg/api';
+        $this->username = $config['username'] ?? config('services.mapi_sms.username', '');
+        $this->password = $config['password'] ?? config('services.mapi_sms.password', '');
+        $this->apiUrl = $config['api_url'] ?? config('services.mapi_sms.api_url', 'https://messaging.mapi.mg/api');
     }
 
     /**
-     * Convertir tout format de numéro vers le format local 03xxxxxxxx
+     * Convertir tout format de numero vers le format local 03xxxxxxxx
      */
     public function formatPhone(string $phone): string
     {
         $phone = preg_replace('/[\s\-\.\(\)]/', '', $phone);
 
-        // Retirer le préfixe tel:
         if (str_starts_with($phone, 'tel:')) {
             $phone = substr($phone, 4);
         }
 
-        // +261327627443 → 0327627443
         if (str_starts_with($phone, '+261')) {
             $phone = '0'.substr($phone, 4);
         }
 
-        // 261327627443 → 0327627443
         if (str_starts_with($phone, '261') && strlen($phone) === 12) {
             $phone = '0'.substr($phone, 3);
         }
 
-        // S'assurer que ça commence par 0
         if (! str_starts_with($phone, '0')) {
             $phone = '0'.$phone;
         }
@@ -86,7 +84,7 @@ class MapiSmsService
     }
 
     /**
-     * Login MAPI avec gestion de la session déjà active
+     * Login MAPI avec gestion de la session deja active
      */
     protected function login(): string
     {
@@ -104,12 +102,11 @@ class MapiSmsService
 
         $data = $response->json();
 
-        // Session déjà active → logout puis réessayer
         if (
             isset($data['status']) && $data['status'] === false
             && isset($data['message']) && str_contains($data['message'], 'en cours de session')
         ) {
-            Log::info('MAPI SMS - Session active détectée, logout puis reconnexion');
+            Log::info('MAPI SMS - Session active detectee, logout puis reconnexion');
             $this->logout();
 
             try {
@@ -126,8 +123,8 @@ class MapiSmsService
 
         if (! $response->successful() || empty($data['status']) || $data['status'] !== true) {
             $msg = $data['message'] ?? $response->body();
-            Log::error('MAPI SMS - Échec authentification', ['body' => $response->body()]);
-            throw new \Exception('Échec authentification SMS : '.$msg);
+            Log::error('MAPI SMS - Echec authentification', ['body' => $response->body()]);
+            throw new \Exception('Echec authentification SMS : '.$msg);
         }
 
         $token = $data['token'];
@@ -137,14 +134,14 @@ class MapiSmsService
     }
 
     /**
-     * Vérifier que le service MAPI est accessible (pré-vérification)
+     * Verifier que le service MAPI est accessible
      */
     public function checkService(): array
     {
         try {
             $this->getToken();
 
-            return ['ok' => true, 'message' => 'Service SMS opérationnel'];
+            return ['ok' => true, 'message' => 'Service SMS operationnel'];
         } catch (\Exception $e) {
             return ['ok' => false, 'message' => $e->getMessage()];
         }
@@ -175,22 +172,21 @@ class MapiSmsService
 
         if (! $response->successful() || empty($data['status']) || $data['status'] !== true) {
             $msg = $data['message'] ?? $response->body();
-            Log::error('MAPI SMS - Échec envoi', [
+            Log::error('MAPI SMS - Echec envoi', [
                 'phone' => $recipient,
                 'status' => $response->status(),
                 'body' => $response->body(),
             ]);
 
-            // Token expiré → invalider le cache et réessayer une fois
             if ($response->status() === 401 || str_contains(strtolower($msg), 'unauthorized') || str_contains(strtolower($msg), 'token')) {
                 Cache::forget('mapi_sms_token');
-                throw new \Exception('Session SMS expirée. Réessayez l\'envoi.');
+                throw new \Exception('Session SMS expiree. Reessayez l\'envoi.');
             }
 
             throw new \Exception('Erreur envoi SMS : '.$msg);
         }
 
-        Log::info('MAPI SMS envoyé', [
+        Log::info('MAPI SMS envoye', [
             'phone' => $recipient,
             'response' => $data,
         ]);

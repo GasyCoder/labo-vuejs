@@ -35,10 +35,19 @@ return [
         ],
     ],
 
+    'orange_sms' => [
+        'client_id' => env('ORANGE_SMS_CLIENT_ID'),
+        'client_secret' => env('ORANGE_SMS_CLIENT_SECRET'),
+        'sender_name' => env('ORANGE_SMS_SENDER_NAME', 'LA REFERENCE'),
+        'sender_number' => env('ORANGE_SMS_SENDER_NUMBER', 'tel:+261341234567'),
+        'auth_url' => env('ORANGE_SMS_AUTH_URL', 'https://api.orange.com/oauth/v3/token'),
+        'api_url' => env('ORANGE_SMS_API_URL', 'https://api.orange.com/smsmessaging/v1/outbound'),
+    ],
+
     'mapi_sms' => [
         'username' => env('MAPI_SMS_USERNAME'),
         'password' => env('MAPI_SMS_PASSWORD'),
-        'api_url' => env('MAPI_SMS_API_URL', 'https://messaging.mapi.mg/api'),
+        'api_url' => env('MAPI_SMS_URL', 'https://messaging.mapi.mg/api'),
     ],
 
 ];

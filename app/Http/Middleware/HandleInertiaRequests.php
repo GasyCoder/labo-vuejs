@@ -51,6 +51,7 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),
+                '_ts' => now()->timestamp,
             ],
             'settings' => [
                 'logo' => \App\Models\Setting::getLogo(),

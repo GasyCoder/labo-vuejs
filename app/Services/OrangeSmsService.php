@@ -2,12 +2,13 @@
 
 namespace App\Services;
 
+use App\Contracts\SmsDriverInterface;
 use App\Exceptions\OrangeSmsException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class OrangeSmsService
+class OrangeSmsService implements SmsDriverInterface
 {
     protected string $clientId;
 
@@ -21,20 +22,23 @@ class OrangeSmsService
 
     protected string $apiUrl;
 
-    public function __construct()
+    /**
+     * @param  array<string, string>  $config
+     */
+    public function __construct(array $config = [])
     {
-        $config = config('services.orange_sms');
+        $fallback = config('services.orange_sms', []);
 
-        $this->clientId = $config['client_id'] ?? '';
-        $this->clientSecret = $config['client_secret'] ?? '';
-        $this->senderName = $config['sender_name'] ?? 'Lareference';
-        $this->senderNumber = $config['sender_number'] ?? 'tel:+261341234567';
-        $this->authUrl = $config['auth_url'] ?? 'https://api.orange.com/oauth/v3/token';
-        $this->apiUrl = $config['api_url'] ?? 'https://api.orange.com/smsmessaging/v1/outbound';
+        $this->clientId = $config['client_id'] ?? $fallback['client_id'] ?? '';
+        $this->clientSecret = $config['client_secret'] ?? $fallback['client_secret'] ?? '';
+        $this->senderName = $config['sender_name'] ?? $fallback['sender_name'] ?? 'Lareference';
+        $this->senderNumber = $config['sender_number'] ?? $fallback['sender_number'] ?? 'tel:+261341234567';
+        $this->authUrl = $config['auth_url'] ?? $fallback['auth_url'] ?? 'https://api.orange.com/oauth/v3/token';
+        $this->apiUrl = $config['api_url'] ?? $fallback['api_url'] ?? 'https://api.orange.com/smsmessaging/v1/outbound';
     }
 
     /**
-     * Formater un numéro local en format international tel:+261...
+     * Formater un numero local en format international tel:+261...
      */
     public function formatPhoneNumber(string $phone): string
     {
@@ -84,7 +88,7 @@ class OrangeSmsService
         }
 
         if (! $response->successful()) {
-            Log::error('Orange SMS OAuth2 - Échec authentification', [
+            Log::error('Orange SMS OAuth2 - Echec authentification', [
                 'status' => $response->status(),
                 'body' => $response->body(),
             ]);
@@ -101,7 +105,15 @@ class OrangeSmsService
     }
 
     /**
-     * Vérifier le statut du contrat SMS en tentant d'obtenir les infos d'achat
+     * Verifier que le service SMS est accessible.
+     */
+    public function checkService(): array
+    {
+        return $this->checkContractStatus();
+    }
+
+    /**
+     * Verifier le statut du contrat SMS
      */
     public function checkContractStatus(): array
     {
@@ -117,13 +129,13 @@ class OrangeSmsService
                 $policyMsg = $data['requestError']['policyException']['variables'][0] ?? '';
 
                 if (str_contains($policyMsg, 'Expired contract')) {
-                    return ['ok' => false, 'message' => 'Forfait SMS Orange expiré. Veuillez renouveler votre bundle sur developer.orange.com'];
+                    return ['ok' => false, 'message' => 'Forfait SMS Orange expire. Veuillez renouveler votre bundle sur developer.orange.com'];
                 }
 
-                return ['ok' => false, 'message' => 'Accès refusé au service SMS Orange'];
+                return ['ok' => false, 'message' => 'Acces refuse au service SMS Orange'];
             }
 
-            return ['ok' => true, 'message' => 'Service SMS opérationnel'];
+            return ['ok' => true, 'message' => 'Service SMS operationnel'];
 
         } catch (OrangeSmsException $e) {
             return ['ok' => false, 'message' => $e->getMessage()];
@@ -137,11 +149,7 @@ class OrangeSmsService
     {
         $recipientAddress = $this->formatPhoneNumber($phoneNumber);
 
-        try {
-            $token = $this->getAccessToken();
-        } catch (OrangeSmsException $e) {
-            throw $e;
-        }
+        $token = $this->getAccessToken();
 
         $senderAddress = $this->senderNumber;
         $endpoint = $this->apiUrl.'/'.urlencode($senderAddress).'/requests';
@@ -165,7 +173,7 @@ class OrangeSmsService
         }
 
         if (! $response->successful()) {
-            Log::error('Orange SMS - Échec envoi', [
+            Log::error('Orange SMS - Echec envoi', [
                 'phone' => $recipientAddress,
                 'status' => $response->status(),
                 'body' => $response->body(),
@@ -173,7 +181,7 @@ class OrangeSmsService
             throw OrangeSmsException::fromApiResponse($response->status(), $response->body());
         }
 
-        Log::info('Orange SMS envoyé', [
+        Log::info('Orange SMS envoye', [
             'phone' => $recipientAddress,
             'status' => $response->status(),
         ]);

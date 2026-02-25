@@ -2,10 +2,10 @@
 
 namespace App\Jobs;
 
+use App\Contracts\SmsDriverInterface;
 use App\Mail\ResultatDisponible;
 use App\Models\NotificationLog;
 use App\Models\Prescription;
-use App\Services\MapiSmsService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -30,7 +30,7 @@ class SendNotificationJob implements ShouldQueue
         public ?int $sentBy = null,
     ) {}
 
-    public function handle(MapiSmsService $mapiSms): void
+    public function handle(SmsDriverInterface $smsDriver): void
     {
         $prescription = Prescription::with('patient')->findOrFail($this->prescriptionId);
         $patient = $prescription->patient;
@@ -42,10 +42,10 @@ class SendNotificationJob implements ShouldQueue
                     throw new \Exception('Aucun numéro de téléphone pour le patient.');
                 }
 
-                $mapiSms->sendSms($phone, $this->message);
+                $smsDriver->sendSms($phone, $this->message);
 
                 $this->logNotification($prescription, 'sms', $phone, 'envoye');
-                Log::info("SMS MAPI envoyé à {$phone} pour prescription {$prescription->reference}");
+                Log::info("SMS envoyé à {$phone} pour prescription {$prescription->reference}");
 
             } elseif ($this->type === 'email') {
                 $email = $patient->email;

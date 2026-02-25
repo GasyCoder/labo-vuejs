@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { Head, useForm, router } from '@inertiajs/vue3';
+import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
 const props = defineProps({
@@ -43,29 +43,6 @@ const paymentForm = useForm({
     is_active: true,
     display_order: 1,
 });
-
-// For testing APIs
-const testSmsForm = useForm({
-    phone: '',
-});
-
-const testEmailForm = useForm({
-    email: '',
-});
-
-const testSms = () => {
-    testSmsForm.post(route('admin.settings.test-sms'), {
-        preserveScroll: true,
-        onSuccess: () => testSmsForm.reset(),
-    });
-};
-
-const testEmail = () => {
-    testEmailForm.post(route('admin.settings.test-email'), {
-        preserveScroll: true,
-        onSuccess: () => testEmailForm.reset(),
-    });
-};
 
 // --- Computed & Watchers ---
 const oldCommissionPourcentage = ref(parseFloat(props.settings.commission_prescripteur_pourcentage) || 10);
@@ -373,66 +350,23 @@ const confirmDeletePayment = (id) => {
                     </div>
                 </div>
 
-                <!-- Test API (NOUVEAU) -->
-                <div class="mt-8 bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden border dark:border-gray-700">
-                        <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-white flex items-center">
-                                <svg class="w-5 h-5 mr-3 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                                Test des APIs (SMS & E-mail)
-                            </h3>
-                        </div>
-                        <div class="p-6">
-                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Utilisez ces formulaires pour vérifier que l'envoi de SMS et d'E-mails fonctionne correctement. Les messages de test seront envoyés immédiatement.</p>
-                            
-                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                <!-- Test E-mail -->
-                                <div class="bg-gray-50 dark:bg-gray-800/50 p-5 rounded-xl border border-gray-200 dark:border-gray-700">
-                                    <h4 class="text-md font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-                                        <svg class="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                                        Test API E-mail
-                                    </h4>
-                                    <form @submit.prevent="testEmail">
-                                        <div class="space-y-4">
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Adresse E-mail de réception</label>
-                                                <input v-model="testEmailForm.email" type="email" placeholder="test@example.com" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                                <div v-if="testEmailForm.errors.email" class="text-red-500 text-xs mt-1">{{ testEmailForm.errors.email }}</div>
-                                            </div>
-                                            <div class="pt-2">
-                                                <button type="submit" :disabled="testEmailForm.processing" class="w-full inline-flex justify-center items-center text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md transition-colors disabled:opacity-50">
-                                                    <svg v-if="testEmailForm.processing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                                    {{ testEmailForm.processing ? 'Envoi...' : 'Envoyer E-mail de Test' }}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </form>
+                <!-- Lien vers la configuration API -->
+                <div class="mt-8">
+                    <Link :href="route('admin.api-settings')" class="block bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden border dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 transition-colors group">
+                        <div class="px-6 py-5 flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 w-12 h-12 bg-blue-100 dark:bg-blue-900/40 rounded-lg flex items-center justify-center mr-4">
+                                    <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                 </div>
-
-                                <!-- Test SMS -->
-                                <div class="bg-gray-50 dark:bg-gray-800/50 p-5 rounded-xl border border-gray-200 dark:border-gray-700">
-                                    <h4 class="text-md font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-                                        <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-                                        Test API SMS
-                                    </h4>
-                                    <form @submit.prevent="testSms">
-                                        <div class="space-y-4">
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Numéro de Téléphone (Ex: +26134...)</label>
-                                                <input v-model="testSmsForm.phone" type="text" placeholder="+261340000000" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                                <div v-if="testSmsForm.errors.phone" class="text-red-500 text-xs mt-1">{{ testSmsForm.errors.phone }}</div>
-                                            </div>
-                                            <div class="pt-2">
-                                                <button type="submit" :disabled="testSmsForm.processing" class="w-full inline-flex justify-center items-center text-sm bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors disabled:opacity-50">
-                                                    <svg v-if="testSmsForm.processing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                                    {{ testSmsForm.processing ? 'Envoi...' : 'Envoyer SMS de Test' }}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </form>
+                                <div>
+                                    <h3 class="text-lg font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Configuration API, Email & SMS</h3>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Configurer les services d'envoi d'emails et de SMS, tester les APIs</p>
                                 </div>
                             </div>
+                            <svg class="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                         </div>
-                    </div>
+                    </Link>
+                </div>
                 </div>
 
                 <!-- Modals -->
@@ -483,7 +417,6 @@ const confirmDeletePayment = (id) => {
                     </div>
                 </div>
 
-            </div>
         </div>
     </AppLayout>
 </template>

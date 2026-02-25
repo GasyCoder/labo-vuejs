@@ -21,8 +21,9 @@ class Setting extends Model
         'commission_prescripteur_quota',
         'tarif_urgence_nuit',
         'tarif_urgence_jour',
-        'logo',        // AJOUTER CETTE LIGNE
-        'favicon',     // AJOUTER CETTE LIGNE
+        'sms_driver',
+        'logo',
+        'favicon',
     ];
 
     protected $casts = [

@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Contracts\SmsDriverInterface;
 use App\Http\Controllers\Controller;
 use App\Models\PaymentMethod;
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
-use App\Services\MapiSmsService;
 
 class SettingController extends Controller
 {
@@ -212,7 +213,7 @@ class SettingController extends Controller
     /**
      * Test de l'API SMS
      */
-    public function testSms(Request $request, MapiSmsService $smsService)
+    public function testSms(Request $request, SmsDriverInterface $smsService)
     {
         $validated = $request->validate([
             'phone' => 'required|string|min:8|max:20',
@@ -220,9 +221,10 @@ class SettingController extends Controller
 
         try {
             $smsService->sendSms($validated['phone'], 'Ceci est un test de l\'API SMS depuis La Reference.');
-            return redirect()->back()->with('success', 'SMS de test envoyé avec succès au ' . $validated['phone']);
+
+            return redirect()->back()->with('success', 'SMS de test envoyé avec succès au '.$validated['phone']);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erreur lors de l\'envoi du SMS: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Erreur lors de l\'envoi du SMS: '.$e->getMessage());
         }
     }
 
@@ -238,12 +240,98 @@ class SettingController extends Controller
         try {
             Mail::raw('Ceci est un test de l\'API Email depuis La Reference.', function ($message) use ($validated) {
                 $message->to($validated['email'])
-                        ->subject('Test API Email - La Reference');
+                    ->subject('Test API Email - La Reference');
             });
 
-            return redirect()->back()->with('success', 'Email de test envoyé avec succès à ' . $validated['email']);
+            return redirect()->back()->with('success', 'Email de test envoyé avec succès à '.$validated['email']);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erreur lors de l\'envoi de l\'email: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Erreur lors de l\'envoi de l\'email: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Mettre à jour la configuration des APIs (dans le fichier .env)
+     */
+    public function updateApiConfig(Request $request)
+    {
+        $validated = $request->validate([
+            'mail_mailer' => 'required|string',
+            'mail_host' => 'required|string',
+            'mail_port' => 'required|numeric',
+            'mail_username' => 'nullable|string',
+            'mail_password' => 'nullable|string',
+            'mail_encryption' => 'nullable|string',
+            'mail_from_address' => 'required|email',
+            'mail_from_name' => 'required|string',
+
+            'orange_sms_client_id' => 'nullable|string',
+            'orange_sms_client_secret' => 'nullable|string',
+            'orange_sms_sender_name' => 'nullable|string|max:11',
+
+            'mapi_sms_url' => 'nullable|url',
+            'mapi_sms_username' => 'nullable|string',
+            'mapi_sms_password' => 'nullable|string',
+        ]);
+
+        try {
+            $envPath = base_path('.env');
+
+            if (! file_exists($envPath)) {
+                return redirect()->back()->with('error', 'Le fichier .env est introuvable.');
+            }
+
+            // Lire le fichier .env actuel
+            $envContent = file_get_contents($envPath);
+
+            // Préparer les nouvelles valeurs
+            $replacements = [
+                'MAIL_MAILER' => $validated['mail_mailer'],
+                'MAIL_HOST' => $validated['mail_host'],
+                'MAIL_PORT' => $validated['mail_port'],
+                'MAIL_USERNAME' => $validated['mail_username'],
+                'MAIL_PASSWORD' => $validated['mail_password'],
+                'MAIL_ENCRYPTION' => $validated['mail_encryption'],
+                'MAIL_FROM_ADDRESS' => $validated['mail_from_address'],
+                'MAIL_FROM_NAME' => '"'.trim($validated['mail_from_name'], '"').'"', // Quote string with spaces
+
+                'ORANGE_SMS_CLIENT_ID' => $validated['orange_sms_client_id'],
+                'ORANGE_SMS_CLIENT_SECRET' => $validated['orange_sms_client_secret'],
+                'ORANGE_SMS_SENDER_NAME' => '"'.trim($validated['orange_sms_sender_name'] ?? '', '"').'"',
+
+                'MAPI_SMS_URL' => $validated['mapi_sms_url'],
+                'MAPI_SMS_USERNAME' => $validated['mapi_sms_username'],
+                'MAPI_SMS_PASSWORD' => $validated['mapi_sms_password'],
+            ];
+
+            // Remplacer ou ajouter chaque valeur
+            foreach ($replacements as $key => $value) {
+                // Ensure nulls are written as empty strings
+                $value = $value ?? '';
+
+                // Regex: Match the key at the start of a line, = and everything to the end of the line
+                $pattern = "/^{$key}=(.*)$/m";
+
+                if (preg_match($pattern, $envContent)) {
+                    // Update existing key
+                    $envContent = preg_replace($pattern, "{$key}={$value}", $envContent);
+                } else {
+                    // Append new key if it doesn't exist
+                    $envContent .= "\n{$key}={$value}";
+                }
+            }
+
+            // Écrire les modifications dans le fichier .env
+            file_put_contents($envPath, $envContent);
+
+            // Vider le cache de configuration pour appliquer les changements
+            if (app()->configurationIsCached()) {
+                Artisan::call('config:clear');
+            }
+
+            return redirect()->back()->with('success', 'Configuration des APIs enregistrée avec succès.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Erreur lors de la sauvegarde: '.$e->getMessage());
         }
     }
 }

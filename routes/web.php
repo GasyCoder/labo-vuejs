@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ApiSettingController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\PrescriptionExportController;
 use App\Http\Controllers\Admin\SettingController;
@@ -286,6 +287,19 @@ Route::middleware(['auth', 'verified', 'role:superadmin'])->prefix('admin')->nam
         Route::post('payment-method', 'storePaymentMethod')->name('payment-method.store');
         Route::put('payment-method/{paymentMethod}', 'updatePaymentMethod')->name('payment-method.update');
         Route::delete('payment-method/{paymentMethod}', 'destroyPaymentMethod')->name('payment-method.destroy');
+        Route::post('test-sms', 'testSms')->name('test-sms');
+        Route::post('test-email', 'testEmail')->name('test-email');
+        Route::post('api-config', 'updateApiConfig')->name('api-config');
+    });
+
+    // Configuration API (Email & SMS) - Page séparée
+    Route::get('api-settings', [ApiSettingController::class, 'index'])->name('api-settings');
+    Route::controller(ApiSettingController::class)->prefix('api-settings')->name('api-settings.')->group(function () {
+        Route::post('email', 'updateEmailConfig')->name('update-email');
+        Route::post('sms', 'storeSmsProvider')->name('store-sms');
+        Route::put('sms/{provider}', 'updateSmsProvider')->name('update-sms');
+        Route::delete('sms/{provider}', 'destroySmsProvider')->name('destroy-sms');
+        Route::post('sms/{provider}/activate', 'activateSmsProvider')->name('activate-sms');
         Route::post('test-sms', 'testSms')->name('test-sms');
         Route::post('test-email', 'testEmail')->name('test-email');
     });
