@@ -119,47 +119,50 @@ const emptyMessages = {
 <template>
     <Head title="Validation Biologiste" />
     <AppLayout>
-        <div class="flex flex-col h-full min-h-0">
-
-            <!-- Sticky Header (Mobile) -->
-            <div class="sticky top-0 z-30 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 safe-top">
-                <!-- Title bar -->
-                <div class="px-4 pt-3 pb-2 sm:px-6 lg:px-8">
-                    <div class="flex items-center justify-between">
-                        <div class="min-w-0">
-                            <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white truncate">Validation des Analyses</h1>
-                            <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5 hidden sm:block">Révision et validation des résultats</p>
-                        </div>
-                        <div class="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-900/30 rounded-full border border-emerald-200 dark:border-emerald-800">
-                            <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-                            <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-400">Biologiste</span>
+        <!-- Added pt-6 sm:pt-8 so it's not attached to the top navbar -->
+        <div class="flex flex-col h-full min-h-0 p-4 sm:p-6 lg:p-8">
+            <!-- Wrapped in a modern card container to give a clean separation -->
+            <div class="flex flex-col flex-1 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                
+                <!-- Header section (Shrink-0 so it stays at top while content scrolls below) -->
+                <div class="shrink-0 border-b border-gray-200 dark:border-gray-700 relative z-10">
+                    <!-- Title bar -->
+                    <div class="px-4 py-5 sm:px-6 lg:px-8">
+                        <div class="flex items-center justify-between">
+                            <div class="min-w-0">
+                                <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white truncate lg:tracking-tight">Validation des Analyses</h1>
+                                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 hidden sm:block">Révision et validation des résultats</p>
+                            </div>
+                            <div class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/30 rounded-full border border-emerald-200 dark:border-emerald-800">
+                                <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                                <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Biologiste</span>
+                            </div>
                         </div>
                     </div>
+
+                    <!-- Stats + Search -->
+                    <ValidationStatsBar
+                        :stats="stats"
+                        :search="search"
+                        @update:search="updateSearch"
+                    />
+
+                    <!-- Tabs -->
+                    <StatusTabs
+                        :currentTab="currentTab"
+                        :stats="stats"
+                        @change="changeTab"
+                    />
                 </div>
 
-                <!-- Stats + Search -->
-                <ValidationStatsBar
-                    :stats="stats"
-                    :search="search"
-                    @update:search="updateSearch"
-                />
-
-                <!-- Tabs -->
-                <StatusTabs
-                    :currentTab="currentTab"
-                    :stats="stats"
-                    @change="changeTab"
-                />
-            </div>
-
-            <!-- Content: Card Grid -->
-            <div class="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
-                <div class="px-3 sm:px-6 lg:px-8 py-4">
-                    <!-- Cards grid: 1 col mobile, 2 cols tablet, 3 cols desktop -->
-                    <div
-                        v-if="prescriptions.data?.length"
-                        class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4"
-                    >
+                <!-- Content: Card Grid (Scrollable area) -->
+                <div class="flex-1 overflow-y-auto bg-gray-50/50 dark:bg-gray-900/50">
+                    <div class="px-4 sm:px-6 lg:px-8 py-5">
+                        <!-- Cards grid: 1 col mobile, 2 cols tablet, 3 cols desktop -->
+                        <div
+                            v-if="prescriptions.data?.length"
+                            class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5"
+                        >
                         <PrescriptionCard
                             v-for="p in prescriptions.data"
                             :key="p.id"
@@ -208,8 +211,7 @@ const emptyMessages = {
                         </nav>
                     </div>
 
-                    <!-- Bottom safe area for iOS -->
-                    <div class="h-6 sm:h-0"></div>
+                    </div>
                 </div>
             </div>
         </div>
