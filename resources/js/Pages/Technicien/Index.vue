@@ -89,10 +89,29 @@ const continueAnalysis = (id) => {
     router.post(route('technicien.prescription.continue', id));
 };
 
+// --- Custom Confirmation Modal Logic ---
+const showConfirmModal = ref(false);
+const confirmTargetId = ref(null);
+const actionProcessing = ref(false);
+
 const redoAnalysis = (id) => {
-    if (confirm('Voulez-vous vraiment recommencer cette analyse ?')) {
-        router.post(route('technicien.prescription.redo', id));
-    }
+    confirmTargetId.value = id;
+    showConfirmModal.value = true;
+};
+
+const submitRedoAnalysis = () => {
+    if (!confirmTargetId.value) return;
+    actionProcessing.value = true;
+    router.post(route('technicien.prescription.redo', confirmTargetId.value), {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+            showConfirmModal.value = false;
+            actionProcessing.value = false;
+        },
+        onError: () => {
+            actionProcessing.value = false;
+        }
+    });
 };
 </script>
 
@@ -435,5 +454,54 @@ const redoAnalysis = (id) => {
                 </div>
             </div>
         </div>
+
+        <!-- Custom Confirmation Modal -->
+        <Transition
+            enter-active-class="transition ease-out duration-200"
+            enter-from-class="opacity-0 scale-95"
+            enter-to-class="opacity-100 scale-100"
+            leave-active-class="transition ease-in duration-150"
+            leave-from-class="opacity-100 scale-100"
+            leave-to-class="opacity-0 scale-95"
+        >
+            <div v-if="showConfirmModal" class="fixed inset-0 z-[1040] flex items-end sm:items-center justify-center p-4 sm:p-0" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+                <div class="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity" @click="showConfirmModal = false"></div>
+                <div class="relative bg-white dark:bg-gray-800 w-full sm:max-w-md rounded-2xl sm:rounded-2xl shadow-2xl z-10 overflow-hidden">
+                    <div class="p-6 text-center">
+                        <div class="mx-auto flex items-center justify-center w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/40 mb-5">
+                            <svg class="h-8 w-8 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                            </svg>
+                        </div>
+                        <h3 id="confirm-title" class="text-xl font-bold text-gray-900 dark:text-white mb-2">Recommencer l'analyse ?</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                            Êtes-vous sûr de vouloir recommencer cette analyse ? Les données actuellement saisies ou en cours seront effacées ou réinitialisées.
+                        </p>
+
+                        <div class="flex flex-col-reverse sm:flex-row items-center justify-center gap-3">
+                            <button
+                                @click="showConfirmModal = false"
+                                :disabled="actionProcessing"
+                                class="w-full sm:w-auto px-6 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-offset-gray-800"
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                @click="submitRedoAnalysis"
+                                :disabled="actionProcessing"
+                                class="w-full sm:w-auto px-6 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-offset-gray-800 flex justify-center items-center disabled:opacity-75 disabled:cursor-not-allowed"
+                            >
+                                <svg v-if="actionProcessing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                </svg>
+                                <span>{{ actionProcessing ? 'Traitement...' : 'Oui, recommencer' }}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Transition>
+
     </AppLayout>
 </template>
