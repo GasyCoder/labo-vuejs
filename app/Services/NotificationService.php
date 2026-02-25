@@ -11,12 +11,7 @@ use Illuminate\Support\Facades\Mail;
 
 class NotificationService
 {
-    protected OrangeSmsService $orangeSms;
-
-    public function __construct(OrangeSmsService $orangeSms)
-    {
-        $this->orangeSms = $orangeSms;
-    }
+    public function __construct(protected MapiSmsService $smsService) {}
 
     /**
      * Envoyer une notification (E-mail ou SMS)
@@ -48,7 +43,7 @@ class NotificationService
         }
 
         try {
-            $this->orangeSms->sendSms($phone, $message);
+            $this->smsService->sendSms($phone, $message);
 
             $this->logNotification($prescription, 'sms', $phone, $message, 'envoye');
             $prescription->update(['notified_at' => now()]);
