@@ -6,7 +6,7 @@
                 Connexion
             </h5>
             <p class="text-sm leading-6 text-slate-400">
-                Accédez au panneau La Reference en utilisant votre identifiant et votre mot de passe.
+                Accédez au panneau {{ $page.props.settings?.nom_entreprise || 'La Reference' }} en utilisant votre identifiant et votre mot de passe.
             </p>
         </div>
 

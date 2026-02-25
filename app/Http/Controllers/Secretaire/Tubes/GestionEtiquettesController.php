@@ -221,10 +221,7 @@ class GestionEtiquettesController extends Controller
             $prescription = Prescription::with('tubes')->findOrFail($id);
 
             if ($prescription->tubes->isEmpty()) {
-                return redirect()->back()->with('notify', [
-                    'type' => 'info',
-                    'message' => 'Cette prescription n\'a pas de tubes',
-                ]);
+                return redirect()->back()->with('success', 'Cette prescription n\'a pas de tubes');
             }
 
             $tubesMarques = 0;
@@ -236,15 +233,9 @@ class GestionEtiquettesController extends Controller
             }
 
             if ($tubesMarques > 0) {
-                return redirect()->back()->with('notify', [
-                    'type' => 'success',
-                    'message' => "{$tubesMarques} tube(s) marqué(s) comme réceptionné(s)",
-                ]);
+                return redirect()->back()->with('success', "{$tubesMarques} tube(s) marqué(s) comme réceptionné(s)");
             } else {
-                return redirect()->back()->with('notify', [
-                    'type' => 'info',
-                    'message' => 'Tous les tubes sont déjà réceptionnés',
-                ]);
+                return redirect()->back()->with('success', 'Tous les tubes sont déjà réceptionnés');
             }
         } catch (\Exception $e) {
             Log::error('Erreur marquage réception tubes prescription', [
@@ -253,10 +244,7 @@ class GestionEtiquettesController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return redirect()->back()->with('notify', [
-                'type' => 'error',
-                'message' => 'Erreur lors du marquage: '.$e->getMessage(),
-            ]);
+            return redirect()->back()->with('error', 'Erreur lors du marquage: '.$e->getMessage());
         }
     }
 
@@ -266,10 +254,7 @@ class GestionEtiquettesController extends Controller
         $inclurePatient = $request->boolean('inclurePatient', true);
 
         if (empty($prescriptionsIds)) {
-            return redirect()->back()->with('notify', [
-                'type' => 'error',
-                'message' => 'Veuillez sélectionner au moins une prescription',
-            ]);
+            return redirect()->back()->with('error', 'Veuillez sélectionner au moins une prescription');
         }
 
         try {
@@ -293,10 +278,7 @@ class GestionEtiquettesController extends Controller
             }
 
             if ($prescriptions->isEmpty()) {
-                return redirect()->back()->with('notify', [
-                    'type' => 'error',
-                    'message' => 'Aucune prescription trouvée pour l\'impression',
-                ]);
+                return redirect()->back()->with('error', 'Aucune prescription trouvée pour l\'impression');
             }
 
             // Calcul des statistiques pour génération
@@ -376,10 +358,7 @@ class GestionEtiquettesController extends Controller
                 'user_id' => Auth::id(),
             ]);
 
-            return redirect()->back()->with('notify', [
-                'type' => 'error',
-                'message' => 'Erreur lors de la génération: '.$e->getMessage(),
-            ]);
+            return redirect()->back()->with('error', 'Erreur lors de la génération: '.$e->getMessage());
         }
     }
 }

@@ -40,10 +40,15 @@ class Setting extends Model
         return $this->belongsTo(PaymentMethod::class, 'default_payment_method_id');
     }
 
-    // DÉCLENCHEMENT AUTOMATIQUE DU RECALCUL
+    // DÉCLENCHEMENT AUTOMATIQUE DU RECALCUL ET DU VIDAGE DE CACHE
     protected static function boot()
     {
         parent::boot();
+
+        static::saved(function ($setting) {
+            // Vider le cache des paramètres globaux
+            cache()->forget('app_settings');
+        });
 
         static::updating(function ($setting) {
             // Vérifier si le pourcentage de commission a changé

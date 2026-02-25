@@ -458,8 +458,7 @@ const exportData = () => {
 };
 
 const viewPrescription = (id) => {
-    // Adapter selon la route de visualisation souhaitée
-    // router.visit(route('prescription.show', id));
+    window.open(route('laboratoire.prescription.pdf', id), '_blank');
 };
 
 const confirmUnarchive = (id) => {

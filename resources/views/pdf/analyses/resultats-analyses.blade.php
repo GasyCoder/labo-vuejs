@@ -15,7 +15,17 @@
 
     {{-- En-tête avec logo (première page seulement) --}}
     <div class="header-section">
-        <img src="{{ public_path('assets/images/logo.png') }}" alt="LABORATOIRE LA REFERENCE" class="header-logo">
+        @php
+            $setting = \App\Models\Setting::first();
+            if ($setting && $setting->logo) {
+                $pdfLogoPath = storage_path('app/public/' . $setting->logo);
+            } else {
+                $pdfLogoPath = public_path('assets/images/logo.png');
+            }
+        @endphp
+        @if(file_exists($pdfLogoPath))
+            <img src="{{ $pdfLogoPath }}" alt="{{ \App\Models\Setting::getNomEntreprise() }}" class="header-logo">
+        @endif
     </div>
     
     <div class="red-line"></div>

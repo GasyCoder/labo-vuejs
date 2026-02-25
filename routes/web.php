@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\PrescriptionExportController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\TracePatientController;
 use App\Http\Controllers\Admin\UserController;
@@ -285,6 +286,8 @@ Route::middleware(['auth', 'verified', 'role:superadmin'])->prefix('admin')->nam
         Route::post('payment-method', 'storePaymentMethod')->name('payment-method.store');
         Route::put('payment-method/{paymentMethod}', 'updatePaymentMethod')->name('payment-method.update');
         Route::delete('payment-method/{paymentMethod}', 'destroyPaymentMethod')->name('payment-method.destroy');
+        Route::post('test-sms', 'testSms')->name('test-sms');
+        Route::post('test-email', 'testEmail')->name('test-email');
     });
 
     // Traçabilité des patients
@@ -301,7 +304,9 @@ Route::middleware(['auth', 'verified', 'role:superadmin'])->prefix('admin')->nam
 
     // Ajout de la route pour voir une prescription en tant qu'admin
     Route::get('/prescription/{prescription}', [PrescriptionWorkspaceController::class, 'showAdmin'])->name('prescriptions.show');
-    Route::get('gestion-analyses', [RoleWorklistController::class, 'adminGestionAnalyses'])->name('gestion-analyses');
+
+    // Export CSV des prescriptions
+    Route::get('prescriptions/export', [PrescriptionExportController::class, 'export'])->name('prescriptions.export');
 });
 
 // ============================================

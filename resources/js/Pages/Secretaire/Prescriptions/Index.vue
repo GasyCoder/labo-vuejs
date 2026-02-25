@@ -623,10 +623,19 @@ const executeModalAction = () => {
     modal.processing = true;
     const cfg = modalConfig.value;
     const url = route(cfg.routeName, modal.prescriptionId);
-    router[cfg.method](url, {}, {
+    const opts = {
         preserveScroll: true,
-        onFinish: () => closeModal(),
-    });
+        onSuccess: () => closeModal(),
+        onError: () => { modal.processing = false; },
+        onFinish: () => { modal.processing = false; },
+    };
+    // router.delete(url, options) — no data arg
+    // router.post(url, data, options)
+    if (cfg.method === 'delete') {
+        router.delete(url, opts);
+    } else {
+        router[cfg.method](url, {}, opts);
+    }
 };
 
 // Notification modal state

@@ -6,7 +6,7 @@
                 Inscription
             </h5>
             <p class="text-sm leading-6 text-slate-400">
-                Créez votre compte pour accéder au panneau La Reference.
+                Créez votre compte pour accéder au panneau {{ $page.props.settings?.nom_entreprise || 'La Reference' }}.
             </p>
         </div>
 

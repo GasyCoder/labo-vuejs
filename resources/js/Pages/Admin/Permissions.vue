@@ -1,6 +1,6 @@
 <script setup>
-import { ref, computed, watch } from 'vue';
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { ref, computed, watch, nextTick } from 'vue';
+import { Head, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import debounce from 'lodash/debounce';
 
@@ -17,6 +17,11 @@ const search = ref('');
 // State to keep track of permissions locally before submitting
 const currentPermissions = ref({ ...props.rolePermissions });
 const originalPermissions = ref({ ...props.rolePermissions });
+
+// Auto-save state
+const saving = ref(false);
+const saved = ref(false);
+let savedTimeout = null;
 
 // Keep track of which modules are expanded (all expanded by default)
 const openModules = ref({});
@@ -57,13 +62,39 @@ const groupedFiltered = computed(() => {
     return filtered;
 });
 
+// Auto-save function
+const autoSave = () => {
+    if (!hasChanges.value) return;
+    saving.value = true;
+    saved.value = false;
+
+    router.put(route('admin.permissions.update'), {
+        role: props.selectedRole,
+        permissions: currentPermissions.value
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            originalPermissions.value = { ...currentPermissions.value };
+            saving.value = false;
+            saved.value = true;
+            clearTimeout(savedTimeout);
+            savedTimeout = setTimeout(() => { saved.value = false; }, 2000);
+        },
+        onError: () => {
+            saving.value = false;
+        }
+    });
+};
+
+const debouncedAutoSave = debounce(autoSave, 500);
+
+// Watch for permission changes and auto-save
+watch(currentPermissions, () => {
+    debouncedAutoSave();
+}, { deep: true });
+
 // Methods
 const selectRole = (roleName) => {
-    if (hasChanges.value) {
-        if (!confirm("Vous avez des modifications non enregistrées. Voulez-vous continuer sans sauvegarder ?")) {
-            return;
-        }
-    }
     router.get(route('admin.permissions'), { role: roleName }, { preserveState: true, preserveScroll: true });
 };
 
@@ -72,7 +103,6 @@ watch(() => props.rolePermissions, (newPerms) => {
     currentPermissions.value = { ...newPerms };
     originalPermissions.value = { ...newPerms };
 }, { deep: true });
-
 
 const togglePermission = (key) => {
     currentPermissions.value[key] = !currentPermissions.value[key];
@@ -97,24 +127,6 @@ const disableAll = () => {
     for (const key in currentPermissions.value) {
         currentPermissions.value[key] = false;
     }
-};
-
-const resetPermissions = () => {
-    currentPermissions.value = { ...originalPermissions.value };
-};
-
-const savePermissions = () => {
-    if (!hasChanges.value) return;
-
-    router.put(route('admin.permissions.update'), {
-        role: props.selectedRole,
-        permissions: currentPermissions.value
-    }, {
-        preserveScroll: true,
-        onSuccess: () => {
-             originalPermissions.value = { ...currentPermissions.value };
-        }
-    });
 };
 
 // Auto format tools
@@ -145,105 +157,90 @@ const getModuleEnabledCount = (moduleName) => {
     <Head title="Gestion des Permissions" />
 
     <AppLayout>
-        <div class="min-h-screen">
-            <!-- ── Sticky Header ──────────────────────────────────────── -->
-            <div class="sticky top-0 z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
-                <div class="px-6 py-4">
-                    <!-- Row 1: Title + Role tabs -->
-                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
-                        <div>
-                            <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Permissions</h1>
-                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Configurez les droits d'accès pour chaque rôle</p>
-                        </div>
-
-                        <!-- Role Tabs -->
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <button
-                                v-for="role in roles"
-                                :key="role.name"
-                                @click="selectRole(role.name)"
-                                class="relative px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
-                                :class="selectedRole === role.name ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'"
-                            >
-                                <span class="capitalize">{{ role.name }}</span>
-                            </button>
-                        </div>
+        <div>
+            <!-- ── Page Header ──────────────────────────────────────── -->
+            <div class="px-4 sm:px-6 lg:px-8 pt-6 pb-4">
+                <!-- Row 1: Title + Role tabs -->
+                <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-5">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Permissions</h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Configurez les droits d'accès pour chaque rôle</p>
                     </div>
 
-                    <!-- Row 2: Search + counters + actions -->
-                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                        <!-- Search -->
-                        <div class="relative w-full sm:w-72">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg class="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                            </div>
-                            <input
-                                type="text"
-                                v-model="search"
-                                placeholder="Rechercher une permission..."
-                                class="w-full pl-10 pr-4 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
-                            >
+                    <!-- Role Tabs -->
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <button
+                            v-for="role in roles"
+                            :key="role.name"
+                            @click="selectRole(role.name)"
+                            class="relative px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
+                            :class="selectedRole === role.name ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'"
+                        >
+                            <span class="capitalize">{{ role.name }}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Row 2: Search + counters + actions (toolbar) -->
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-3">
+                    <!-- Search -->
+                    <div class="relative w-full sm:w-72">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                        <input
+                            type="text"
+                            v-model="search"
+                            placeholder="Rechercher une permission..."
+                            class="w-full pl-10 pr-4 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                        >
+                    </div>
+
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <!-- Counter badge -->
+                        <div class="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-full">
+                            <div class="w-2 h-2 rounded-full" :class="enabledCount > 0 ? 'bg-emerald-500' : 'bg-gray-400 dark:bg-gray-600'"></div>
+                            <span class="text-xs font-bold text-gray-700 dark:text-gray-300">
+                                {{ enabledCount }} / {{ totalPermissions }}
+                            </span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">activées</span>
                         </div>
 
-                        <div class="flex items-center gap-3 flex-wrap">
-                            <!-- Counter badge -->
-                            <div class="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-full">
-                                <div class="w-2 h-2 rounded-full" :class="enabledCount > 0 ? 'bg-emerald-500' : 'bg-gray-400 dark:bg-gray-600'"></div>
-                                <span class="text-xs font-bold text-gray-700 dark:text-gray-300">
-                                    {{ enabledCount }} / {{ totalPermissions }}
-                                </span>
-                                <span class="text-xs text-gray-500 dark:text-gray-400">activées</span>
-                            </div>
+                        <!-- Auto-save status -->
+                        <div v-if="saving" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-full">
+                            <svg class="w-3.5 h-3.5 text-blue-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                            <span class="text-xs font-medium text-blue-700 dark:text-blue-400">Enregistrement...</span>
+                        </div>
+                        <div v-else-if="saved" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 rounded-full transition-opacity">
+                            <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span class="text-xs font-medium text-emerald-700 dark:text-emerald-400">Enregistré</span>
+                        </div>
 
-                            <!-- Unsaved indicator -->
-                            <div v-if="hasChanges" class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-full animate-pulse">
-                                <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
-                                <span class="text-xs font-medium text-amber-700 dark:text-amber-400">Non enregistré</span>
-                            </div>
-
-                            <!-- Action buttons -->
-                            <div class="flex items-center gap-1.5">
-                                <button
-                                    @click="enableAll"
-                                    class="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                                    title="Tout activer"
-                                >
-                                    Tout
-                                </button>
-                                <button
-                                    @click="disableAll"
-                                    class="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                                    title="Tout désactiver"
-                                >
-                                    Aucun
-                                </button>
-                                <button
-                                    @click="resetPermissions"
-                                    :disabled="!hasChanges"
-                                    class="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                                    :class="!hasChanges ? 'opacity-40 cursor-not-allowed' : ''"
-                                    title="Réinitialiser"
-                                >
-                                    Reset
-                                </button>
-                                <button
-                                    @click="savePermissions"
-                                    :disabled="!hasChanges"
-                                    class="px-4 py-1.5 text-xs font-bold text-white rounded-lg transition-all duration-200"
-                                    :class="hasChanges ? 'bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-500/25' : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'"
-                                >
-                                    Enregistrer
-                                </button>
-                            </div>
+                        <!-- Action buttons -->
+                        <div class="flex items-center gap-1.5">
+                            <button
+                                @click="enableAll"
+                                class="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                                title="Tout activer"
+                            >
+                                Tout
+                            </button>
+                            <button
+                                @click="disableAll"
+                                class="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                                title="Tout désactiver"
+                            >
+                                Aucun
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- ── Module Cards ───────────────────────────────────────── -->
-            <div class="px-6 py-6 pb-24 space-y-4 max-w-7xl mx-auto">
+            <div class="px-4 sm:px-6 lg:px-8 py-6 pb-24 space-y-4">
                 <template v-if="Object.keys(groupedFiltered).length > 0">
                     <div v-for="(permissions, module) in groupedFiltered" :key="module" class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm transition-shadow duration-200 overflow-hidden">
                         
@@ -292,26 +289,31 @@ const getModuleEnabledCount = (moduleName) => {
                             </div>
                         </div>
 
-                        <!-- Permission Rows (collapsible) -->
-                        <div v-show="openModules[module]" class="border-t border-gray-100 dark:border-gray-800">
-                            <div class="divide-y divide-gray-50 dark:divide-gray-800/50">
-                                <div v-for="(meta, key) in permissions" :key="key" class="flex items-center justify-between px-6 py-3.5 hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-colors duration-150 group">
-                                    <div class="flex-1 min-w-0 pr-4 cursor-pointer" @click="togglePermission(key)">
-                                        <div class="flex items-center gap-3">
-                                            <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ meta.label }}</span>
-                                            <code class="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono font-medium text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 rounded">{{ key }}</code>
+                        <!-- Permission Grid (collapsible) -->
+                        <div v-show="openModules[module]" class="border-t border-gray-100 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-900/50 p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                <div v-for="(meta, key) in permissions" :key="key" 
+                                     @click="togglePermission(key)"
+                                     class="flex flex-col justify-between p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-500/50 transition-all duration-200 cursor-pointer group">
+                                    
+                                    <div class="flex items-start justify-between mb-3">
+                                        <div class="flex flex-col gap-1 pr-4">
+                                            <span class="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{{ meta.label }}</span>
+                                            <code class="self-start px-1.5 py-0.5 text-[10px] font-mono font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">{{ key }}</code>
                                         </div>
-                                        <p v-if="meta.description" class="mt-0.5 text-xs text-gray-400 dark:text-gray-500 truncate">{{ meta.description }}</p>
+                                        
+                                        <!-- Toggle Button -->
+                                        <button
+                                            @click.stop="togglePermission(key)"
+                                            class="relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+                                            :class="currentPermissions[key] ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'"
+                                        >
+                                            <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200" :class="currentPermissions[key] ? 'translate-x-[22px]' : 'translate-x-[2px]'"></span>
+                                        </button>
                                     </div>
-
-                                    <!-- Toggle -->
-                                    <button
-                                        @click.stop="togglePermission(key)"
-                                        class="relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
-                                        :class="currentPermissions[key] ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'"
-                                    >
-                                        <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform duration-200" :class="currentPermissions[key] ? 'translate-x-[18px]' : 'translate-x-[3px]'"></span>
-                                    </button>
+                                    
+                                    <p v-if="meta.description" class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{{ meta.description }}</p>
+                                    <p v-else class="text-xs text-gray-400 dark:text-gray-500 italic">Aucune description disponible.</p>
                                 </div>
                             </div>
                         </div>

@@ -18,6 +18,6 @@ class RoleWorklistController extends Controller
 
     public function adminGestionAnalyses(): RedirectResponse
     {
-        return redirect()->route('laboratoire.analyses.listes');
+        return redirect()->route('dashboard');
     }
 }

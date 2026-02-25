@@ -33,8 +33,8 @@ class ResultatPdfShow
         // 1. Récupérer les résultats selon le statut de la prescription
         $query = Resultat::where('prescription_id', $prescription->id);
 
-        if ($prescription->status === Prescription::STATUS_VALIDE) {
-            // Pour prescriptions validées : seulement les résultats validés
+        if (in_array($prescription->status, [Prescription::STATUS_VALIDE, Prescription::STATUS_ARCHIVE])) {
+            // Pour prescriptions validées/archivées : seulement les résultats validés
             $query->where('status', 'VALIDE')->whereNotNull('validated_by');
         } else {
             // Pour prescriptions terminées : tous les résultats saisis
@@ -414,18 +414,18 @@ class ResultatPdfShow
     }
 
     /**
-     * Générer le PDF FINAL des résultats - CORRIGÉ pour accepter TERMINE et VALIDE
+     * Générer le PDF FINAL des résultats - CORRIGÉ pour accepter TERMINE, VALIDE et ARCHIVE
      */
     public function generateFinalPDF(Prescription $prescription)
     {
         // Vérifications existantes...
-        if (! in_array($prescription->status, [Prescription::STATUS_VALIDE, Prescription::STATUS_TERMINE])) {
-            throw new \Exception('La prescription doit être terminée ou validée pour générer le PDF final');
+        if (! in_array($prescription->status, [Prescription::STATUS_VALIDE, Prescription::STATUS_TERMINE, Prescription::STATUS_ARCHIVE])) {
+            throw new \Exception('La prescription doit être terminée, validée ou archivée pour générer le PDF final');
         }
 
         $hasResults = false;
 
-        if ($prescription->status === Prescription::STATUS_VALIDE) {
+        if (in_array($prescription->status, [Prescription::STATUS_VALIDE, Prescription::STATUS_ARCHIVE])) {
             $hasResults = Resultat::where('prescription_id', $prescription->id)
                 ->where('status', 'VALIDE')
                 ->whereNotNull('validated_by')
@@ -573,14 +573,14 @@ class ResultatPdfShow
      */
     public function canGenerateFinalPdf(Prescription $prescription): bool
     {
-        // CORRECTION : Accepter TERMINE et VALIDE
-        if (! in_array($prescription->status, [Prescription::STATUS_VALIDE, Prescription::STATUS_TERMINE])) {
+        // CORRECTION : Accepter TERMINE, VALIDE et ARCHIVE
+        if (! in_array($prescription->status, [Prescription::STATUS_VALIDE, Prescription::STATUS_TERMINE, Prescription::STATUS_ARCHIVE])) {
             return false;
         }
 
         $hasResults = false;
 
-        if ($prescription->status === Prescription::STATUS_VALIDE) {
+        if (in_array($prescription->status, [Prescription::STATUS_VALIDE, Prescription::STATUS_ARCHIVE])) {
             $hasResults = Resultat::where('prescription_id', $prescription->id)
                 ->where('status', 'VALIDE')
                 ->whereNotNull('validated_by')

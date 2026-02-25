@@ -19,13 +19,13 @@
         </div>
         <div class="relative flex flex-shrink-0">
             <Link :href="baseUrl"
-                class="relative inline-block transition-opacity duration-300 h-9 group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0">
-                <span
-                    class="text-xl font-bold text-primary-500 whitespace-nowrap group-[&.is-compact:not(.has-hover)]/sidebar:hidden">La
-                    Reference
+                class="relative inline-flex items-center transition-opacity duration-300 h-9 group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0">
+                <img v-if="$page.props.settings?.logo" :src="$page.props.settings.logo" :alt="$page.props.settings?.nom_entreprise || 'Logo'" class="h-8 w-auto object-contain group-[&.is-compact:not(.has-hover)]/sidebar:hidden" />
+                <span v-else
+                    class="text-xl font-bold text-primary-500 whitespace-nowrap group-[&.is-compact:not(.has-hover)]/sidebar:hidden">{{ $page.props.settings?.nom_entreprise || 'La Reference' }}
                 </span>
                 <span
-                    class="text-xl font-bold text-primary-500 hidden group-[&.is-compact:not(.has-hover)]/sidebar:block">L</span>
+                    class="text-xl font-bold text-primary-500 hidden group-[&.is-compact:not(.has-hover)]/sidebar:block">{{ ($page.props.settings?.nom_entreprise || 'L').charAt(0) }}</span>
             </Link>
         </div>
     </div>
@@ -57,24 +57,7 @@
                         </li>
                     </template>
 
-                    <template v-if="$page.props.auth.user && $page.props.auth.user.isAdmin">
-                        <li
-                            :class="['nk-menu-item py-0.5 group/item', { 'active': route().current('admin.gestion-analyses') }]">
-                            <Link :href="route('admin.gestion-analyses')"
-                                class="nk-menu-link flex relative items-center align-middle py-2.5 ps-6 pe-10 font-heading font-bold tracking-snug group">
-                                <span
-                                    class="font-normal tracking-normal w-8 inline-flex flex-grow-0 flex-shrink-0 text-slate-400 group-[.active]/item:text-primary-500 group-hover:text-primary-500">
-                                    <em
-                                        class="text-xl leading-none text-current transition-all duration-300 icon ni ni-list-check"></em>
-                                </span>
-                                <span
-                                    class="group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0 flex-grow-1 inline-block whitespace-nowrap transition-all duration-300 text-sm text-slate-600 dark:text-slate-500 group-[.active]/item:text-primary-500 group-hover:text-primary-500">
-                                    Suivi des Analyses (<span
-                                        id="analyses-count">{{ $page.props.stats.countAnalyses }}</span>)
-                                </span>
-                            </Link>
-                        </li>
-                    </template>
+                    <!-- Gestion Analyses merged into Dashboard -->
 
                     <template v-if="$page.props.auth.user && hasAnyPermission(['prescriptions.voir', 'analyses.voir', 'patients.voir', 'prescripteurs.voir'])">
                         <!-- Section Secrétaire / Gestion Prescriptions -->

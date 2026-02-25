@@ -44,6 +44,29 @@ const paymentForm = useForm({
     display_order: 1,
 });
 
+// For testing APIs
+const testSmsForm = useForm({
+    phone: '',
+});
+
+const testEmailForm = useForm({
+    email: '',
+});
+
+const testSms = () => {
+    testSmsForm.post(route('admin.settings.test-sms'), {
+        preserveScroll: true,
+        onSuccess: () => testSmsForm.reset(),
+    });
+};
+
+const testEmail = () => {
+    testEmailForm.post(route('admin.settings.test-email'), {
+        preserveScroll: true,
+        onSuccess: () => testEmailForm.reset(),
+    });
+};
+
 // --- Computed & Watchers ---
 const oldCommissionPourcentage = ref(parseFloat(props.settings.commission_prescripteur_pourcentage) || 10);
 const showCommissionAlert = computed(() => {
@@ -138,7 +161,7 @@ const confirmDeletePayment = (id) => {
         </template>
 
         <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="px-4 sm:px-6 lg:px-8">
                 
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     <!-- MAIN CONTENT COLUMN -->
@@ -243,8 +266,12 @@ const confirmDeletePayment = (id) => {
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4 text-right text-sm font-medium">
-                                                <button @click="openPaymentModal(method)" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-3">Modifier</button>
-                                                <button @click="confirmDeletePayment(method.id)" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Supprimer</button>
+                                                <button @click="openPaymentModal(method)" class="p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-900/30 transition-colors mr-1" title="Modifier">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                                </button>
+                                                <button @click="confirmDeletePayment(method.id)" class="p-1.5 rounded-lg text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30 transition-colors" title="Supprimer">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                </button>
                                             </td>
                                         </tr>
                                         <tr v-if="paymentMethods.length === 0">
@@ -342,6 +369,68 @@ const confirmDeletePayment = (id) => {
                                     <button type="submit" :disabled="urgenceForm.processing" class="text-sm bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md transition-colors disabled:opacity-50">Sauvegarder</button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Test API (NOUVEAU) -->
+                <div class="mt-8 bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden border dark:border-gray-700">
+                        <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white flex items-center">
+                                <svg class="w-5 h-5 mr-3 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                                Test des APIs (SMS & E-mail)
+                            </h3>
+                        </div>
+                        <div class="p-6">
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Utilisez ces formulaires pour vérifier que l'envoi de SMS et d'E-mails fonctionne correctement. Les messages de test seront envoyés immédiatement.</p>
+                            
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <!-- Test E-mail -->
+                                <div class="bg-gray-50 dark:bg-gray-800/50 p-5 rounded-xl border border-gray-200 dark:border-gray-700">
+                                    <h4 class="text-md font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                                        <svg class="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                        Test API E-mail
+                                    </h4>
+                                    <form @submit.prevent="testEmail">
+                                        <div class="space-y-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Adresse E-mail de réception</label>
+                                                <input v-model="testEmailForm.email" type="email" placeholder="test@example.com" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                                <div v-if="testEmailForm.errors.email" class="text-red-500 text-xs mt-1">{{ testEmailForm.errors.email }}</div>
+                                            </div>
+                                            <div class="pt-2">
+                                                <button type="submit" :disabled="testEmailForm.processing" class="w-full inline-flex justify-center items-center text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md transition-colors disabled:opacity-50">
+                                                    <svg v-if="testEmailForm.processing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                    {{ testEmailForm.processing ? 'Envoi...' : 'Envoyer E-mail de Test' }}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <!-- Test SMS -->
+                                <div class="bg-gray-50 dark:bg-gray-800/50 p-5 rounded-xl border border-gray-200 dark:border-gray-700">
+                                    <h4 class="text-md font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                                        <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                                        Test API SMS
+                                    </h4>
+                                    <form @submit.prevent="testSms">
+                                        <div class="space-y-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Numéro de Téléphone (Ex: +26134...)</label>
+                                                <input v-model="testSmsForm.phone" type="text" placeholder="+261340000000" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                                <div v-if="testSmsForm.errors.phone" class="text-red-500 text-xs mt-1">{{ testSmsForm.errors.phone }}</div>
+                                            </div>
+                                            <div class="pt-2">
+                                                <button type="submit" :disabled="testSmsForm.processing" class="w-full inline-flex justify-center items-center text-sm bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors disabled:opacity-50">
+                                                    <svg v-if="testSmsForm.processing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                    {{ testSmsForm.processing ? 'Envoi...' : 'Envoyer SMS de Test' }}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

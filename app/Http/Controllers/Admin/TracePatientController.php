@@ -78,7 +78,7 @@ class TracePatientController extends Controller
                 'total' => $prescriptionsCount,
                 'recent' => Prescription::onlyTrashed()->where('deleted_at', '>=', now()->subDays(7))->count(),
                 'old' => Prescription::onlyTrashed()->where('deleted_at', '<', now()->subDays(30))->count(),
-                'valeur_totale' => Prescription::onlyTrashed()->sum('montant_total'),
+                'valeur_totale' => 0,
             ],
             'total' => $patientsCount + $prescriptionsCount,
         ];

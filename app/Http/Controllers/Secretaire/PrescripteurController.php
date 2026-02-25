@@ -144,10 +144,7 @@ class PrescripteurController extends Controller
 
         Prescripteur::create($validated);
 
-        return redirect()->back()->with('notify', [
-            'type' => 'success',
-            'message' => 'Prescripteur créé avec succès.',
-        ]);
+        return redirect()->back()->with('success', 'Prescripteur créé avec succès.');
     }
 
     public function update(Request $request, Prescripteur $prescripteur)
@@ -171,10 +168,7 @@ class PrescripteurController extends Controller
 
         $prescripteur->update($validated);
 
-        return redirect()->back()->with('notify', [
-            'type' => 'success',
-            'message' => 'Prescripteur modifié avec succès.',
-        ]);
+        return redirect()->back()->with('success', 'Prescripteur modifié avec succès.');
     }
 
     public function destroy(Prescripteur $prescripteur)
@@ -189,20 +183,14 @@ class PrescripteurController extends Controller
                 ? "Prescripteur « {$prescripteurNom} » déplacé vers la corbeille ({$prescriptionsCount} prescription(s) associée(s))."
                 : "Prescripteur « {$prescripteurNom} » déplacé vers la corbeille.";
 
-            return redirect()->back()->with('notify', [
-                'type' => 'success',
-                'message' => $message,
-            ]);
+            return redirect()->back()->with('success', $message);
         } catch (\Exception $e) {
             \Log::error('Erreur lors de la suppression du prescripteur', [
                 'prescripteur_id' => $prescripteur->id,
                 'error' => $e->getMessage(),
             ]);
 
-            return redirect()->back()->with('notify', [
-                'type' => 'error',
-                'message' => 'Impossible de supprimer ce prescripteur : '.$e->getMessage(),
-            ]);
+            return redirect()->back()->with('error', 'Impossible de supprimer ce prescripteur : '.$e->getMessage());
         }
     }
 
@@ -212,10 +200,7 @@ class PrescripteurController extends Controller
 
         $statusMessage = $prescripteur->is_active ? 'activé' : 'désactivé';
 
-        return redirect()->back()->with('notify', [
-            'type' => 'success',
-            'message' => "Prescripteur {$statusMessage} avec succès.",
-        ]);
+        return redirect()->back()->with('success', "Prescripteur {$statusMessage} avec succès.");
     }
 
     public function export(Request $request)
@@ -302,19 +287,13 @@ class PrescripteurController extends Controller
             $template = 'pdf.autre.commission-facture';
 
             if (! view()->exists($template)) {
-                return redirect()->back()->with('notify', [
-                    'type' => 'error',
-                    'message' => "Le template PDF '$template' n'existe pas.",
-                ]);
+                return redirect()->back()->with('error', "Le template PDF '$template' n'existe pas.");
             }
 
             $statistiques = $prescripteur->getStatistiquesCommissions($dateDebut, $dateFin);
 
             if (($statistiques['total_commission'] ?? 0) == 0) {
-                return redirect()->back()->with('notify', [
-                    'type' => 'warning',
-                    'message' => 'Aucune commission à facturer pour cette période.',
-                ]);
+                return redirect()->back()->with('error', 'Aucune commission à facturer pour cette période.');
             }
 
             $commissions = $prescripteur->getCommissionsParMois(null, $dateDebut, $dateFin);
@@ -344,10 +323,7 @@ class PrescripteurController extends Controller
         } catch (\Exception $e) {
             \Log::error('Erreur génération PDF: '.$e->getMessage());
 
-            return redirect()->back()->with('notify', [
-                'type' => 'error',
-                'message' => 'Erreur lors de la génération du PDF : '.$e->getMessage(),
-            ]);
+            return redirect()->back()->with('error', 'Erreur lors de la génération du PDF : '.$e->getMessage());
         }
     }
 }

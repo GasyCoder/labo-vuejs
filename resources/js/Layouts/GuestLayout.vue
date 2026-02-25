@@ -30,7 +30,7 @@
                     <div class="flex flex-wrap justify-center -m-2">
                         <div class="w-full p-2">
                             <p class="text-center text-slate-400 text-sm/4">
-                                &copy; {{ new Date().getFullYear() }} La Reference.
+                                &copy; {{ new Date().getFullYear() }} {{ $page.props.settings?.nom_entreprise || 'La Reference' }}.
                                 Tous droits réservés. Développé par
                                 <a href="https://gasycoder.com" target="_blank" class="hover:text-primary-500 transition-colors">GasyCoder</a>
                             </p>

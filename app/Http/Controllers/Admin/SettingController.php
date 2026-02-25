@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\PaymentMethod;
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use App\Services\MapiSmsService;
 
 class SettingController extends Controller
 {
@@ -205,5 +207,43 @@ class SettingController extends Controller
         $paymentMethod->delete();
 
         return redirect()->back()->with('success', 'Mode de paiement supprimé avec succès.');
+    }
+
+    /**
+     * Test de l'API SMS
+     */
+    public function testSms(Request $request, MapiSmsService $smsService)
+    {
+        $validated = $request->validate([
+            'phone' => 'required|string|min:8|max:20',
+        ]);
+
+        try {
+            $smsService->sendSms($validated['phone'], 'Ceci est un test de l\'API SMS depuis La Reference.');
+            return redirect()->back()->with('success', 'SMS de test envoyé avec succès au ' . $validated['phone']);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Erreur lors de l\'envoi du SMS: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Test de l'API Email
+     */
+    public function testEmail(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email|max:255',
+        ]);
+
+        try {
+            Mail::raw('Ceci est un test de l\'API Email depuis La Reference.', function ($message) use ($validated) {
+                $message->to($validated['email'])
+                        ->subject('Test API Email - La Reference');
+            });
+
+            return redirect()->back()->with('success', 'Email de test envoyé avec succès à ' . $validated['email']);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Erreur lors de l\'envoi de l\'email: ' . $e->getMessage());
+        }
     }
 }

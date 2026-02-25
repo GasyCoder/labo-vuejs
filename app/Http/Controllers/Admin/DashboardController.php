@@ -32,7 +32,61 @@ class DashboardController extends Controller
 
         return Inertia::render('Dashboard', [
             'stats' => $stats,
+            // PRESCRIPTION MONITORING
+            'prescriptionsList' => $this->getPrescriptionsList($request),
+            'secretaires' => \App\Models\User::where('type', 'secretaire')
+                ->orWhere('type', 'superadmin')
+                ->orderBy('name')
+                ->get(['id', 'name', 'type']),
+            'prescriptionsFilters' => [
+                'date_from' => $request->input('date_from', ''),
+                'date_to' => $request->input('date_to', ''),
+                'prescriptionSearch' => $request->input('prescriptionSearch', ''),
+                'secretaire_id' => $request->input('secretaire_id', ''),
+                'prescriptionsPerPage' => $request->input('prescriptionsPerPage', 15),
+            ],
         ]);
+    }
+
+    private function getPrescriptionsList(Request $request)
+    {
+        $query = Prescription::with(['patient', 'secretaire', 'prescripteur', 'paiements', 'analyses'])
+            ->orderBy('created_at', 'desc');
+
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+
+        if ($dateFrom && $dateTo) {
+            $query->whereBetween('created_at', [
+                Carbon::parse($dateFrom)->startOfDay(),
+                Carbon::parse($dateTo)->endOfDay(),
+            ]);
+        } elseif ($dateFrom) {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        } elseif ($dateTo) {
+            $query->whereDate('created_at', '<=', $dateTo);
+        }
+
+        $secretaireId = $request->input('secretaire_id');
+        if ($secretaireId) {
+            $query->where('secretaire_id', $secretaireId);
+        }
+
+        $prescriptionSearch = $request->input('prescriptionSearch');
+        if ($prescriptionSearch) {
+            $query->where(function ($q) use ($prescriptionSearch) {
+                $q->where('reference', 'like', "%{$prescriptionSearch}%")
+                    ->orWhereHas('patient', function ($pq) use ($prescriptionSearch) {
+                        $pq->where('nom', 'like', "%{$prescriptionSearch}%")
+                            ->orWhere('prenom', 'like', "%{$prescriptionSearch}%")
+                            ->orWhere('numero_dossier', 'like', "%{$prescriptionSearch}%");
+                    });
+            });
+        }
+
+        $perPage = $request->input('prescriptionsPerPage', 15);
+
+        return $query->paginate($perPage, ['*'], 'prescriptions_page')->withQueryString();
     }
 
     private function getPatientStats($user)

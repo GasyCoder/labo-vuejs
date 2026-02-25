@@ -24,6 +24,9 @@
 </template>
 
 <script setup>
+import { watch } from 'vue';
+import { usePage } from '@inertiajs/vue3';
+import Swal from 'sweetalert2';
 import Sidebar from './Partials/Sidebar.vue';
 import Header from './Partials/Header.vue';
 import Footer from './Partials/Footer.vue';
@@ -34,4 +37,32 @@ const props = defineProps({
         default: false,
     }
 });
+
+const page = usePage();
+
+// Global toast — fires on every flash message across ALL pages
+watch(() => page.props.flash, (flash) => {
+    if (flash?.success) {
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: flash.success,
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+        });
+    }
+    if (flash?.error) {
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'error',
+            title: flash.error,
+            showConfirmButton: false,
+            timer: 4000,
+            timerProgressBar: true,
+        });
+    }
+}, { deep: true });
 </script>
