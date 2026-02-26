@@ -66,6 +66,9 @@ class PatientController extends Controller
                 'sortField' => $sortField,
                 'sortDirection' => $sortDirection,
             ],
+            'permissions' => [
+                'canDelete' => auth()->user()->hasPermission('patients.supprimer'),
+            ],
         ], $statistiques));
     }
 
@@ -165,6 +168,9 @@ class PatientController extends Controller
             'prescriptionsEnAttente' => $prescriptionsEnAttente,
             'prescriptionsEnCours' => $prescriptionsEnCours,
             'prescriptionsTerminees' => $prescriptionsTerminees,
+            'permissions' => [
+                'canDelete' => auth()->user()->hasPermission('patients.supprimer'),
+            ],
         ]);
     }
 
@@ -197,6 +203,11 @@ class PatientController extends Controller
 
     public function destroy(Patient $patient): RedirectResponse
     {
+        $user = auth()->user();
+        if (! $user->hasPermission('patients.supprimer')) {
+            return back()->with('error', 'Vous n\'avez pas la permission de supprimer des patients.');
+        }
+
         // On supprime les prescriptions associées (qui devraient supprimer leurs analyses/paiements via cascade ou manuellement si nécessaire)
         // Mais ici on utilise le soft delete ou force delete selon la config du modèle
         $patient->delete();

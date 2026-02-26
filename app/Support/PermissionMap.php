@@ -14,6 +14,13 @@ class PermissionMap
      * 3. Assigner aux rôles dans PermissionSeeder
      */
     public const PERMISSIONS = [
+        // ── Tableau de Bord ───────────────────────────────────
+        'dashboard.voir' => [
+            'label' => 'Voir le tableau de bord',
+            'module' => 'Tableau de bord',
+            'description' => 'Consulter les statistiques et indicateurs clés de performance',
+        ],
+
         // ── Prescriptions ──────────────────────────────────────
         'prescriptions.voir' => [
             'label' => 'Voir les prescriptions',
@@ -67,7 +74,12 @@ class PermissionMap
         'patients.gerer' => [
             'label' => 'Gérer les patients',
             'module' => 'Patients',
-            'description' => 'Créer, modifier et supprimer des patients',
+            'description' => 'Créer et modifier des patients',
+        ],
+        'patients.supprimer' => [
+            'label' => 'Supprimer des patients',
+            'module' => 'Patients',
+            'description' => 'Mettre en corbeille ou supprimer définitivement des patients',
         ],
 
         // ── Prescripteurs ──────────────────────────────────────
@@ -79,7 +91,12 @@ class PermissionMap
         'prescripteurs.gerer' => [
             'label' => 'Gérer les prescripteurs',
             'module' => 'Prescripteurs',
-            'description' => 'Créer, modifier et supprimer des prescripteurs',
+            'description' => 'Créer et modifier des prescripteurs',
+        ],
+        'prescripteurs.supprimer' => [
+            'label' => 'Supprimer des prescripteurs',
+            'module' => 'Prescripteurs',
+            'description' => 'Mettre en corbeille ou supprimer définitivement des prescripteurs',
         ],
 
         // ── Laboratoire ────────────────────────────────────────
@@ -118,6 +135,7 @@ class PermissionMap
      * Mapping ancien (anglais) → nouveau (français)
      */
     public const MIGRATION_MAP = [
+        'dashboard.view' => 'dashboard.voir',
         'prescriptions.view' => 'prescriptions.voir',
         'prescriptions.create' => 'prescriptions.creer',
         'prescriptions.edit' => 'prescriptions.modifier',
@@ -127,8 +145,10 @@ class PermissionMap
         'analyses.validate' => 'analyses.valider',
         'patients.view' => 'patients.voir',
         'patients.manage' => 'patients.gerer',
+        'patients.delete' => 'patients.supprimer',
         'prescripteurs.view' => 'prescripteurs.voir',
         'prescripteurs.manage' => 'prescripteurs.gerer',
+        'prescripteurs.delete' => 'prescripteurs.supprimer',
         'laboratory.manage' => 'laboratoire.gerer',
         'users.manage' => 'utilisateurs.gerer',
         'settings.manage' => 'parametres.gerer',

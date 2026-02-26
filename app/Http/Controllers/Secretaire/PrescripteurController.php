@@ -70,6 +70,8 @@ class PrescripteurController extends Controller
         $grades = Prescripteur::getGradesDisponibles();
         $statusOptions = Prescripteur::getStatusDisponibles();
 
+        $user = auth()->user();
+
         return Inertia::render('Secretaire/Prescripteurs', array_merge([
             'prescripteurs' => $prescripteurs,
             'grades' => $grades,
@@ -80,6 +82,11 @@ class PrescripteurController extends Controller
                 'sortField' => $sortField,
                 'sortDirection' => $sortDirection,
                 'perPage' => $perPage,
+            ],
+            'permissions' => [
+                'canCreate' => $user->hasPermission('prescripteurs.gerer'),
+                'canEdit' => $user->hasPermission('prescripteurs.gerer'),
+                'canDelete' => $user->hasPermission('prescripteurs.supprimer'),
             ],
             'globalCommissionQuota' => \App\Models\Setting::getCommissionQuota(),
             'globalCommissionPourcentage' => \App\Models\Setting::getCommissionPourcentage(),
@@ -123,6 +130,10 @@ class PrescripteurController extends Controller
 
     public function store(Request $request)
     {
+        if (! auth()->user()->hasPermission('prescripteurs.gerer')) {
+            return redirect()->back()->with('error', 'Vous n\'avez pas la permission de créer des prescripteurs.');
+        }
+
         $validated = $request->validate([
             'nom' => 'required|min:2|max:100',
             'prenom' => 'nullable|max:100',
@@ -146,6 +157,10 @@ class PrescripteurController extends Controller
 
     public function update(Request $request, Prescripteur $prescripteur)
     {
+        if (! auth()->user()->hasPermission('prescripteurs.gerer')) {
+            return redirect()->back()->with('error', 'Vous n\'avez pas la permission de modifier des prescripteurs.');
+        }
+
         $validated = $request->validate([
             'nom' => 'required|min:2|max:100',
             'prenom' => 'nullable|max:100',
@@ -169,6 +184,11 @@ class PrescripteurController extends Controller
 
     public function destroy(Prescripteur $prescripteur)
     {
+        $user = auth()->user();
+        if (! $user->hasPermission('prescripteurs.supprimer')) {
+            return redirect()->back()->with('error', 'Vous n\'avez pas la permission de supprimer des prescripteurs.');
+        }
+
         try {
             $prescripteurNom = $prescripteur->nom_complet;
             $prescriptionsCount = $prescripteur->prescriptions()->count();

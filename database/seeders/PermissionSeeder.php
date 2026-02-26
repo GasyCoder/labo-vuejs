@@ -31,18 +31,22 @@ class PermissionSeeder extends Seeder
 
         $secretaire = Role::firstOrCreate(['name' => 'secretaire', 'guard_name' => 'web']);
         $secretaire->syncPermissions([
+            'dashboard.voir',
             'prescriptions.voir',
             'prescriptions.creer',
             'prescriptions.modifier',
             'patients.voir',
             'patients.gerer',
+            'patients.supprimer',
             'prescripteurs.voir',
             'prescripteurs.gerer',
+            'prescripteurs.supprimer',
             'archives.acceder',
         ]);
 
         $technicien = Role::firstOrCreate(['name' => 'technicien', 'guard_name' => 'web']);
         $technicien->syncPermissions([
+            'dashboard.voir',
             'analyses.voir',
             'analyses.effectuer',
             'analyses.conclusion',
@@ -52,6 +56,7 @@ class PermissionSeeder extends Seeder
 
         $biologiste = Role::firstOrCreate(['name' => 'biologiste', 'guard_name' => 'web']);
         $biologiste->syncPermissions([
+            'dashboard.voir',
             'analyses.voir',
             'analyses.valider',
             'laboratoire.gerer',

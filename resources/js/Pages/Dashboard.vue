@@ -5,9 +5,11 @@
         <!-- Header -->
         <div class="sm:flex sm:justify-between sm:items-center mb-8">
             <div class="mb-4 sm:mb-0">
-                <h1 class="text-2xl md:text-3xl text-slate-800 dark:text-slate-100 font-bold mb-1">Tableau de bord stratégique 📈</h1>
+                <h1 class="text-2xl md:text-3xl text-slate-800 dark:text-slate-100 font-bold mb-1">
+                    {{ dashboardTitle }}
+                </h1>
                 <p class="text-sm text-slate-500 dark:text-slate-400">
-                    Bienvenue, {{ $page.props.auth.user.name }}
+                    Bienvenue, {{ $page.props.auth.user.name }} ({{ $page.props.auth.user.type_name }})
                 </p>
             </div>
             <div class="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
@@ -18,25 +20,20 @@
         </div>
 
         <!-- ========================================================= -->
-        <!--  VUE SUPERADMIN / ADMIN (Stratégique SaaS)                 -->
+        <!--  VUE STRATÉGIQUE (SUPERADMIN / ADMIN)                      -->
         <!-- ========================================================= -->
-        <template v-if="['superadmin', 'admin'].includes($page.props.auth.user.type)">
-            
-            <!-- KPIs Ligne 1 -->
+        <template v-if="isAdmin">
             <div class="grid grid-cols-12 gap-6 mb-6">
                 <!-- Chiffre d'Affaire Mois -->
                 <div class="flex flex-col col-span-full sm:col-span-6 xl:col-span-4 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700">
                     <div class="px-5 pt-5 pb-4">
                         <header class="flex justify-between items-start mb-2">
                             <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-2">CA du mois</h2>
-                            <div class="flex items-center" :class="strategicData.monthlyComparison.isPositive ? 'text-emerald-500' : 'text-rose-500'">
-                                <svg v-if="strategicData.monthlyComparison.isPositive" class="w-4 h-4 fill-current mr-1" viewBox="0 0 16 16"><path d="M8 0L9.4 1.4 3.8 7H16v2H3.8l5.6 5.6L8 16 0 8z" transform="scale(1 -1) translate(-16 -16)"/></svg>
-                                <svg v-else class="w-4 h-4 fill-current mr-1" viewBox="0 0 16 16"><path d="M8 16l1.4-1.4-5.6-5.6H16V7H3.8l5.6-5.6L8 0 0 8z" /></svg>
+                            <div v-if="strategicData?.monthlyComparison" class="flex items-center" :class="strategicData.monthlyComparison.isPositive ? 'text-emerald-500' : 'text-rose-500'">
                                 <span class="text-sm font-medium">{{ Math.abs(strategicData.monthlyComparison.growthPercentage) }}%</span>
                             </div>
                         </header>
-                        <div class="text-3xl font-bold text-slate-800 dark:text-slate-100 mr-2">{{ formatN(strategicData.kpis.revenueThisMonth) }} <span class="text-sm font-medium text-slate-500">Ar</span></div>
-                        <div class="text-sm text-slate-500 dark:text-slate-400 mt-1">Comparé au mois précédent</div>
+                        <div class="text-3xl font-bold text-slate-800 dark:text-slate-100 mr-2">{{ formatN(strategicData?.kpis?.revenueThisMonth) }} <span class="text-sm font-medium text-slate-500">Ar</span></div>
                     </div>
                 </div>
 
@@ -46,8 +43,7 @@
                         <header class="flex justify-between items-start mb-2">
                             <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-2">Recettes du jour</h2>
                         </header>
-                        <div class="text-3xl font-bold text-slate-800 dark:text-slate-100 mr-2">{{ formatN(strategicData.kpis.revenueToday) }} <span class="text-sm font-medium text-slate-500">Ar</span></div>
-                        <div class="text-sm text-slate-500 dark:text-slate-400 mt-1">Total encaissé aujourd'hui</div>
+                        <div class="text-3xl font-bold text-slate-800 dark:text-slate-100 mr-2">{{ formatN(strategicData?.kpis?.revenueToday) }} <span class="text-sm font-medium text-slate-500">Ar</span></div>
                     </div>
                 </div>
 
@@ -55,63 +51,157 @@
                 <div class="flex flex-col col-span-full sm:col-span-6 xl:col-span-4 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700">
                     <div class="px-5 pt-5 pb-4">
                         <header class="flex justify-between items-start mb-2">
-                            <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-2">Impayés & Restes à payer</h2>
+                            <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-2">Impayés globaux</h2>
                         </header>
-                        <div class="text-3xl font-bold text-rose-500 mr-2">{{ formatN(strategicData.kpis.unpaidAmount) }} <span class="text-sm font-medium text-slate-500">Ar</span></div>
-                        <div class="text-sm text-slate-500 dark:text-slate-400 mt-1">Taux d'encaissement: <span class="font-bold text-slate-700 dark:text-slate-300">{{ strategicData.kpis.paymentRate }}%</span></div>
+                        <div class="text-3xl font-bold text-rose-500 mr-2">{{ formatN(strategicData?.kpis?.unpaidAmount) }} <span class="text-sm font-medium text-slate-500">Ar</span></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Graphiques Ligne 2 -->
+            <!-- Graphiques -->
             <div class="grid grid-cols-12 gap-6 mb-6">
-                <!-- Chiffre d'affaire (Line Chart) -->
-                <div class="flex flex-col col-span-full xl:col-span-8 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700">
+                <div class="col-span-full xl:col-span-8 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700">
                     <header class="px-5 py-4 border-b border-slate-100 dark:border-slate-700">
-                        <h2 class="font-semibold text-slate-800 dark:text-slate-100">Evolution du Revenu (30 derniers jours)</h2>
+                        <h2 class="font-semibold text-slate-800 dark:text-slate-100">Evolution du Revenu (30 jours)</h2>
                     </header>
-                    <div class="p-5 flex-grow">
-                        <div class="h-72">
-                            <canvas id="revenueChart"></canvas>
+                    <div class="p-5 h-72">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-span-full xl:col-span-4 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700">
+                    <header class="px-5 py-4 border-b border-slate-100 dark:border-slate-700">
+                        <h2 class="font-semibold text-slate-800 dark:text-slate-100">Encaissements du mois</h2>
+                    </header>
+                    <div class="p-5 h-64 flex justify-center">
+                        <canvas id="paymentRatioChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- ========================================================= -->
+        <!--  VUE MÉTIER : SECRÉTAIRE                                   -->
+        <!-- ========================================================= -->
+        <template v-else-if="userType === 'secretaire'">
+            <div class="grid grid-cols-12 gap-6 mb-8">
+                <div class="col-span-full sm:col-span-6 xl:col-span-3 bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-3">
+                            <em class="ni ni-users text-blue-600"></em>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-slate-400 uppercase">Nouveaux Patients (J)</div>
+                            <div class="text-2xl font-bold text-slate-800 dark:text-slate-100">{{ roleData.patients_jour || 0 }}</div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Ratio de Paiement (Doughnut) -->
-                <div class="flex flex-col col-span-full xl:col-span-4 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700">
-                    <header class="px-5 py-4 border-b border-slate-100 dark:border-slate-700">
-                        <h2 class="font-semibold text-slate-800 dark:text-slate-100">Encaissement du mois</h2>
-                    </header>
-                    <div class="p-5 flex-grow flex items-center justify-center">
-                        <div class="h-64 w-full">
-                            <canvas id="paymentRatioChart"></canvas>
+                <div class="col-span-full sm:col-span-6 xl:col-span-3 bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mr-3">
+                            <em class="ni ni-coins text-emerald-600"></em>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-slate-400 uppercase">Encaissé ce jour</div>
+                            <div class="text-2xl font-bold text-emerald-600">{{ formatN(stats.finances.recettes_jour) }} Ar</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-span-full sm:col-span-6 xl:col-span-3 bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mr-3">
+                            <em class="ni ni-wallet-out text-amber-600"></em>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-slate-400 uppercase">À encaisser (Total)</div>
+                            <div class="text-2xl font-bold text-amber-600">{{ roleData.prescriptions_a_encaisser || 0 }}</div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Graphiques Ligne 3 -->
-            <div class="grid grid-cols-12 gap-6">
-                <!-- Total Prescriptions par jour (Bar Chart) -->
-                <div class="flex flex-col col-span-full xl:col-span-6 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700">
-                    <header class="px-5 py-4 border-b border-slate-100 dark:border-slate-700">
-                        <h2 class="font-semibold text-slate-800 dark:text-slate-100">Volume Prescriptions (30 jours)</h2>
-                    </header>
-                    <div class="p-5 flex-grow">
-                        <div class="h-64">
-                            <canvas id="prescriptionsChart"></canvas>
+            <!-- Graphiques Métier Secrétaire -->
+            <div class="grid grid-cols-12 gap-6 mb-8">
+                <div class="col-span-full xl:col-span-8 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700">
+                    <header class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 font-semibold">Evolution Recettes (7j)</header>
+                    <div class="p-5 h-64"><canvas id="secrRevenueChart"></canvas></div>
+                </div>
+                <div class="col-span-full xl:col-span-4 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700">
+                    <header class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 font-semibold">Modes de paiement</header>
+                    <div class="p-5 h-64 flex justify-center"><canvas id="secrPaymentsChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Dernières prescriptions -->
+            <div class="bg-white dark:bg-slate-800 shadow-sm rounded-xl border border-slate-200 dark:border-slate-700 mb-6">
+                <header class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                    <h2 class="font-semibold text-slate-800 dark:text-slate-100">Dernières prescriptions enregistrées</h2>
+                    <Link :href="route('secretaire.prescription.index')" class="text-sm font-medium text-indigo-500 hover:text-indigo-600">Voir tout -></Link>
+                </header>
+                <div class="p-3 overflow-x-auto">
+                    <table class="table-auto w-full dark:text-slate-300">
+                        <thead class="text-xs uppercase text-slate-400 bg-slate-50 dark:bg-slate-700/20">
+                            <tr>
+                                <th class="px-2 py-3 text-left">Référence</th>
+                                <th class="px-2 py-3 text-left">Patient</th>
+                                <th class="px-2 py-3 text-left">Statut</th>
+                                <th class="px-2 py-3 text-right">Montant</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm divide-y divide-slate-100 dark:divide-slate-700">
+                            <tr v-for="p in roleData.dernieres_prescriptions" :key="p.id">
+                                <td class="px-2 py-3 font-medium text-slate-800 dark:text-slate-100">{{ p.reference }}</td>
+                                <td class="px-2 py-3">{{ p.patient?.nom }} {{ p.patient?.prenom }}</td>
+                                <td class="px-2 py-3">
+                                    <span :class="p.is_paid ? 'text-emerald-500' : 'text-amber-500'">{{ p.is_paid ? 'Payé' : 'Impayé' }}</span>
+                                </td>
+                                <td class="px-2 py-3 text-right font-bold">{{ formatN(p.montant_total) }} Ar</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </template>
+
+        <!-- ========================================================= -->
+        <!--  VUE MÉTIER : TECHNICIEN                                   -->
+        <!-- ========================================================= -->
+        <template v-else-if="userType === 'technicien'">
+            <div class="grid grid-cols-12 gap-6 mb-8">
+                <div class="col-span-full sm:col-span-6 xl:col-span-4 bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center mr-3">
+                            <em class="ni ni-alert text-rose-600"></em>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-slate-400 uppercase">Urgences à traiter</div>
+                            <div class="text-2xl font-bold text-rose-600">{{ roleData.analyses_urgentes || 0 }}</div>
                         </div>
                     </div>
                 </div>
+                <div class="col-span-full sm:col-span-6 xl:col-span-4 bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mr-3">
+                            <em class="ni ni-flask text-indigo-600"></em>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-slate-400 uppercase">Analyses en attente</div>
+                            <div class="text-2xl font-bold text-indigo-600">{{ roleData.analyses_a_faire || 0 }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                <!-- Top 5 analyses (Pie Chart) -->
-                <div class="flex flex-col col-span-full xl:col-span-6 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700">
-                    <header class="px-5 py-4 border-b border-slate-100 dark:border-slate-700">
-                        <h2 class="font-semibold text-slate-800 dark:text-slate-100">Analyses les plus demandées (Mois)</h2>
-                    </header>
-                    <div class="p-5 flex-grow flex items-center justify-center">
-                        <div class="h-64 w-full">
-                            <canvas id="topAnalysesChart"></canvas>
+            <div class="grid grid-cols-12 gap-6 mb-8">
+                <div class="col-span-full xl:col-span-8 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700">
+                    <header class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 font-semibold">Analyses traitées (7j)</header>
+                    <div class="p-5 h-64"><canvas id="techCompletionChart"></canvas></div>
+                </div>
+                <div class="col-span-full xl:col-span-4 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700">
+                    <header class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 font-semibold">Charge par type d'examen</header>
+                    <div class="p-5 overflow-y-auto max-h-64 space-y-3">
+                        <div v-for="t in roleData.examens_par_type" :key="t.nom" class="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-700/30 rounded">
+                            <span class="text-sm font-medium">{{ t.nom }}</span>
+                            <span class="px-2 py-1 bg-indigo-500 text-white text-xs rounded-full">{{ t.total }}</span>
                         </div>
                     </div>
                 </div>
@@ -119,262 +209,232 @@
         </template>
 
         <!-- ========================================================= -->
-        <!--  AUTRES VUES DE BASE (Secrétaire / Technicien / Bio)       -->
+        <!--  VUE MÉTIER : BIOLOGISTE                                   -->
         <!-- ========================================================= -->
-        <template v-else>
-            <!-- Ligne 1: Résumé Synthétique Simple -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <!-- Box 1 -->
-                <div v-if="['secretaire'].includes($page.props.auth.user.type)" class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-                    <div class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Prescriptions du jour</div>
-                    <div class="text-3xl font-bold text-slate-800 dark:text-slate-100">{{ stats.finances.nb_paiements || 0 }}</div>
+        <template v-else-if="userType === 'biologiste'">
+            <div class="grid grid-cols-12 gap-6 mb-8">
+                <div class="col-span-full sm:col-span-6 xl:col-span-4 bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center text-amber-600">
+                        <em class="ni ni-check-circle-fill text-2xl mr-3"></em>
+                        <div>
+                            <div class="text-xs font-semibold uppercase">Analyses à valider</div>
+                            <div class="text-3xl font-bold">{{ roleData.a_valider || 0 }}</div>
+                        </div>
+                    </div>
                 </div>
-
-                <div v-if="['secretaire'].includes($page.props.auth.user.type)" class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-                    <div class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Recettes du jour</div>
-                    <div class="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{{ formatN(stats.finances.recettes_jour) }} Ar</div>
+                <div class="col-span-full sm:col-span-6 xl:col-span-4 bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center text-rose-600">
+                        <em class="ni ni-activity-round text-2xl mr-3"></em>
+                        <div>
+                            <div class="text-xs font-semibold uppercase">Pathologiques</div>
+                            <div class="text-3xl font-bold">{{ stats.analyses.pathologiques || 0 }}</div>
+                        </div>
+                    </div>
                 </div>
+            </div>
 
-                <div v-if="['technicien', 'biologiste'].includes($page.props.auth.user.type)" class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-                    <div class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Analyses Terminées</div>
-                    <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{{ stats.analyses.terminees || 0 }}</div>
+            <div class="grid grid-cols-12 gap-6 mb-8">
+                <div class="col-span-full sm:col-span-6 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700">
+                    <header class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 font-semibold text-rose-600">Alertes Pathologiques (Priorité)</header>
+                    <div class="p-4 overflow-y-auto max-h-72">
+                        <ul class="space-y-3">
+                            <li v-for="res in roleData.pathologiques_recente" :key="res.id" class="p-3 bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/30 rounded-lg flex justify-between items-center">
+                                <div>
+                                    <div class="font-bold text-slate-800 dark:text-slate-100">{{ res.analyse?.designation }}</div>
+                                    <div class="text-xs text-slate-500">Patient: {{ res.prescription?.patient?.nom }}</div>
+                                </div>
+                                <Link :href="route('biologiste.prescription.show', res.prescription_id)" class="text-xs bg-rose-600 text-white px-3 py-1 rounded">Valider</Link>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
-
-                <div v-if="['technicien', 'biologiste'].includes($page.props.auth.user.type)" class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-                    <div class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">En attente / En Cours</div>
-                    <div class="text-3xl font-bold text-amber-500">{{ (stats.analyses.en_attente || 0) + (stats.analyses.en_cours || 0) }}</div>
+                <div class="col-span-full sm:col-span-6 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700">
+                    <header class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 font-semibold">Taux de Pathologie Global</header>
+                    <div class="p-5 h-64 flex justify-center"><canvas id="bioPathoChart"></canvas></div>
                 </div>
+            </div>
+        </template>
 
-                <div v-if="['biologiste'].includes($page.props.auth.user.type)" class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-                    <div class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Validées</div>
-                    <div class="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{{ stats.analyses.valides || 0 }}</div>
+        <!-- ========================================================= -->
+        <!--  JOURNAL D'ACTIVITÉS ENRICHI (Filtres & Recherche)         -->
+        <!-- ========================================================= -->
+        <div class="mt-12 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <header class="px-6 py-5 border-b border-slate-100 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center mr-3 shadow-indigo-200 shadow-lg">
+                        <em class="ni ni-history text-white"></em>
+                    </div>
+                    <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100">Journal d'activités</h2>
                 </div>
                 
-                <div v-if="['technicien', 'biologiste'].includes($page.props.auth.user.type)" class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-                    <div class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Pathologiques</div>
-                    <div class="text-3xl font-bold text-rose-500">{{ stats.analyses.pathologiques || 0 }}</div>
+                <!-- Filtres -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="relative">
+                        <input v-model="filterForm.search" type="text" placeholder="Rechercher..." 
+                               class="text-xs border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-lg pl-8 focus:ring-indigo-500 w-48">
+                        <em class="ni ni-search absolute left-2.5 top-2.5 text-slate-400"></em>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input v-model="filterForm.date_from" type="date" class="text-xs border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-lg focus:ring-indigo-500">
+                        <span class="text-slate-400">à</span>
+                        <input v-model="filterForm.date_to" type="date" class="text-xs border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-lg focus:ring-indigo-500">
+                    </div>
+                    <button @click="applyFilters" class="px-3 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-all">Filtrer</button>
+                    <button @click="resetFilters" class="px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold rounded-lg hover:bg-slate-200">Réinitialiser</button>
                 </div>
-            </div>
+            </header>
 
-            <!-- Activités récentes générales (Style Timeline) -->
-            <div class="bg-white dark:bg-slate-800 shadow-sm rounded-xl border border-slate-200 dark:border-slate-700">
-                <header class="px-5 py-4 border-b border-slate-100 dark:border-slate-700">
-                    <h2 class="font-semibold text-slate-800 dark:text-slate-100">Activités récentes</h2>
-                </header>
-                <div class="p-3">
-                    <ul class="my-1">
-                        <li v-for="(act, idx) in stats.activites" :key="idx" class="flex px-2 py-3 border-b border-slate-100 dark:border-slate-700 last:border-0 last:pb-1">
-                            <div class="w-9 h-9 rounded-full shrink-0 flex items-center justify-center mr-3"
-                                 :class="{
-                                     'bg-indigo-100 text-indigo-500 dark:bg-indigo-500/20': act.color === 'indigo',
-                                     'bg-emerald-100 text-emerald-500 dark:bg-emerald-500/20': act.color === 'green',
-                                     'bg-amber-100 text-amber-500 dark:bg-amber-500/20': act.color === 'yellow',
-                                     'bg-blue-100 text-blue-500 dark:bg-blue-500/20': act.color === 'blue'
-                                 }">
-                                <svg v-if="act.type==='patient'" class="w-4 h-4 fill-current" viewBox="0 0 16 16"><path d="M8 0C3.6 0 0 3.6 0 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zm0 14c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6zm0-11c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5z"/></svg>
-                                <svg v-else-if="act.type==='paiement'" class="w-4 h-4 fill-current" viewBox="0 0 16 16"><path d="M15 4c-.6 0-1 .4-1 1v6c0 .6.4 1 1 1s1-.4 1-1V5c0-.6-.4-1-1-1zm-3 0H4c-.6 0-1 .4-1 1v6c0 .6.4 1 1 1h8c.6 0 1-.4 1-1V5c0-.6-.4-1-1-1zM2 5H1c-.6 0-1 .4-1 1v4c0 .6.4 1 1 1h1c.6 0 1-.4 1-1V6c0-.6-.4-1-1-1z"/></svg>
-                                <svg v-else class="w-4 h-4 fill-current" viewBox="0 0 16 16"><path d="M8 0C3.6 0 0 3.6 0 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zm0 14c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6z"/></svg>
-                            </div>
-                            <div class="grow flex items-center text-sm">
-                                <span class="text-slate-800 dark:text-slate-200 font-medium">{{ act.message }}</span>
-                            </div>
-                            <div class="shrink-0 text-sm text-slate-500 flex items-center ml-2">{{ act.time }}</div>
-                        </li>
-                        <li v-if="!stats.activites || stats.activites.length === 0" class="p-6 text-center text-slate-500">
-                            Aucune activité récente.
-                        </li>
-                    </ul>
+            <div class="p-0">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
+                            <tr v-for="(act, idx) in stats.activites" :key="idx" class="hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap w-10">
+                                    <div class="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm"
+                                         :class="{
+                                             'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20': act.color === 'indigo' || act.color === 'blue',
+                                             'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20': act.color === 'green',
+                                             'bg-amber-100 text-amber-600 dark:bg-amber-500/20': act.color === 'yellow',
+                                             'bg-rose-100 text-rose-600 dark:bg-rose-500/20': act.color === 'red'
+                                         }">
+                                        <em v-if="act.type==='patient'" class="ni ni-user-add"></em>
+                                        <em v-else-if="act.type==='paiement'" class="ni ni-wallet-in"></em>
+                                        <em v-else-if="act.type==='validation'" class="ni ni-check-circle"></em>
+                                        <em v-else class="ni ni-activity"></em>
+                                    </div>
+                                </td>
+                                <td class="px-2 py-4">
+                                    <div class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ act.message }}</div>
+                                    <div v-if="act.author" class="text-xs text-slate-400 mt-0.5">Par : <span class="text-indigo-500 font-medium">{{ act.author }}</span></div>
+                                </td>
+                                <td class="px-6 py-4 text-right whitespace-nowrap">
+                                    <div class="text-xs font-bold text-slate-500 dark:text-slate-400">{{ act.time }}</div>
+                                    <div class="text-[10px] text-slate-300 dark:text-slate-600 uppercase tracking-tighter">{{ act.type }}</div>
+                                </td>
+                            </tr>
+                            <tr v-if="!stats.activites || stats.activites.length === 0">
+                                <td colspan="3" class="px-6 py-12 text-center text-slate-400">
+                                    <div class="flex flex-col items-center">
+                                        <em class="ni ni-inbox text-4xl mb-2 opacity-20"></em>
+                                        <p>Aucune activité trouvée pour ces critères.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        </template>
+        </div>
     </div>
 </AppLayout>
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted } from 'vue';
-import { usePage } from '@inertiajs/vue3';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { usePage, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Chart from 'chart.js/auto';
 
 const props = defineProps({
     stats: Object,
+    roleData: Object,
     strategicData: Object,
+    filters: Object,
 });
 
 const page = usePage();
 const userType = computed(() => page.props.auth.user.type);
+const isAdmin = computed(() => ['superadmin', 'admin'].includes(userType.value));
+
+const filterForm = ref({
+    search: props.filters?.search || '',
+    date_from: props.filters?.date_from || '',
+    date_to: props.filters?.date_to || '',
+});
+
+const applyFilters = () => {
+    router.get(route('dashboard'), filterForm.value, {
+        preserveState: true,
+        preserveScroll: true,
+        only: ['stats'],
+    });
+};
+
+const resetFilters = () => {
+    filterForm.value = { search: '', date_from: '', date_to: '' };
+    applyFilters();
+};
+
+const dashboardTitle = computed(() => {
+    if (isAdmin.value) return 'Tableau de bord stratégique 📈';
+    if (userType.value === 'secretaire') return 'Espace Secrétariat 📁';
+    if (userType.value === 'technicien') return 'Espace Technique 🔬';
+    if (userType.value === 'biologiste') return 'Espace Biologiste 🧬';
+    return 'Tableau de bord';
+});
 
 const currentDate = computed(() => {
     const now = new Date();
-    const day = String(now.getDate()).padStart(2, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const year = now.getFullYear();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    return `${day}/${month}/${year} à ${hours}:${minutes}`;
+    return now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 });
 
 const formatN = (n) => Number(n || 0).toLocaleString('fr-FR');
 
-let revenueChartInstance = null;
-let prescriptionsChartInstance = null;
-let topAnalysesChartInstance = null;
-let paymentRatioChartInstance = null;
+const chartInstances = [];
+
+const createChart = (id, type, data, options = {}) => {
+    const ctx = document.getElementById(id);
+    if (!ctx) return null;
+    const chart = new Chart(ctx, { type, data, options: { maintainAspectRatio: false, ...options } });
+    chartInstances.push(chart);
+    return chart;
+};
 
 const renderCharts = () => {
-    if (!['superadmin', 'admin'].includes(userType.value) || !props.strategicData) {
-        return;
-    }
-
-    const tailwindColors = {
-        indigo500: '#6366f1',
-        sky500: '#0ea5e9',
-        emerald500: '#10b981',
-        rose500: '#f43f5e',
-        amber500: '#f59e0b',
-        slate200: '#e2e8f0',
-        slate700: '#334155',
-        slate600: '#475569',
-        transparent: 'transparent'
+    const darkMode = document.documentElement.classList.contains('dark');
+    const colors = {
+        indigo: '#6366f1', sky: '#0ea5e9', emerald: '#10b981', rose: '#f43f5e', amber: '#f59e0b',
+        grid: darkMode ? '#334155' : '#e2e8f0', ticks: '#475569'
     };
 
-    const darkMode = document.documentElement.classList.contains('dark');
-    const gridColor = darkMode ? tailwindColors.slate700 : tailwindColors.slate200;
-    const ticksColor = darkMode ? tailwindColors.slate600 : tailwindColors.slate600;
+    if (isAdmin.value && props.strategicData) {
+        createChart('revenueChart', 'line', {
+            labels: props.strategicData.revenueLast30Days.labels,
+            datasets: [{ label: 'Revenu', data: props.strategicData.revenueLast30Days.series, borderColor: colors.indigo, backgroundColor: 'rgba(99, 102, 241, 0.1)', fill: true, tension: 0.3 }]
+        }, { plugins: { legend: { display: false } } });
 
-    // 1. Revenue Line Chart
-    const revCtx = document.getElementById('revenueChart');
-    if (revCtx) {
-        if(revenueChartInstance) revenueChartInstance.destroy();
-        revenueChartInstance = new Chart(revCtx, {
-            type: 'line',
-            data: {
-                labels: props.strategicData.revenueLast30Days.labels,
-                datasets: [{
-                    label: 'Revenu (Ar)',
-                    data: props.strategicData.revenueLast30Days.series,
-                    borderColor: tailwindColors.indigo500,
-                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.3,
-                    fill: true,
-                    pointRadius: 0,
-                    pointHoverRadius: 4,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: ticksColor } },
-                    x: { grid: { display: false }, ticks: { color: ticksColor } }
-                }
-            }
+        createChart('paymentRatioChart', 'doughnut', {
+            labels: props.strategicData.paymentRatio.labels,
+            datasets: [{ data: props.strategicData.paymentRatio.series, backgroundColor: [colors.emerald, colors.rose] }]
+        }, { cutout: '70%', plugins: { legend: { position: 'bottom' } } });
+    }
+
+    if (userType.value === 'secretaire' && props.roleData) {
+        createChart('secrRevenueChart', 'line', {
+            labels: props.roleData.revenue_trend.labels.slice(-7),
+            datasets: [{ label: 'Encaissements', data: props.roleData.revenue_trend.series.slice(-7), borderColor: colors.emerald, backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.3 }]
+        });
+        createChart('secrPaymentsChart', 'pie', {
+            labels: props.roleData.payment_methods_chart.labels,
+            datasets: [{ data: props.roleData.payment_methods_chart.series, backgroundColor: [colors.indigo, colors.sky, colors.amber, colors.emerald] }]
         });
     }
 
-    // 2. Prescriptions Bar Chart
-    const presCtx = document.getElementById('prescriptionsChart');
-    if (presCtx) {
-        if(prescriptionsChartInstance) prescriptionsChartInstance.destroy();
-        prescriptionsChartInstance = new Chart(presCtx, {
-            type: 'bar',
-            data: {
-                labels: props.strategicData.prescriptionsLast30Days.labels,
-                datasets: [{
-                    label: 'Prescriptions',
-                    data: props.strategicData.prescriptionsLast30Days.series,
-                    backgroundColor: tailwindColors.sky500,
-                    borderRadius: 4,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: ticksColor } },
-                    x: { grid: { display: false }, ticks: { color: ticksColor } }
-                }
-            }
+    if (userType.value === 'technicien' && props.roleData) {
+        createChart('techCompletionChart', 'bar', {
+            labels: props.roleData.completion_trend.labels,
+            datasets: [{ label: 'Analyses traitées', data: props.roleData.completion_trend.series, backgroundColor: colors.sky, borderRadius: 4 }]
         });
     }
 
-    // 3. Top Analyses Pie Chart
-    const topCtx = document.getElementById('topAnalysesChart');
-    if (topCtx) {
-        if(topAnalysesChartInstance) topAnalysesChartInstance.destroy();
-        topAnalysesChartInstance = new Chart(topCtx, {
-            type: 'pie',
-            data: {
-                labels: props.strategicData.topAnalyses.labels,
-                datasets: [{
-                    data: props.strategicData.topAnalyses.series,
-                    backgroundColor: [
-                        tailwindColors.indigo500,
-                        tailwindColors.sky500,
-                        tailwindColors.emerald500,
-                        tailwindColors.amber500,
-                        tailwindColors.rose500
-                    ],
-                    borderWidth: darkMode ? 2 : 1,
-                    borderColor: darkMode ? '#1e293b' : '#ffffff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: { color: ticksColor }
-                    }
-                }
-            }
-        });
-    }
-
-    // 4. Payment Ratio Doughnut
-    const payCtx = document.getElementById('paymentRatioChart');
-    if (payCtx) {
-        if(paymentRatioChartInstance) paymentRatioChartInstance.destroy();
-        paymentRatioChartInstance = new Chart(payCtx, {
-            type: 'doughnut',
-            data: {
-                labels: props.strategicData.paymentRatio.labels,
-                datasets: [{
-                    data: props.strategicData.paymentRatio.series,
-                    backgroundColor: [tailwindColors.emerald500, tailwindColors.rose500],
-                    borderWidth: darkMode ? 2 : 1,
-                    borderColor: darkMode ? '#1e293b' : '#ffffff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '70%',
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { color: ticksColor }
-                    }
-                }
-            }
+    if (userType.value === 'biologiste' && props.roleData) {
+        createChart('bioPathoChart', 'doughnut', {
+            labels: props.roleData.pathology_ratio.labels,
+            datasets: [{ data: props.roleData.pathology_ratio.series, backgroundColor: [colors.indigo, colors.rose] }]
         });
     }
 };
 
-onMounted(() => {
-    // Render chart immediately
-    renderCharts();
-});
-
-onUnmounted(() => {
-    if(revenueChartInstance) revenueChartInstance.destroy();
-    if(prescriptionsChartInstance) prescriptionsChartInstance.destroy();
-    if(topAnalysesChartInstance) topAnalysesChartInstance.destroy();
-    if(paymentRatioChartInstance) paymentRatioChartInstance.destroy();
-});
+onMounted(() => { setTimeout(renderCharts, 100); });
+onUnmounted(() => { chartInstances.forEach(c => c.destroy()); });
 </script>

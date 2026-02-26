@@ -30,11 +30,14 @@ class EnsureFeatureEnabled
             return redirect()->route('login');
         }
 
-        // 2. Superadmins *could* bypass this, but for testing UI/UX we might want them to experience
-        //    the same restrictions if they are attached to a specific client.
-        //    For now, we enforce strictly based on the client_id attached to the user.
+        // 2. Superadmins bypass all feature restrictions
+        if ($user->type === 'superadmin') {
+            return $next($request);
+        }
+
+        // 3. Others are checked strictly based on the client_id attached to the user.
         if (! $this->featureService->isEnabledForCurrentUser($featureKey)) {
-            
+
             // Handle XHR / JSON requests
             if ($request->wantsJson()) {
                 return response()->json(['message' => 'Fonctionnalité Premium requise.'], 403);

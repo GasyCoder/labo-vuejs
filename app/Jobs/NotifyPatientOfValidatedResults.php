@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Prescription;
+use App\Services\FeatureService;
 use App\Services\NotificationService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -27,8 +28,21 @@ class NotifyPatientOfValidatedResults implements ShouldQueue
      */
     public function handle(NotificationService $notificationService): void
     {
-        $this->prescription->loadMissing('patient');
+        $this->prescription->loadMissing(['patient', 'secretaire']);
         $patient = $this->prescription->patient;
+        $secretaire = $this->prescription->secretaire;
+
+        $clientId = $secretaire?->client_id;
+
+        // Check if the premium feature is enabled for the client
+        if (! app(FeatureService::class)->isEnabled($clientId, 'notifications_sms_email_validated')) {
+            Log::info('NotifyPatientOfValidatedResults: Premium feature "notifications_sms_email_validated" is disabled for this client.', [
+                'prescription_id' => $this->prescription->id,
+                'client_id' => $clientId,
+            ]);
+
+            return;
+        }
 
         if (! $patient) {
             Log::warning('NotifyPatientOfValidatedResults: Prescription sans patient.', ['prescription_id' => $this->prescription->id]);

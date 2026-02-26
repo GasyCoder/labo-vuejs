@@ -303,6 +303,7 @@ const props = defineProps({
     patientsNouveaux: Number,
     patientsFideles: Number,
     patientsVip: Number,
+    permissions: Object,
 });
 
 const form = ref({

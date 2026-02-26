@@ -13,6 +13,11 @@ class RoleRedirectMiddleware
         if (Auth::check() && $request->route()->getName() === 'dashboard') {
             $user = Auth::user();
 
+            // Si l'utilisateur a la permission explicite de voir le dashboard, on le laisse passer
+            if ($user->hasPermission('dashboard.voir')) {
+                return $next($request);
+            }
+
             if ($user->hasRole('biologiste')) {
                 return redirect()->route('biologiste.analyse.index');
             }

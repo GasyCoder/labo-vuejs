@@ -33,6 +33,12 @@ Route::redirect('/register', '/login')->name('register.redirect');
 Route::get('/', function () {
     if (Auth::check()) {
         $user = Auth::user();
+
+        // Si l'utilisateur a la permission dashboard, on l'envoie là-bas
+        if ($user->hasPermission('dashboard.voir')) {
+            return redirect()->route('dashboard');
+        }
+
         if ($user->hasRole('biologiste')) {
             return redirect()->route('biologiste.analyse.index');
         }
@@ -103,7 +109,9 @@ Route::middleware(['auth', 'verified', 'role:secretaire,superadmin,admin'])->pre
         Route::get('patients/{patient}', 'show')->name('patient.detail');
         Route::put('patients/{patient}', 'update')->name('patient.update');
         Route::delete('patients/{patient}', 'destroy')->name('patient.destroy');
-        Route::post('prescriptions/{prescription}/send-invoice', 'sendInvoice')->name('patient.send-invoice');
+        Route::post('prescriptions/{prescription}/send-invoice', 'sendInvoice')
+            ->name('patient.send-invoice')
+            ->middleware('feature:patient_invoice_email');
     });
     Route::controller(\App\Http\Controllers\Secretaire\PrescripteurController::class)->group(function () {
         Route::get('prescripteurs', 'index')->name('prescripteurs.index');
@@ -138,10 +146,12 @@ Route::middleware(['auth', 'verified', 'role:secretaire,superadmin,admin'])->pre
     });
 
     // Notifications
-    Route::controller(\App\Http\Controllers\Secretaire\NotificationController::class)->group(function () {
-        Route::post('/prescriptions/{prescription}/sms', 'sendSms')->name('prescription.send-sms');
-        Route::post('/prescriptions/{prescription}/email', 'sendEmail')->name('prescription.send-email');
-    });
+    Route::controller(\App\Http\Controllers\Secretaire\NotificationController::class)
+        ->middleware('feature:notifications_sms_email_validated')
+        ->group(function () {
+            Route::post('/prescriptions/{prescription}/sms', 'sendSms')->name('prescription.send-sms');
+            Route::post('/prescriptions/{prescription}/email', 'sendEmail')->name('prescription.send-email');
+        });
 });
 
 // ============================================ Résultats PDF prescriptions

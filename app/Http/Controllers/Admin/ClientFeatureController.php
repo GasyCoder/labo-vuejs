@@ -22,10 +22,20 @@ class ClientFeatureController extends Controller
      */
     public function index()
     {
-        $clients = Client::withCount('users')->get();
+        $clients = Client::withCount('users')->with('features')->get();
+
+        $clients->transform(function ($client) {
+            $client->enabled_features = $client->features
+                ->where('is_enabled', true)
+                ->pluck('feature_key')
+                ->toArray();
+
+            return $client;
+        });
 
         return Inertia::render('Admin/Features/Index', [
             'clients' => $clients,
+            'availableFeatures' => config('features.list', []),
         ]);
     }
 
@@ -69,7 +79,6 @@ class ClientFeatureController extends Controller
             $this->featureService->setEnabled($client->id, $featureData['key'], $featureData['is_enabled']);
         }
 
-        return redirect()->route('admin.features.index')
-            ->with('success', "Les fonctionnalités Premium du client {$client->name} ont été mises à jour.");
+        return back()->with('success', 'Configuration mise à jour avec succès.');
     }
 }

@@ -50,8 +50,20 @@ class HandleInertiaRequests extends Middleware
             ],
             'enabledFeatures' => function () use ($request) {
                 if ($request->user()) {
+                    // Superadmins get all features
+                    if ($request->user()->type === 'superadmin') {
+                        $registeredFeatures = config('features.list', []);
+                        $result = [];
+                        foreach ($registeredFeatures as $key => $config) {
+                            $result[$key] = true;
+                        }
+
+                        return $result;
+                    }
+
                     return app(\App\Services\FeatureService::class)->getAllForCurrentUser();
                 }
+
                 return [];
             },
             'flash' => [

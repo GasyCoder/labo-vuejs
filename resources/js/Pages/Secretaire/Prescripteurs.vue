@@ -98,7 +98,7 @@
                     </button>
 
                     <button 
-                        v-if="canManagePrescripteurs"
+                        v-if="canCreatePrescripteurs"
                         @click="openPrescripteurModal()"
                         class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 border border-transparent rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                     >
@@ -257,7 +257,7 @@
                                             </svg>
                                         </button>
                                         
-                                        <template v-if="canManagePrescripteurs">
+                                        <template v-if="canEditPrescripteurs">
                                             <button 
                                                 @click="openPrescripteurModal(prescripteur)"
                                                 class="p-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors" 
@@ -285,17 +285,18 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                 </svg>
                                             </button>
-
-                                            <button 
-                                                @click="confirmDelete(prescripteur)"
-                                                class="p-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors" 
-                                                title="Supprimer"
-                                            >
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                                </svg>
-                                            </button>
                                         </template>
+
+                                        <button 
+                                            v-if="canDeletePrescripteurs"
+                                            @click="confirmDelete(prescripteur)"
+                                            class="p-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors" 
+                                            title="Supprimer"
+                                        >
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -381,12 +382,16 @@ const props = defineProps({
 
 const page = usePage();
 // Permission check using Spatie permissions shared via HandleInertiaRequests
-const canManagePrescripteurs = computed(() => {
-    const user = page.props.auth.user;
-    if (!user) return false;
-    if (user.isAdmin) return true;
-    const perms = user.permissions || [];
-    return perms.includes('prescripteurs.gerer');
+const canCreatePrescripteurs = computed(() => {
+    return page.props.permissions?.canCreate;
+});
+
+const canEditPrescripteurs = computed(() => {
+    return page.props.permissions?.canEdit;
+});
+
+const canDeletePrescripteurs = computed(() => {
+    return page.props.permissions?.canDelete;
 });
 
 const form = ref({

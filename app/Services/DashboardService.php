@@ -46,10 +46,10 @@ class DashboardService
             ->whereIn('p.status', ['EN_ATTENTE', 'EN_COURS', 'A_REFAIRE'])
             ->whereNotExists(function ($query) {
                 $query->select(DB::raw(1))
-                      ->from('resultats as r')
-                      ->whereColumn('r.prescription_id', 'pa.prescription_id')
-                      ->whereColumn('r.analyse_id', 'pa.analyse_id')
-                      ->whereNotNull('r.valeur');
+                    ->from('resultats as r')
+                    ->whereColumn('r.prescription_id', 'pa.prescription_id')
+                    ->whereColumn('r.analyse_id', 'pa.analyse_id')
+                    ->whereNotNull('r.valeur');
             })
             ->count();
 
@@ -164,7 +164,7 @@ class DashboardService
         $monthlyPrescriptions = Prescription::with(['analyses.parent', 'tubes'])
             ->where('created_at', '>=', $startOfMonth)
             ->get();
-            
+
         $expectedQueryMonth = $monthlyPrescriptions->sum(function ($p) {
             return $p->montant_total;
         });
@@ -174,7 +174,7 @@ class DashboardService
 
         return [
             'labels' => ['Payé', 'Reste à payer'],
-            'series' => [(float)$totalPaidMonth, (float)$unpaidMonth],
+            'series' => [(float) $totalPaidMonth, (float) $unpaidMonth],
         ];
     }
 
@@ -202,6 +202,60 @@ class DashboardService
             'revenueLastMonth' => $revenueLastMonth,
             'growthPercentage' => round($growth, 2),
             'isPositive' => $growth >= 0,
+        ];
+    }
+
+    /**
+     * Secretary: Payment methods distribution (Pie chart)
+     */
+    public function getPaymentMethodsStats()
+    {
+        $data = DB::table('paiements')
+            ->join('payment_methods', 'paiements.payment_method_id', '=', 'payment_methods.id')
+            ->select('payment_methods.label', DB::raw('COUNT(*) as count'))
+            ->whereNull('paiements.deleted_at')
+            ->groupBy('payment_methods.label')
+            ->get();
+
+        return [
+            'labels' => $data->pluck('label'),
+            'series' => $data->pluck('count'),
+        ];
+    }
+
+    /**
+     * Technician: Analysis completion trend (last 7 days)
+     */
+    public function getAnalysisCompletionTrend()
+    {
+        $days = [];
+        $series = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = Carbon::today()->subDays($i);
+            $days[] = $date->format('d/m');
+            $series[] = Prescription::whereDate('updated_at', $date)
+                ->whereIn('status', ['TERMINE', 'VALIDE'])
+                ->count();
+        }
+
+        return [
+            'labels' => $days,
+            'series' => $series,
+        ];
+    }
+
+    /**
+     * Biologist: Pathology Ratio
+     */
+    public function getPathologyRatio()
+    {
+        $total = \App\Models\Resultat::count();
+        $patho = \App\Models\Resultat::where('interpretation', 'PATHOLOGIQUE')->count();
+        $normal = max(0, $total - $patho);
+
+        return [
+            'labels' => ['Normal', 'Pathologique'],
+            'series' => [$normal, $patho],
         ];
     }
 }

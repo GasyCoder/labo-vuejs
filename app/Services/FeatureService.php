@@ -23,7 +23,7 @@ class FeatureService
      */
     public function isEnabled(?int $clientId, string $featureKey): bool
     {
-        // If there's no client ID (e.g. system command or superadmin without client), 
+        // If there's no client ID (e.g. system command or superadmin without client),
         // we might deny by default, but typically users belong to a client now.
         if (! $clientId) {
             return false;
@@ -39,7 +39,7 @@ class FeatureService
      */
     public function getAllForClient(int $clientId): array
     {
-        $cacheKey = self::CACHE_PREFIX . $clientId;
+        $cacheKey = self::CACHE_PREFIX.$clientId;
 
         return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($clientId) {
             $toggles = ClientFeature::where('client_id', $clientId)->pluck('is_enabled', 'feature_key')->toArray();
@@ -88,7 +88,22 @@ class FeatureService
     public function getAllForCurrentUser(): array
     {
         $user = auth()->user();
-        if (! $user || ! $user->client_id) {
+        if (! $user) {
+            return [];
+        }
+
+        // Superadmins see everything as enabled
+        if ($user->type === 'superadmin') {
+            $registeredFeatures = config('features.list', []);
+            $result = [];
+            foreach ($registeredFeatures as $key => $config) {
+                $result[$key] = true;
+            }
+
+            return $result;
+        }
+
+        if (! $user->client_id) {
             return [];
         }
 
@@ -100,6 +115,6 @@ class FeatureService
      */
     public function clearCache(int $clientId): void
     {
-        Cache::forget(self::CACHE_PREFIX . $clientId);
+        Cache::forget(self::CACHE_PREFIX.$clientId);
     }
 }
