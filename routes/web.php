@@ -1,12 +1,13 @@
 <?php
 
+use App\Http\Controllers\Admin\ClientFeatureController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\PrescriptionTrackingController;
 use App\Http\Controllers\Admin\ApiSettingController;
-use App\Http\Controllers\Admin\PermissionController;
-use App\Http\Controllers\Admin\PrescriptionExportController;
-use App\Http\Controllers\Admin\SettingController;
-use App\Http\Controllers\Admin\TracePatientController;
-use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Biologiste\PrescriptionPdfController;
+use App\Http\Controllers\ArchivesController;
+use App\Http\Controllers\Biologiste\BiologisteController;
+use App\Http\Controllers\JournalCaisseController;
+use App\Http\Controllers\JournalDecaissementController;
 use App\Http\Controllers\Laboratoire\AnalyseController;
 use App\Http\Controllers\Laboratoire\AntibiotiqueController;
 use App\Http\Controllers\Laboratoire\BacterieController;
@@ -14,11 +15,22 @@ use App\Http\Controllers\Laboratoire\BacterieFamilleController;
 use App\Http\Controllers\Laboratoire\ExamenController;
 use App\Http\Controllers\Laboratoire\PrelevementController;
 use App\Http\Controllers\Laboratoire\TypeController;
+use App\Http\Controllers\Secretaire\PatientController;
+use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Secretaire\PrescriptionController;
+use App\Http\Controllers\Admin\PrescriptionExportController;
+use App\Http\Controllers\Biologiste\PrescriptionPdfController;
 use App\Http\Controllers\PrescriptionWorkspaceController;
 use App\Http\Controllers\ResultatController;
 use App\Http\Controllers\RoleWorklistController;
-use App\Http\Controllers\Secretaire\PatientController;
-use App\Http\Controllers\Secretaire\PrescriptionController;
+use App\Http\Controllers\Secretaire\NotificationController;
+use App\Http\Controllers\Secretaire\PaiementController;
+use App\Http\Controllers\Secretaire\PrescripteurController;
+use App\Http\Controllers\Secretaire\Tubes\GestionEtiquettesController;
+use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Technicien\TechnicienController;
+use App\Http\Controllers\Admin\TracePatientController;
+use App\Http\Controllers\Admin\UserController;
 use App\Models\Prescription;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Illuminate\Support\Facades\Auth;
@@ -60,17 +72,17 @@ Route::get('/', function () {
 // ============================================
 Route::middleware(['auth', 'verified', 'role.redirect'])->group(function () {
     // Dashboard principal
-    Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Suivi Opérationnel des Prescriptions (Gated by Premium Feature)
     Route::middleware('feature:prescriptions_tracking')
-        ->get('/prescriptions-tracking', [\App\Http\Controllers\Admin\PrescriptionTrackingController::class, 'index'])
+        ->get('/prescriptions-tracking', [PrescriptionTrackingController::class, 'index'])
         ->name('admin.prescriptions-tracking.index');
 
     // Archives
-    Route::get('/archives', [\App\Http\Controllers\ArchivesController::class, 'index'])->name('archives');
-    Route::post('/archives/{prescription}/unarchive', [\App\Http\Controllers\ArchivesController::class, 'unarchive'])->name('archives.unarchive');
-    Route::delete('/archives/{prescription}', [\App\Http\Controllers\ArchivesController::class, 'permanentDelete'])->name('archives.destroy');
+    Route::get('/archives', [ArchivesController::class, 'index'])->name('archives');
+    Route::post('/archives/{prescription}/unarchive', [ArchivesController::class, 'unarchive'])->name('archives.unarchive');
+    Route::delete('/archives/{prescription}', [ArchivesController::class, 'permanentDelete'])->name('archives.destroy');
 });
 
 // ============================================
@@ -113,7 +125,7 @@ Route::middleware(['auth', 'verified', 'role:secretaire,superadmin,admin'])->pre
             ->name('patient.send-invoice')
             ->middleware('feature:patient_invoice_email');
     });
-    Route::controller(\App\Http\Controllers\Secretaire\PrescripteurController::class)->group(function () {
+    Route::controller(PrescripteurController::class)->group(function () {
         Route::get('prescripteurs', 'index')->name('prescripteurs.index');
         Route::post('prescripteurs', 'store')->name('prescripteurs.store');
         Route::put('prescripteurs/{prescripteur}', 'update')->name('prescripteurs.update');
@@ -123,30 +135,30 @@ Route::middleware(['auth', 'verified', 'role:secretaire,superadmin,admin'])->pre
         Route::get('prescripteurs/{prescripteur}/commissions/pdf', 'generateCommissionPDF')->name('prescripteurs.commissions.pdf');
         Route::get('prescripteurs/{prescripteur}/commissions/api', 'getCommissions')->name('prescripteurs.commissions.api');
     });
-    Route::get('dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Route pour afficher le journal de caisse
-    Route::get('/journal-caisse', [\App\Http\Controllers\JournalCaisseController::class, 'index'])->name('journal-caisse');
-    Route::get('/journal-caisse/export', [\App\Http\Controllers\JournalCaisseController::class, 'exportPdf'])->name('journal-caisse.export');
+    Route::get('/journal-caisse', [JournalCaisseController::class, 'index'])->name('journal-caisse');
+    Route::get('/journal-caisse/export', [JournalCaisseController::class, 'exportPdf'])->name('journal-caisse.export');
     // Journal de decaissement (Gated by Premium Feature)
     Route::middleware('feature:journal_decaissement')
-        ->get('journal-decaissement', [\App\Http\Controllers\JournalDecaissementController::class, 'index'])
+        ->get('journal-decaissement', [JournalDecaissementController::class, 'index'])
         ->name('journal-decaissement');
-    Route::get('/journal-decaissement/export', [\App\Http\Controllers\JournalDecaissementController::class, 'exportPdf'])->name('journal-decaissement.export');
-    Route::controller(\App\Http\Controllers\Secretaire\Tubes\GestionEtiquettesController::class)->group(function () {
+    Route::get('/journal-decaissement/export', [JournalDecaissementController::class, 'exportPdf'])->name('journal-decaissement.export');
+    Route::controller(GestionEtiquettesController::class)->group(function () {
         Route::get('/secretaire/etiquettes', 'index')->name('etiquettes');
         Route::get('/secretaire/etiquettes/export', 'exportPdf')->name('etiquettes.export');
         Route::post('/secretaire/etiquettes/{id}/receptionner', 'marquerReceptionne')->name('etiquettes.marquer.reception');
     });
 
     // Paiements
-    Route::controller(\App\Http\Controllers\Secretaire\PaiementController::class)->group(function () {
+    Route::controller(PaiementController::class)->group(function () {
         Route::post('/paiements/{paiement}/pay', 'markAsPaid')->name('paiement.mark-paid');
         Route::post('/paiements/{paiement}/unpay', 'markAsUnpaid')->name('paiement.mark-unpaid');
     });
 
     // Notifications
-    Route::controller(\App\Http\Controllers\Secretaire\NotificationController::class)
+    Route::controller(NotificationController::class)
         ->middleware('feature:notifications_sms_email_validated')
         ->group(function () {
             Route::post('/prescriptions/{prescription}/sms', 'sendSms')->name('prescription.send-sms');
@@ -166,32 +178,32 @@ Route::middleware(['auth', 'verified', 'role:secretaire,biologiste,superadmin,ad
 // ROUTES SPÉCIFIQUES AUX TECHNICIENS
 // ============================================
 Route::middleware(['auth', 'verified', 'role:technicien,superadmin,admin'])->prefix('technicien')->name('technicien.')->group(function () {
-    Route::get('traitement', [\App\Http\Controllers\Technicien\TechnicienController::class, 'index'])->name('index');
-    Route::post('prescription/{id}/start', [\App\Http\Controllers\Technicien\TechnicienController::class, 'startAnalysis'])->name('prescription.start');
-    Route::post('prescription/{id}/continue', [\App\Http\Controllers\Technicien\TechnicienController::class, 'continueAnalysis'])->name('prescription.continue');
-    Route::post('prescription/{id}/redo', [\App\Http\Controllers\Technicien\TechnicienController::class, 'redoAnalysis'])->name('prescription.redo');
+    Route::get('traitement', [TechnicienController::class, 'index'])->name('index');
+    Route::post('prescription/{id}/start', [TechnicienController::class, 'startAnalysis'])->name('prescription.start');
+    Route::post('prescription/{id}/continue', [TechnicienController::class, 'continueAnalysis'])->name('prescription.continue');
+    Route::post('prescription/{id}/redo', [TechnicienController::class, 'redoAnalysis'])->name('prescription.redo');
     Route::get('/technicien/prescription/{prescription}', [PrescriptionWorkspaceController::class, 'showTechnicien'])->name('prescription.show');
     Route::get('prescription/{prescription}/progression', [PrescriptionWorkspaceController::class, 'getProgression'])->name('prescription.progression');
 
     // API endpoints pour la saisie des résultats
-    Route::post('resultats/save', [\App\Http\Controllers\Technicien\ResultatController::class, 'save'])->name('resultats.save');
-    Route::post('resultats/save-all', [\App\Http\Controllers\Technicien\ResultatController::class, 'saveAll'])->name('resultats.saveAll');
+    Route::post('resultats/save', [ResultatController::class, 'save'])->name('resultats.save');
+    Route::post('resultats/save-all', [ResultatController::class, 'saveAll'])->name('resultats.saveAll');
 
     // Nouveaux endpoints pour les notes et conclusions
-    Route::post('resultats/group-conclusion', [\App\Http\Controllers\Technicien\ResultatController::class, 'saveGroupConclusion'])->name('resultats.groupConclusion');
-    Route::post('resultats/notes', [\App\Http\Controllers\Technicien\ResultatController::class, 'addConclusionNote'])->name('resultats.addNote');
-    Route::put('resultats/notes/{id}', [\App\Http\Controllers\Technicien\ResultatController::class, 'updateConclusionNote'])->name('resultats.updateNote');
-    Route::delete('resultats/notes/{id}', [\App\Http\Controllers\Technicien\ResultatController::class, 'deleteConclusionNote'])->name('resultats.deleteNote');
+    Route::post('resultats/group-conclusion', [ResultatController::class, 'saveGroupConclusion'])->name('resultats.groupConclusion');
+    Route::post('resultats/notes', [ResultatController::class, 'addConclusionNote'])->name('resultats.addNote');
+    Route::put('resultats/notes/{id}', [ResultatController::class, 'updateConclusionNote'])->name('resultats.updateNote');
+    Route::delete('resultats/notes/{id}', [ResultatController::class, 'deleteConclusionNote'])->name('resultats.deleteNote');
 
     // Nouveaux endpoints pour Antibiogrammes (Germe/Culture)
-    Route::post('resultats/antibiogrammes/sync', [\App\Http\Controllers\Technicien\ResultatController::class, 'syncAntibiogrammes'])->name('resultats.antibiogrammes.sync');
-    Route::post('resultats/antibiogrammes/data', [\App\Http\Controllers\Technicien\ResultatController::class, 'getAntibiogrammesData'])->name('resultats.antibiogrammes.data');
-    Route::post('resultats/antibiogrammes', [\App\Http\Controllers\Technicien\ResultatController::class, 'addAntibiotique'])->name('resultats.antibiogrammes.add');
-    Route::put('resultats/antibiogrammes/{id}', [\App\Http\Controllers\Technicien\ResultatController::class, 'updateResultatAntibiotique'])->name('resultats.antibiogrammes.update');
-    Route::delete('resultats/antibiogrammes/{id}', [\App\Http\Controllers\Technicien\ResultatController::class, 'deleteResultatAntibiotique'])->name('resultats.antibiogrammes.delete');
+    Route::post('resultats/antibiogrammes/sync', [ResultatController::class, 'syncAntibiogrammes'])->name('resultats.antibiogrammes.sync');
+    Route::post('resultats/antibiogrammes/data', [ResultatController::class, 'getAntibiogrammesData'])->name('resultats.antibiogrammes.data');
+    Route::post('resultats/antibiogrammes', [ResultatController::class, 'addAntibiotique'])->name('resultats.antibiogrammes.add');
+    Route::put('resultats/antibiogrammes/{id}', [ResultatController::class, 'updateResultatAntibiotique'])->name('resultats.antibiogrammes.update');
+    Route::delete('resultats/antibiogrammes/{id}', [ResultatController::class, 'deleteResultatAntibiotique'])->name('resultats.antibiogrammes.delete');
 
-    Route::post('analyse/{id}/complete', [\App\Http\Controllers\Technicien\ResultatController::class, 'completeAnalyse'])->name('analyse.complete');
-    Route::post('prescription/{id}/complete', [\App\Http\Controllers\Technicien\ResultatController::class, 'completePrescription'])->name('prescription.finalize');
+    Route::post('analyse/{id}/complete', [ResultatController::class, 'completeAnalyse'])->name('analyse.complete');
+    Route::post('prescription/{id}/complete', [ResultatController::class, 'completePrescription'])->name('prescription.finalize');
 });
 
 // ============================================
@@ -204,8 +216,8 @@ Route::middleware(['auth', 'verified', 'role:biologiste,superadmin,admin'])->pre
     Route::get('/valide/{prescription}/analyse', [PrescriptionWorkspaceController::class, 'showBiologisteValidation'])->name('valide.show');
 
     // Validation actions
-    Route::post('/prescription/{id}/validate', [\App\Http\Controllers\Biologiste\BiologisteController::class, 'validatePrescription'])->name('prescription.validate');
-    Route::post('/prescription/{id}/reject', [\App\Http\Controllers\Biologiste\BiologisteController::class, 'rejectPrescription'])->name('prescription.reject');
+    Route::post('/prescription/{id}/validate', [BiologisteController::class, 'validatePrescription'])->name('prescription.validate');
+    Route::post('/prescription/{id}/reject', [BiologisteController::class, 'rejectPrescription'])->name('prescription.reject');
 });
 
 // ============================================
@@ -294,9 +306,9 @@ Route::middleware(['auth', 'verified', 'role:superadmin,admin'])->prefix('admin'
 
         // Administration des fonctionnalités Premium SaaS
         Route::prefix('features')->name('features.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\ClientFeatureController::class, 'index'])->name('index');
-            Route::get('/{client}/edit', [\App\Http\Controllers\Admin\ClientFeatureController::class, 'edit'])->name('edit');
-            Route::put('/{client}', [\App\Http\Controllers\Admin\ClientFeatureController::class, 'update'])->name('update');
+            Route::get('/', [ClientFeatureController::class, 'index'])->name('index');
+            Route::get('/{client}/edit', [ClientFeatureController::class, 'edit'])->name('edit');
+            Route::put('/{client}', [ClientFeatureController::class, 'update'])->name('update');
         });
         Route::get('parametres', [SettingController::class, 'index'])->name('settings');
         Route::controller(SettingController::class)->prefix('parametres')->name('settings.')->group(function () {
