@@ -106,11 +106,11 @@
 <body>
     <!-- Header -->
     <div class="header">
-        <div class="company-name">LNB SITE MAITRE</div>
+        <div class="company-name">{{ \App\Models\Setting::getNomEntreprise() }}</div>
         <div class="company-info">
-            Analyses Médicales<br>
-            IMMEUBLE ARO<br>
-            Tél: 0321145065
+            {{ \App\Models\Setting::getAdresse() ?? 'Mahajanga Be 401' }}<br>
+            Tél: {{ \App\Models\Setting::getTelephone() ?? '0327627443' }}<br>
+            Email : {{ \App\Models\Setting::getEmail() ?? 'gasycoder@gmail.com' }}
         </div>
     </div>
 

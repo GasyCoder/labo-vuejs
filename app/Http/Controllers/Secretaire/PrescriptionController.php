@@ -690,6 +690,10 @@ class PrescriptionController extends Controller
             return back()->with('error', 'Autorisation refusée.');
         }
 
+        if (! app(\App\Services\FeatureService::class)->isEnabledForCurrentUser('notifications_sms_email_validated')) {
+            return back()->with('error', 'La fonctionnalité Premium de notification n\'est pas activée sur ce compte.');
+        }
+
         $prescription = Prescription::findOrFail($id);
         $prescription->update(['notified_at' => now()]);
 

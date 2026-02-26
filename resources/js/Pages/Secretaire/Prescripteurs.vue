@@ -6,6 +6,17 @@
             <div>
                 <h1 class="text-3xl font-heading font-bold text-gray-900 dark:text-white">Gestion des Prescripteurs</h1>
                 <p class="text-gray-600 dark:text-gray-400 mt-2">Consultez et gérez les prescripteurs associés à votre laboratoire</p>
+                <!-- Indication Paramètres Globaux -->
+                <div class="mt-4 flex items-center space-x-4">
+                    <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-700">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                        Commission : {{ formatNumber(globalCommissionPourcentage) }}%
+                    </span>
+                    <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 border border-orange-200 dark:border-orange-700">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        Quota base : {{ formatNumber(globalCommissionQuota) }} Ar
+                    </span>
+                </div>
             </div>
             
             <!-- Statistiques améliorées -->
@@ -157,7 +168,9 @@
                                             <div :class="[
                                                 prescripteur.status === 'Professeur' 
                                                     ? 'bg-gradient-to-br from-purple-400 to-purple-600 dark:from-purple-500 dark:to-purple-700' 
-                                                    : 'bg-gradient-to-br from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700',
+                                                    : prescripteur.status === 'Biologiste'
+                                                        ? 'bg-gradient-to-br from-teal-400 to-teal-600 dark:from-teal-500 dark:to-teal-700'
+                                                        : 'bg-gradient-to-br from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700',
                                                 'w-10 h-10 rounded-full flex items-center justify-center shadow-lg'
                                             ]">
                                                 <span class="text-white font-bold text-sm">
@@ -181,7 +194,9 @@
                                             <span :class="[
                                                 prescripteur.status === 'Professeur'
                                                     ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300'
-                                                    : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300',
+                                                    : prescripteur.status === 'Biologiste'
+                                                        ? 'bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-300'
+                                                        : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300',
                                                 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium'
                                             ]">
                                                 <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -208,21 +223,11 @@
                                         <span v-if="prescripteur.total_prescriptions !== prescripteur.prescriptions_commissionnables" class="text-xs text-gray-500 dark:text-gray-400">
                                             / {{ prescripteur.total_prescriptions }} total
                                         </span>
-                                        
-                                        <div class="flex flex-col">
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
-                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                                                </svg>
-                                                {{ prescripteur.commission_pourcentage }}% commission
-                                            </span>
-                                            
-                                            <div v-if="prescripteur.brute_mensuel < prescripteur.commission_quota" class="mt-1 text-[10px] text-orange-500 font-medium whitespace-nowrap" :title="`Quota: ${formatNumber(prescripteur.commission_quota)} Ar`">
-                                                Quota: {{ formatNumber(prescripteur.brute_mensuel) }} / {{ formatNumber(prescripteur.commission_quota) }}
-                                            </div>
-                                            <div v-else class="mt-1 text-[10px] text-green-500 font-medium whitespace-nowrap">
-                                                Quota atteint ({{ formatNumber(prescripteur.brute_mensuel) }} Ar)
-                                            </div>
+                                        <div v-if="!prescripteur.is_commissionned" class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                                            </svg>
+                                            Sans commission
                                         </div>
                                     </div>
                                 </td>
@@ -242,7 +247,7 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
                                     <div class="flex justify-center space-x-2">
-                                        <button 
+                                        <button v-if="prescripteur.is_commissionned"
                                             @click="showCommissions(prescripteur.id)"
                                             class="p-2 text-yellow-600 dark:text-yellow-400 hover:text-yellow-800 dark:hover:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 rounded-lg transition-colors"
                                             title="Voir les commissions"
@@ -334,8 +339,6 @@
         :prescripteur="selectedPrescripteur"
         :grades="grades"
         :status-options="statusOptions"
-        :default-commission-quota="defaultCommissionQuota"
-        :default-commission-pourcentage="defaultCommissionPourcentage"
         @close="showModal = false"
     />
 
@@ -372,8 +375,8 @@ const props = defineProps({
     prescripteursActifs: Number,
     totalCommissions: [Number, String],
     totalPrescriptionsCommissionnables: [Number, String],
-    defaultCommissionQuota: [Number, String],
-    defaultCommissionPourcentage: [Number, String],
+    globalCommissionQuota: [Number, String],
+    globalCommissionPourcentage: [Number, String],
 });
 
 const page = usePage();

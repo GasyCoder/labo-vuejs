@@ -17,28 +17,14 @@ class Prescripteur extends Model
         'status',
         'telephone',
         'is_active',
+        'is_commissionned',
         'notes',
-        'commission_quota',
-        'commission_pourcentage',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
-        'commission_quota' => 'decimal:2',
-        'commission_pourcentage' => 'decimal:2',
+        'is_commissionned' => 'boolean',
     ];
-
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::updated(function ($prescripteur) {
-            // Si le quota ou le pourcentage change, recalculer les commissions du mois en cours
-            if ($prescripteur->isDirty('commission_quota') || $prescripteur->isDirty('commission_pourcentage')) {
-                Paiement::recalculerPourPrescripteur($prescripteur, now());
-            }
-        });
-    }
 
     // Scopes
     public function scopeActifs($query)
@@ -48,7 +34,7 @@ class Prescripteur extends Model
 
     public function scopeCommissionnables($query)
     {
-        return $query->whereIn('status', ['Medecin', 'Professeur']);
+        return $query->where('is_commissionned', true);
     }
 
     // Relations
@@ -78,7 +64,7 @@ class Prescripteur extends Model
      */
     public function isQuotaAtteint($date = null)
     {
-        return $this->getBruteAnalysesMensuel($date) >= $this->commission_quota;
+        return $this->getBruteAnalysesMensuel($date) >= \App\Models\Setting::getCommissionQuota();
     }
 
     public function getStatistiquesCommissions($dateDebut = null, $dateFin = null)
@@ -140,7 +126,8 @@ class Prescripteur extends Model
             $bruteTotal = $prescriptionsDuMois->sum(function ($p) {
                 return $p->getMontantAnalysesCalcule();
             });
-            $isQuotaAtteint = $bruteTotal >= $this->commission_quota;
+            $quotaGlobal = \App\Models\Setting::getCommissionQuota();
+            $isQuotaAtteint = $bruteTotal >= $quotaGlobal;
 
             $results->push((object) [
                 'mois' => $mois,
@@ -153,7 +140,7 @@ class Prescripteur extends Model
                     return $p->paiements->sum('commission_prescripteur');
                 }),
                 'quota_atteint' => $isQuotaAtteint,
-                'quota_montant' => $this->commission_quota,
+                'quota_montant' => $quotaGlobal,
                 // Ajouter les détails des prescriptions avec les informations du patient
                 'prescriptions' => $prescriptionsDuMois->map(function ($prescription) {
                     return (object) [
@@ -188,7 +175,7 @@ class Prescripteur extends Model
 
     public function getEstCommissionnableAttribute()
     {
-        return in_array($this->status, ['Medecin', 'Professeur'], true);
+        return $this->is_commissionned;
     }
 
     // Méthodes statiques
@@ -207,6 +194,7 @@ class Prescripteur extends Model
         return [
             'Medecin' => 'Médecin',
             'Professeur' => 'Professeur',
+            'Biologiste' => 'Biologiste',
         ];
     }
 }

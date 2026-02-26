@@ -205,6 +205,9 @@
         $nifEntreprise = $settings->nif ?? '2000000000';
         $statutEntreprise = $settings->statut ?? '72102 11 2010 010000';
         $formatArgent = $settings->format_unite_argent ?? 'Ar';
+        $adresseEntreprise = $settings->adresse ?? 'Immeuble ARO, 1ère étage, Nosy Be Hell Ville';
+        $telEntreprise = $settings->telephone ?? '032 11 450 65';
+        $emailEntreprise = $settings->email ?? 'laboratoirenosybe@gmail.com';
 
         $paiement = $prescription->paiements->first();
         
@@ -224,7 +227,7 @@
         $solde = $paiementEffectue ? max(0, $total - $montantPaye) : $total;
 
         // ✅ FONCTIONS COMPLÈTES POUR CONVERSION EN LETTRES
-        function nombreEnLettres($nombre)
+        if (!function_exists("nombreEnLettres")) { function nombreEnLettres($nombre)
         {
             $unites = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
             $dizaines = [
@@ -323,18 +326,22 @@
             return trim($resultat);
         }
 
-        function montantEnLettres($montant, $devise = 'ariary')
-        {
-            $montantEntier = intval($montant);
-            $decimales = intval(($montant - $montantEntier) * 100);
+        } // End if
 
-            $lettres = nombreEnLettres($montantEntier) . ' ' . $devise;
+        if (!function_exists('montantEnLettres')) {
+            function montantEnLettres($montant, $devise = 'ariary')
+            {
+                $montantEntier = intval($montant);
+                $decimales = intval(($montant - $montantEntier) * 100);
 
-            if ($decimales > 0) {
-                $lettres .= ' et ' . nombreEnLettres($decimales) . ' centimes';
+                $lettres = nombreEnLettres($montantEntier) . ' ' . $devise;
+
+                if ($decimales > 0) {
+                    $lettres .= ' et ' . nombreEnLettres($decimales) . ' centimes';
+                }
+
+                return $lettres;
             }
-
-            return $lettres;
         }
     @endphp
 

@@ -22,6 +22,9 @@ class Setting extends Model
         'tarif_urgence_nuit',
         'tarif_urgence_jour',
         'sms_driver',
+        'adresse',
+        'telephone',
+        'email',
         'logo',
         'favicon',
     ];
@@ -143,5 +146,26 @@ class Setting extends Model
         $setting = static::first();
 
         return $setting ? (float) $setting->tarif_urgence_jour : 15000;
+    }
+
+    public static function getAdresse()
+    {
+        $settings = self::getSettings();
+
+        return $settings ? $settings->adresse : null;
+    }
+
+    public static function getTelephone()
+    {
+        $settings = self::getSettings();
+
+        return $settings ? $settings->telephone : null;
+    }
+
+    public static function getEmail()
+    {
+        $settings = self::getSettings();
+
+        return $settings ? $settings->email : null;
     }
 }

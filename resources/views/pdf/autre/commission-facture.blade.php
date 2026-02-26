@@ -136,10 +136,10 @@
     </div>
     <div class="col">
         <strong>Émetteur</strong>
-        Nom : CBDC NOSY BE<br>
-        Adresse : Immeuble ARO, 1ère étage, Nosy Be Hell Ville<br>
-        Téléphone : 032 11 450 65<br>
-        Email : laboratoirenosybe@gmail.com
+        Nom : {{ \App\Models\Setting::getNomEntreprise() }}<br>
+        Adresse : {{ \App\Models\Setting::getAdresse() ?? 'Mahajanga Be 401' }}<br>
+        Téléphone : {{ \App\Models\Setting::getTelephone() ?? '0327627443' }}<br>
+        Email : {{ \App\Models\Setting::getEmail() ?? 'gasycoder@gmail.com' }}
     </div>
 </div>
 
@@ -209,7 +209,7 @@
 
         <!-- Pied de page -->
         <div class="footer">
-            CBDC NOSY BE | Facture des Commissions | {{ date('Y') }}
+            {{ \App\Models\Setting::getNomEntreprise() }} | Facture des Commissions | {{ date('Y') }}
         </div>
     </div>
 </body>

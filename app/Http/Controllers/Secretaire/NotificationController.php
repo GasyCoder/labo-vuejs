@@ -4,18 +4,10 @@ namespace App\Http\Controllers\Secretaire;
 
 use App\Http\Controllers\Controller;
 use App\Models\Prescription;
-use App\Services\NotificationService;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
-    protected NotificationService $notificationService;
-
-    public function __construct(NotificationService $notificationService)
-    {
-        $this->notificationService = $notificationService;
-    }
-
     /**
      * Envoyer un SMS au patient
      */
@@ -26,11 +18,11 @@ class NotificationController extends Controller
         ]);
 
         try {
-            $this->notificationService->sendSms($prescription, $validated['message']);
+            \App\Jobs\SendManualNotification::dispatch($prescription, 'sms', $validated['message']);
 
-            return back()->with('success', 'SMS envoyé avec succès.');
+            return back()->with('success', 'La notification SMS a été ajoutée à la file d\'attente.');
         } catch (\Exception $e) {
-            return back()->with('error', 'Erreur lors de l\'envoi du SMS : '.$e->getMessage());
+            return back()->with('error', 'Erreur lors de la mise en file d\'attente du SMS : '.$e->getMessage());
         }
     }
 
@@ -45,11 +37,11 @@ class NotificationController extends Controller
         ]);
 
         try {
-            $this->notificationService->sendEmail($prescription, $validated['message'], $validated['lien_pdf'] ?? '');
+            \App\Jobs\SendManualNotification::dispatch($prescription, 'email', $validated['message'], $validated['lien_pdf'] ?? null);
 
-            return back()->with('success', 'E-mail envoyé avec succès.');
+            return back()->with('success', 'L\'e-mail a été ajouté à la file d\'attente.');
         } catch (\Exception $e) {
-            return back()->with('error', 'Erreur lors de l\'envoi de l\'e-mail : '.$e->getMessage());
+            return back()->with('error', 'Erreur lors de la mise en file d\'attente de l\'e-mail : '.$e->getMessage());
         }
     }
 }

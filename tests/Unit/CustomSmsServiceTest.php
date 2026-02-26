@@ -29,8 +29,10 @@ it('sends a post request with correct payload', function () {
             expect($data['to'])->toBe('+1234567890');
             expect($data['text'])->toBe('Hello world!');
             expect($data['sender_id'])->toBe('MY_APP');
+
             return true;
         }
+
         return false;
     });
 });

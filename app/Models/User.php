@@ -14,6 +14,8 @@ class User extends Authenticatable
     // ========== CONSTANTES POUR LES TYPES D'UTILISATEURS ==========
     public const TYPE_SUPERADMIN = 'superadmin';
 
+    public const TYPE_ADMIN = 'admin';
+
     public const TYPE_SECRETAIRE = 'secretaire';
 
     public const TYPE_TECHNICIEN = 'technicien';
@@ -22,6 +24,7 @@ class User extends Authenticatable
 
     public const TYPES = [
         self::TYPE_SUPERADMIN => 'Super Administrateur',
+        self::TYPE_ADMIN => 'Administrateur',
         self::TYPE_SECRETAIRE => 'Secrétaire',
         self::TYPE_TECHNICIEN => 'Technicien',
         self::TYPE_BIOLOGISTE => 'Biologiste',
@@ -34,6 +37,7 @@ class User extends Authenticatable
         'email',
         'password',
         'type',
+        'client_id',
     ];
 
     protected $hidden = [
@@ -136,7 +140,7 @@ class User extends Authenticatable
 
     public function canAccessAdmin(): bool
     {
-        return $this->isSuperAdmin();
+        return $this->isSuperAdmin() || $this->hasRole(self::TYPE_ADMIN);
     }
 
     public function canManagePrescriptions(): bool
@@ -189,6 +193,11 @@ class User extends Authenticatable
     }
 
     // ========== RELATIONS ==========
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
+    }
+
     public function prescriptions()
     {
         return $this->hasMany(Prescription::class, 'secretaire_id');

@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Secretaire;
 
 use App\Http\Controllers\Controller;
+use App\Mail\PatientInvoiceMail;
 use App\Models\Patient;
+use App\Models\Prescription;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -190,5 +193,33 @@ class PatientController extends Controller
         return redirect()
             ->route('secretaire.patient.detail', ['patient' => $patient->id])
             ->with('success', 'Patient mis à jour avec succès.');
+    }
+
+    public function destroy(Patient $patient): RedirectResponse
+    {
+        // On supprime les prescriptions associées (qui devraient supprimer leurs analyses/paiements via cascade ou manuellement si nécessaire)
+        // Mais ici on utilise le soft delete ou force delete selon la config du modèle
+        $patient->delete();
+
+        return redirect()
+            ->route('secretaire.patients.index')
+            ->with('success', 'Le patient a été supprimé avec succès.');
+    }
+
+    public function sendInvoice(Request $request, Prescription $prescription): RedirectResponse
+    {
+        if (! app(\App\Services\FeatureService::class)->isEnabledForCurrentUser('patient_invoice_email')) {
+            return back()->with('error', 'L\'envoi de facture par email n\'est pas activé sur ce compte.');
+        }
+
+        $prescription->load(['patient', 'prescripteur', 'analyses', 'prelevements', 'paiements.paymentMethod', 'secretaire']);
+
+        if (! $prescription->patient->email) {
+            return back()->with('error', 'Le patient n\'a pas d\'adresse email renseignée.');
+        }
+
+        Mail::to($prescription->patient->email)->queue(new PatientInvoiceMail($prescription));
+
+        return back()->with('success', 'La facture a été mise en file d\'attente et sera envoyée au patient par email.');
     }
 }

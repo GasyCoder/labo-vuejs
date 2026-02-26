@@ -117,6 +117,9 @@ class BiologisteController extends Controller
 
             DB::commit();
 
+            // Lancer le Job de notification
+            \App\Jobs\NotifyPatientOfValidatedResults::dispatch($prescription);
+
             return back()->with('success', 'Prescription '.$prescription->reference.' validée avec succès.');
         } catch (\Exception $e) {
             DB::rollBack();

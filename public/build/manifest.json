@@ -1,34 +1,41 @@
 {
-  "_AppLayout-Ddcz_BTQ.js": {
-    "file": "assets/AppLayout-Ddcz_BTQ.js",
+  "_AppLayout-C43c5kxY.js": {
+    "file": "assets/AppLayout-C43c5kxY.js",
     "name": "AppLayout",
     "imports": [
       "resources/js/app.js"
     ]
   },
-  "_GuestLayout-ewDeHI4D.js": {
-    "file": "assets/GuestLayout-ewDeHI4D.js",
+  "_GuestLayout-DFnuVQku.js": {
+    "file": "assets/GuestLayout-DFnuVQku.js",
     "name": "GuestLayout",
     "imports": [
       "resources/js/app.js"
     ]
   },
-  "_Modal-Pf558TP3.js": {
-    "file": "assets/Modal-Pf558TP3.js",
+  "_Modal-CpG4RlBP.js": {
+    "file": "assets/Modal-CpG4RlBP.js",
     "name": "Modal",
     "imports": [
       "resources/js/app.js"
     ]
   },
-  "_Pagination-DHKkYGMy.js": {
-    "file": "assets/Pagination-DHKkYGMy.js",
+  "_Pagination-y0rkzCjv.js": {
+    "file": "assets/Pagination-y0rkzCjv.js",
     "name": "Pagination",
     "imports": [
       "resources/js/app.js"
     ]
   },
-  "_SecondaryButton-C6k0RMwD.js": {
-    "file": "assets/SecondaryButton-C6k0RMwD.js",
+  "_PrimaryButton-b0cGTr0X.js": {
+    "file": "assets/PrimaryButton-b0cGTr0X.js",
+    "name": "PrimaryButton",
+    "imports": [
+      "resources/js/app.js"
+    ]
+  },
+  "_SecondaryButton-CL59nU8y.js": {
+    "file": "assets/SecondaryButton-CL59nU8y.js",
     "name": "SecondaryButton",
     "imports": [
       "resources/js/app.js"
@@ -37,6 +44,10 @@
   "__commonjsHelpers-_d1bhYXs.js": {
     "file": "assets/_commonjsHelpers-_d1bhYXs.js",
     "name": "_commonjsHelpers"
+  },
+  "_auto-yb1cLV1l.js": {
+    "file": "assets/auto-yb1cLV1l.js",
+    "name": "auto"
   },
   "_debounce-BjP9TRjn.js": {
     "file": "assets/debounce-BjP9TRjn.js",
@@ -72,7 +83,7 @@
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-n_8IVTmD.css",
+    "file": "assets/app-zTtSbXzS.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
@@ -185,19 +196,19 @@
     "src": "resources/fonts/Roboto-Regular.woff2"
   },
   "resources/js/Pages/Admin/ApiSettings.vue": {
-    "file": "assets/ApiSettings-BzpDfYTh.js",
+    "file": "assets/ApiSettings-D4Yx7f9z.js",
     "name": "ApiSettings",
     "src": "resources/js/Pages/Admin/ApiSettings.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
-      "_Modal-Pf558TP3.js",
+      "_AppLayout-C43c5kxY.js",
+      "_Modal-CpG4RlBP.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -229,20 +240,19 @@
       "assets/Roboto-Bold-5byz6fKo.ttf"
     ]
   },
-  "resources/js/Pages/Admin/Partials/DashboardPrescriptions.vue": {
-    "file": "assets/DashboardPrescriptions-CAEmY8ir.js",
-    "name": "DashboardPrescriptions",
-    "src": "resources/js/Pages/Admin/Partials/DashboardPrescriptions.vue",
+  "resources/js/Pages/Admin/Features/Edit.vue": {
+    "file": "assets/Edit-Pn7WXqfw.js",
+    "name": "Edit",
+    "src": "resources/js/Pages/Admin/Features/Edit.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_Pagination-DHKkYGMy.js",
-      "_lodash-DJbfzEvl.js",
+      "_AppLayout-C43c5kxY.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -274,18 +284,19 @@
       "assets/Roboto-Bold-5byz6fKo.ttf"
     ]
   },
-  "resources/js/Pages/Admin/Partials/DashboardStats.vue": {
-    "file": "assets/DashboardStats-DgPMEa6Y.js",
-    "name": "DashboardStats",
-    "src": "resources/js/Pages/Admin/Partials/DashboardStats.vue",
+  "resources/js/Pages/Admin/Features/Index.vue": {
+    "file": "assets/Index-BLx4UxSc.js",
+    "name": "Index",
+    "src": "resources/js/Pages/Admin/Features/Index.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
+      "_AppLayout-C43c5kxY.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -318,19 +329,19 @@
     ]
   },
   "resources/js/Pages/Admin/Partials/GestionAnalyses.vue": {
-    "file": "assets/GestionAnalyses-DF4hA-9N.js",
+    "file": "assets/GestionAnalyses-Q6bcSP2o.js",
     "name": "GestionAnalyses",
     "src": "resources/js/Pages/Admin/Partials/GestionAnalyses.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_Pagination-DHKkYGMy.js",
+      "_Pagination-y0rkzCjv.js",
       "_lodash-DJbfzEvl.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -363,19 +374,68 @@
     ]
   },
   "resources/js/Pages/Admin/Permissions.vue": {
-    "file": "assets/Permissions-CxL3lieu.js",
+    "file": "assets/Permissions-DDu571q_.js",
     "name": "Permissions",
     "src": "resources/js/Pages/Admin/Permissions.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
+      "_AppLayout-C43c5kxY.js",
       "_debounce-BjP9TRjn.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
+    ],
+    "assets": [
+      "assets/Nioicon-81EzONOx.ttf",
+      "assets/Nioicon-CdXEyyGP.woff",
+      "assets/Nioicon-BbLMLxdP.svg",
+      "assets/Nunito-Regular-DsRLXTRo.eot",
+      "assets/Nunito-Regular-CaFVKpgy.woff2",
+      "assets/Nunito-Regular-VCwdpEvf.woff",
+      "assets/Nunito-Regular-Dm_Elocd.ttf",
+      "assets/Nunito-Bold-DXkw16y9.eot",
+      "assets/Nunito-Bold-CqlRzoaE.woff2",
+      "assets/Nunito-Bold-C-LBwSZ0.woff",
+      "assets/Nunito-Bold-E4WWBfJS.ttf",
+      "assets/Roboto-Light-DKDbSA-H.eot",
+      "assets/Roboto-Light-BND1yEHK.woff2",
+      "assets/Roboto-Light-D8eEbjjJ.woff",
+      "assets/Roboto-Light-CvdGXh6_.ttf",
+      "assets/Roboto-Regular-CFbaRf1w.eot",
+      "assets/Roboto-Regular-56L6iL-I.woff2",
+      "assets/Roboto-Regular-BsN8iP2n.woff",
+      "assets/Roboto-Regular-Ds6KraGe.ttf",
+      "assets/Roboto-Medium-wdXOcZVn.eot",
+      "assets/Roboto-Medium--cGQoWUT.woff2",
+      "assets/Roboto-Medium-BFS8JZeR.woff",
+      "assets/Roboto-Medium-D3k-fcGv.ttf",
+      "assets/Roboto-Bold-D_X5cL-b.eot",
+      "assets/Roboto-Bold-B2n1BHly.woff2",
+      "assets/Roboto-Bold-B7cOq_fN.woff",
+      "assets/Roboto-Bold-5byz6fKo.ttf"
+    ]
+  },
+  "resources/js/Pages/Admin/PrescriptionsTracking.vue": {
+    "file": "assets/PrescriptionsTracking-CYU2PtEd.js",
+    "name": "PrescriptionsTracking",
+    "src": "resources/js/Pages/Admin/PrescriptionsTracking.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.js",
+      "_AppLayout-C43c5kxY.js",
+      "_Pagination-y0rkzCjv.js",
+      "_Modal-CpG4RlBP.js",
+      "_PrimaryButton-b0cGTr0X.js",
+      "_SecondaryButton-CL59nU8y.js",
+      "_lodash-DJbfzEvl.js",
+      "__commonjsHelpers-_d1bhYXs.js",
+      "_debounce-D0G5qrda.js"
+    ],
+    "css": [
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -408,18 +468,18 @@
     ]
   },
   "resources/js/Pages/Admin/Settings.vue": {
-    "file": "assets/Settings-DaMycexQ.js",
+    "file": "assets/Settings-gahxO3fJ.js",
     "name": "Settings",
     "src": "resources/js/Pages/Admin/Settings.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
+      "_AppLayout-C43c5kxY.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -452,20 +512,20 @@
     ]
   },
   "resources/js/Pages/Admin/TracePatient.vue": {
-    "file": "assets/TracePatient-D8bm-T2u.js",
+    "file": "assets/TracePatient-CtyZZ3Pz.js",
     "name": "TracePatient",
     "src": "resources/js/Pages/Admin/TracePatient.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
-      "_Pagination-DHKkYGMy.js",
+      "_AppLayout-C43c5kxY.js",
+      "_Pagination-y0rkzCjv.js",
       "_debounce-BjP9TRjn.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -498,19 +558,19 @@
     ]
   },
   "resources/js/Pages/Admin/Users/Index.vue": {
-    "file": "assets/Index-B3T_rDCE.js",
+    "file": "assets/Index-CYbOgQHp.js",
     "name": "Index",
     "src": "resources/js/Pages/Admin/Users/Index.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
+      "_AppLayout-C43c5kxY.js",
       "_debounce-BjP9TRjn.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -543,20 +603,20 @@
     ]
   },
   "resources/js/Pages/Archives.vue": {
-    "file": "assets/Archives-DFGnC86I.js",
+    "file": "assets/Archives-ClWZqGSQ.js",
     "name": "Archives",
     "src": "resources/js/Pages/Archives.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
+      "_AppLayout-C43c5kxY.js",
       "_debounce-BjP9TRjn.js",
       "_format-D4v_baXN.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -589,18 +649,18 @@
     ]
   },
   "resources/js/Pages/Auth/ConfirmPassword.vue": {
-    "file": "assets/ConfirmPassword-BASKvkQz.js",
+    "file": "assets/ConfirmPassword-GjfiCLyk.js",
     "name": "ConfirmPassword",
     "src": "resources/js/Pages/Auth/ConfirmPassword.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_GuestLayout-ewDeHI4D.js",
+      "_GuestLayout-DFnuVQku.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -633,18 +693,18 @@
     ]
   },
   "resources/js/Pages/Auth/ForgotPassword.vue": {
-    "file": "assets/ForgotPassword-Bf3finNM.js",
+    "file": "assets/ForgotPassword-CSwfI8X4.js",
     "name": "ForgotPassword",
     "src": "resources/js/Pages/Auth/ForgotPassword.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_GuestLayout-ewDeHI4D.js",
+      "_GuestLayout-DFnuVQku.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -677,18 +737,18 @@
     ]
   },
   "resources/js/Pages/Auth/Login.vue": {
-    "file": "assets/Login-BhWr_eol.js",
+    "file": "assets/Login-B8Cb9K48.js",
     "name": "Login",
     "src": "resources/js/Pages/Auth/Login.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_GuestLayout-ewDeHI4D.js",
+      "_GuestLayout-DFnuVQku.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -721,18 +781,18 @@
     ]
   },
   "resources/js/Pages/Auth/Register.vue": {
-    "file": "assets/Register-BZ8b_YwO.js",
+    "file": "assets/Register-DD5gc2eP.js",
     "name": "Register",
     "src": "resources/js/Pages/Auth/Register.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_GuestLayout-ewDeHI4D.js",
+      "_GuestLayout-DFnuVQku.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -765,18 +825,18 @@
     ]
   },
   "resources/js/Pages/Auth/ResetPassword.vue": {
-    "file": "assets/ResetPassword-e1hF-53-.js",
+    "file": "assets/ResetPassword-CrvA-RYB.js",
     "name": "ResetPassword",
     "src": "resources/js/Pages/Auth/ResetPassword.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_GuestLayout-ewDeHI4D.js",
+      "_GuestLayout-DFnuVQku.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -809,18 +869,18 @@
     ]
   },
   "resources/js/Pages/Auth/VerifyEmail.vue": {
-    "file": "assets/VerifyEmail-DWHBK4cb.js",
+    "file": "assets/VerifyEmail-Ci1hTGy5.js",
     "name": "VerifyEmail",
     "src": "resources/js/Pages/Auth/VerifyEmail.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_GuestLayout-ewDeHI4D.js",
+      "_GuestLayout-DFnuVQku.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -853,7 +913,7 @@
     ]
   },
   "resources/js/Pages/Biologiste/GroupTagList.vue": {
-    "file": "assets/GroupTagList-DrZ72IAL.js",
+    "file": "assets/GroupTagList-BvWvWCUr.js",
     "name": "GroupTagList",
     "src": "resources/js/Pages/Biologiste/GroupTagList.vue",
     "isDynamicEntry": true,
@@ -863,7 +923,7 @@
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -896,13 +956,13 @@
     ]
   },
   "resources/js/Pages/Biologiste/Index.vue": {
-    "file": "assets/Index-C_IumDSK.js",
+    "file": "assets/Index-DrJEqXi1.js",
     "name": "Index",
     "src": "resources/js/Pages/Biologiste/Index.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
+      "_AppLayout-C43c5kxY.js",
       "resources/js/Pages/Biologiste/StatusTabs.vue",
       "resources/js/Pages/Biologiste/ValidationStatsBar.vue",
       "resources/js/Pages/Biologiste/PrescriptionCard.vue",
@@ -912,7 +972,7 @@
     ],
     "css": [
       "assets/Index-BsdLTdAX.css",
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -945,7 +1005,7 @@
     ]
   },
   "resources/js/Pages/Biologiste/PrescriptionCard.vue": {
-    "file": "assets/PrescriptionCard-PWKaPewO.js",
+    "file": "assets/PrescriptionCard-D3p8ehla.js",
     "name": "PrescriptionCard",
     "src": "resources/js/Pages/Biologiste/PrescriptionCard.vue",
     "isDynamicEntry": true,
@@ -956,7 +1016,7 @@
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -989,7 +1049,7 @@
     ]
   },
   "resources/js/Pages/Biologiste/StatusTabs.vue": {
-    "file": "assets/StatusTabs-BQ-WnhbH.js",
+    "file": "assets/StatusTabs-9YEfp6Xn.js",
     "name": "StatusTabs",
     "src": "resources/js/Pages/Biologiste/StatusTabs.vue",
     "isDynamicEntry": true,
@@ -999,7 +1059,7 @@
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -1032,7 +1092,7 @@
     ]
   },
   "resources/js/Pages/Biologiste/ValidationStatsBar.vue": {
-    "file": "assets/ValidationStatsBar-DXiIVHfe.js",
+    "file": "assets/ValidationStatsBar-CIn7GezN.js",
     "name": "ValidationStatsBar",
     "src": "resources/js/Pages/Biologiste/ValidationStatsBar.vue",
     "isDynamicEntry": true,
@@ -1042,7 +1102,7 @@
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -1075,22 +1135,19 @@
     ]
   },
   "resources/js/Pages/Dashboard.vue": {
-    "file": "assets/Dashboard-BtmJzO5_.js",
+    "file": "assets/Dashboard-1uoGaf8P.js",
     "name": "Dashboard",
     "src": "resources/js/Pages/Dashboard.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
-      "resources/js/Pages/Admin/Partials/DashboardStats.vue",
-      "resources/js/Pages/Admin/Partials/DashboardPrescriptions.vue",
+      "_AppLayout-C43c5kxY.js",
+      "_auto-yb1cLV1l.js",
       "__commonjsHelpers-_d1bhYXs.js",
-      "_debounce-D0G5qrda.js",
-      "_Pagination-DHKkYGMy.js",
-      "_lodash-DJbfzEvl.js"
+      "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -1123,19 +1180,19 @@
     ]
   },
   "resources/js/Pages/JournalCaisse.vue": {
-    "file": "assets/JournalCaisse-BadNOEEx.js",
+    "file": "assets/JournalCaisse-D8iRgSpe.js",
     "name": "JournalCaisse",
     "src": "resources/js/Pages/JournalCaisse.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
+      "_AppLayout-C43c5kxY.js",
       "_format-D4v_baXN.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -1168,18 +1225,18 @@
     ]
   },
   "resources/js/Pages/JournalDecaissement.vue": {
-    "file": "assets/JournalDecaissement-CKqTSv2v.js",
+    "file": "assets/JournalDecaissement-BZlfokSC.js",
     "name": "JournalDecaissement",
     "src": "resources/js/Pages/JournalDecaissement.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
+      "_AppLayout-C43c5kxY.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -1212,18 +1269,18 @@
     ]
   },
   "resources/js/Pages/Laboratoire/Analyses/Examens.vue": {
-    "file": "assets/Examens-uzmHdKFU.js",
+    "file": "assets/Examens-srm84BkY.js",
     "name": "Examens",
     "src": "resources/js/Pages/Laboratoire/Analyses/Examens.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
+      "_AppLayout-C43c5kxY.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -1256,20 +1313,20 @@
     ]
   },
   "resources/js/Pages/Laboratoire/Analyses/Listes.vue": {
-    "file": "assets/Listes-DnbSaWug.js",
+    "file": "assets/Listes-CAumg_wm.js",
     "name": "Listes",
     "src": "resources/js/Pages/Laboratoire/Analyses/Listes.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
-      "_Pagination-DHKkYGMy.js",
+      "_AppLayout-C43c5kxY.js",
+      "_Pagination-y0rkzCjv.js",
       "_lodash-DJbfzEvl.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -1302,20 +1359,20 @@
     ]
   },
   "resources/js/Pages/Laboratoire/Analyses/Prelevements.vue": {
-    "file": "assets/Prelevements-CT_NpeZ6.js",
+    "file": "assets/Prelevements-8nrp4UUM.js",
     "name": "Prelevements",
     "src": "resources/js/Pages/Laboratoire/Analyses/Prelevements.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
-      "_Pagination-DHKkYGMy.js",
+      "_AppLayout-C43c5kxY.js",
+      "_Pagination-y0rkzCjv.js",
       "_lodash-DJbfzEvl.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -1348,20 +1405,20 @@
     ]
   },
   "resources/js/Pages/Laboratoire/Analyses/Types.vue": {
-    "file": "assets/Types-BouVsvfw.js",
+    "file": "assets/Types-CXLLWhhC.js",
     "name": "Types",
     "src": "resources/js/Pages/Laboratoire/Analyses/Types.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
-      "_Pagination-DHKkYGMy.js",
+      "_AppLayout-C43c5kxY.js",
+      "_Pagination-y0rkzCjv.js",
       "_lodash-DJbfzEvl.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -1394,20 +1451,20 @@
     ]
   },
   "resources/js/Pages/Laboratoire/Microbiologie/Antibiotiques.vue": {
-    "file": "assets/Antibiotiques-CSv4btZH.js",
+    "file": "assets/Antibiotiques-DzQrvIcc.js",
     "name": "Antibiotiques",
     "src": "resources/js/Pages/Laboratoire/Microbiologie/Antibiotiques.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
-      "_Pagination-DHKkYGMy.js",
+      "_AppLayout-C43c5kxY.js",
+      "_Pagination-y0rkzCjv.js",
       "_lodash-DJbfzEvl.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -1440,20 +1497,20 @@
     ]
   },
   "resources/js/Pages/Laboratoire/Microbiologie/Bacteries.vue": {
-    "file": "assets/Bacteries-Dg8uEaaY.js",
+    "file": "assets/Bacteries-CeH85kF6.js",
     "name": "Bacteries",
     "src": "resources/js/Pages/Laboratoire/Microbiologie/Bacteries.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
-      "_Pagination-DHKkYGMy.js",
+      "_AppLayout-C43c5kxY.js",
+      "_Pagination-y0rkzCjv.js",
       "_lodash-DJbfzEvl.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -1486,20 +1543,20 @@
     ]
   },
   "resources/js/Pages/Laboratoire/Microbiologie/FamillesBacteries.vue": {
-    "file": "assets/FamillesBacteries-DTqTMEnS.js",
+    "file": "assets/FamillesBacteries-6GrsFNCL.js",
     "name": "FamillesBacteries",
     "src": "resources/js/Pages/Laboratoire/Microbiologie/FamillesBacteries.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
-      "_Pagination-DHKkYGMy.js",
+      "_AppLayout-C43c5kxY.js",
+      "_Pagination-y0rkzCjv.js",
       "_lodash-DJbfzEvl.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -1532,18 +1589,18 @@
     ]
   },
   "resources/js/Pages/Profile/Edit.vue": {
-    "file": "assets/Edit-Cw_2V1fY.js",
+    "file": "assets/Edit-BoD8SGDM.js",
     "name": "Edit",
     "src": "resources/js/Pages/Profile/Edit.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
+      "_AppLayout-C43c5kxY.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -1576,19 +1633,19 @@
     ]
   },
   "resources/js/Pages/Secretaire/Modals/ModalCommissionPrescripteur.vue": {
-    "file": "assets/ModalCommissionPrescripteur-Cc8cArnu.js",
+    "file": "assets/ModalCommissionPrescripteur-pxW6JgeS.js",
     "name": "ModalCommissionPrescripteur",
     "src": "resources/js/Pages/Secretaire/Modals/ModalCommissionPrescripteur.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_Modal-Pf558TP3.js",
-      "_SecondaryButton-C6k0RMwD.js",
+      "_Modal-CpG4RlBP.js",
+      "_SecondaryButton-CL59nU8y.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -1621,19 +1678,19 @@
     ]
   },
   "resources/js/Pages/Secretaire/Modals/ModalDeletePrescripteur.vue": {
-    "file": "assets/ModalDeletePrescripteur-PoTO2bW0.js",
+    "file": "assets/ModalDeletePrescripteur-DzRZALIw.js",
     "name": "ModalDeletePrescripteur",
     "src": "resources/js/Pages/Secretaire/Modals/ModalDeletePrescripteur.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_Modal-Pf558TP3.js",
-      "_SecondaryButton-C6k0RMwD.js",
+      "_Modal-CpG4RlBP.js",
+      "_SecondaryButton-CL59nU8y.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -1666,19 +1723,20 @@
     ]
   },
   "resources/js/Pages/Secretaire/Modals/ModalFormPrescripteur.vue": {
-    "file": "assets/ModalFormPrescripteur-6evetAPC.js",
+    "file": "assets/ModalFormPrescripteur-BmFJY2mw.js",
     "name": "ModalFormPrescripteur",
     "src": "resources/js/Pages/Secretaire/Modals/ModalFormPrescripteur.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_Modal-Pf558TP3.js",
-      "_SecondaryButton-C6k0RMwD.js",
+      "_Modal-CpG4RlBP.js",
+      "_PrimaryButton-b0cGTr0X.js",
+      "_SecondaryButton-CL59nU8y.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -1711,20 +1769,20 @@
     ]
   },
   "resources/js/Pages/Secretaire/Patients/Index.vue": {
-    "file": "assets/Index-BE_sHm0h.js",
+    "file": "assets/Index-D8YaETE9.js",
     "name": "Index",
     "src": "resources/js/Pages/Secretaire/Patients/Index.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
-      "_Pagination-DHKkYGMy.js",
+      "_AppLayout-C43c5kxY.js",
+      "_Pagination-y0rkzCjv.js",
       "_lodash-DJbfzEvl.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -1757,18 +1815,18 @@
     ]
   },
   "resources/js/Pages/Secretaire/Patients/Show.vue": {
-    "file": "assets/Show-ByxHz-to.js",
+    "file": "assets/Show-BBOQKvbB.js",
     "name": "Show",
     "src": "resources/js/Pages/Secretaire/Patients/Show.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
+      "_AppLayout-C43c5kxY.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -1801,25 +1859,26 @@
     ]
   },
   "resources/js/Pages/Secretaire/Prescripteurs.vue": {
-    "file": "assets/Prescripteurs-Bl8iW0pL.js",
+    "file": "assets/Prescripteurs-qvBBH_fT.js",
     "name": "Prescripteurs",
     "src": "resources/js/Pages/Secretaire/Prescripteurs.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
-      "_Pagination-DHKkYGMy.js",
+      "_AppLayout-C43c5kxY.js",
+      "_Pagination-y0rkzCjv.js",
       "resources/js/Pages/Secretaire/Modals/ModalFormPrescripteur.vue",
       "resources/js/Pages/Secretaire/Modals/ModalDeletePrescripteur.vue",
       "resources/js/Pages/Secretaire/Modals/ModalCommissionPrescripteur.vue",
       "_lodash-DJbfzEvl.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js",
-      "_Modal-Pf558TP3.js",
-      "_SecondaryButton-C6k0RMwD.js"
+      "_Modal-CpG4RlBP.js",
+      "_PrimaryButton-b0cGTr0X.js",
+      "_SecondaryButton-CL59nU8y.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -1852,18 +1911,18 @@
     ]
   },
   "resources/js/Pages/Secretaire/Prescriptions/Create.vue": {
-    "file": "assets/Create-DobHIAE9.js",
+    "file": "assets/Create-BAeTga9x.js",
     "name": "Create",
     "src": "resources/js/Pages/Secretaire/Prescriptions/Create.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
+      "_AppLayout-C43c5kxY.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -1896,18 +1955,18 @@
     ]
   },
   "resources/js/Pages/Secretaire/Prescriptions/Edit.vue": {
-    "file": "assets/Edit-BCgI7y_k.js",
+    "file": "assets/Edit-257pApQG.js",
     "name": "Edit",
     "src": "resources/js/Pages/Secretaire/Prescriptions/Edit.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
+      "_AppLayout-C43c5kxY.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -1940,20 +1999,20 @@
     ]
   },
   "resources/js/Pages/Secretaire/Prescriptions/Index.vue": {
-    "file": "assets/Index-CCQgBhG7.js",
+    "file": "assets/Index-DBFp6eEZ.js",
     "name": "Index",
     "src": "resources/js/Pages/Secretaire/Prescriptions/Index.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
       "_debounce-BjP9TRjn.js",
-      "_AppLayout-Ddcz_BTQ.js",
-      "_Pagination-DHKkYGMy.js",
+      "_AppLayout-C43c5kxY.js",
+      "_Pagination-y0rkzCjv.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -1986,20 +2045,20 @@
     ]
   },
   "resources/js/Pages/Secretaire/Tubes/GestionEtiquettes.vue": {
-    "file": "assets/GestionEtiquettes-CPNozWsj.js",
+    "file": "assets/GestionEtiquettes-B8qWdcBn.js",
     "name": "GestionEtiquettes",
     "src": "resources/js/Pages/Secretaire/Tubes/GestionEtiquettes.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
+      "_AppLayout-C43c5kxY.js",
       "_debounce-BjP9TRjn.js",
       "_format-D4v_baXN.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -2032,7 +2091,7 @@
     ]
   },
   "resources/js/Pages/Shared/AnalyseNode.vue": {
-    "file": "assets/AnalyseNode-VV7ZgR9n.js",
+    "file": "assets/AnalyseNode-DYdFduBP.js",
     "name": "AnalyseNode",
     "src": "resources/js/Pages/Shared/AnalyseNode.vue",
     "isDynamicEntry": true,
@@ -2043,7 +2102,7 @@
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -2076,7 +2135,7 @@
     ]
   },
   "resources/js/Pages/Shared/AnalysesSidebar.vue": {
-    "file": "assets/AnalysesSidebar-fezwGaEs.js",
+    "file": "assets/AnalysesSidebar-C8A-ZOFG.js",
     "name": "AnalysesSidebar",
     "src": "resources/js/Pages/Shared/AnalysesSidebar.vue",
     "isDynamicEntry": true,
@@ -2086,7 +2145,7 @@
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -2119,7 +2178,7 @@
     ]
   },
   "resources/js/Pages/Shared/GermeCulture.vue": {
-    "file": "assets/GermeCulture-Vxexhay7.js",
+    "file": "assets/GermeCulture-BFiBrJqY.js",
     "name": "GermeCulture",
     "src": "resources/js/Pages/Shared/GermeCulture.vue",
     "isDynamicEntry": true,
@@ -2129,7 +2188,7 @@
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -2162,13 +2221,13 @@
     ]
   },
   "resources/js/Pages/Shared/PrescriptionWorkspace.vue": {
-    "file": "assets/PrescriptionWorkspace-Djw9oXJ9.js",
+    "file": "assets/PrescriptionWorkspace-DQQ6wmP-.js",
     "name": "PrescriptionWorkspace",
     "src": "resources/js/Pages/Shared/PrescriptionWorkspace.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
+      "_AppLayout-C43c5kxY.js",
       "resources/js/Pages/Shared/AnalyseNode.vue",
       "resources/js/Pages/Shared/AnalysesSidebar.vue",
       "__commonjsHelpers-_d1bhYXs.js",
@@ -2176,7 +2235,7 @@
       "resources/js/Pages/Shared/GermeCulture.vue"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -2209,18 +2268,18 @@
     ]
   },
   "resources/js/Pages/Technicien/Index.vue": {
-    "file": "assets/Index-C7VOLucb.js",
+    "file": "assets/Index-4sq0EICF.js",
     "name": "Index",
     "src": "resources/js/Pages/Technicien/Index.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
-      "_AppLayout-Ddcz_BTQ.js",
+      "_AppLayout-C43c5kxY.js",
       "__commonjsHelpers-_d1bhYXs.js",
       "_debounce-D0G5qrda.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -2253,7 +2312,7 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-Bg1XaAxF.js",
+    "file": "assets/app-C9wF-B7e.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -2263,10 +2322,11 @@
     ],
     "dynamicImports": [
       "resources/js/Pages/Admin/ApiSettings.vue",
-      "resources/js/Pages/Admin/Partials/DashboardPrescriptions.vue",
-      "resources/js/Pages/Admin/Partials/DashboardStats.vue",
+      "resources/js/Pages/Admin/Features/Edit.vue",
+      "resources/js/Pages/Admin/Features/Index.vue",
       "resources/js/Pages/Admin/Partials/GestionAnalyses.vue",
       "resources/js/Pages/Admin/Permissions.vue",
+      "resources/js/Pages/Admin/PrescriptionsTracking.vue",
       "resources/js/Pages/Admin/Settings.vue",
       "resources/js/Pages/Admin/TracePatient.vue",
       "resources/js/Pages/Admin/Users/Index.vue",
@@ -2310,7 +2370,7 @@
       "resources/js/Pages/Technicien/Index.vue"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",
@@ -2354,16 +2414,17 @@
     ]
   },
   "resources/js/charts.js": {
-    "file": "assets/charts-z6dwjcIW.js",
+    "file": "assets/charts-BdN4LDZ2.js",
     "name": "charts",
     "src": "resources/js/charts.js",
     "isEntry": true,
     "imports": [
-      "_isRTL-0_WXRM0q.js"
+      "_isRTL-0_WXRM0q.js",
+      "_auto-yb1cLV1l.js"
     ]
   },
   "resources/js/scripts.js": {
-    "file": "assets/scripts-DxKDilJC.js",
+    "file": "assets/scripts-B8iihLox.js",
     "name": "scripts",
     "src": "resources/js/scripts.js",
     "isEntry": true,
@@ -2374,7 +2435,7 @@
       "__commonjsHelpers-_d1bhYXs.js"
     ],
     "css": [
-      "assets/app-n_8IVTmD.css"
+      "assets/app-zTtSbXzS.css"
     ],
     "assets": [
       "assets/Nioicon-81EzONOx.ttf",

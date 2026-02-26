@@ -56,6 +56,21 @@
                             </Link>
                         </li>
                     </template>
+                    <template v-if="$page.props.auth.user && ['superadmin', 'admin', 'secretaire'].includes($page.props.auth.user.type) && $page.props.enabledFeatures?.prescriptions_tracking !== false">
+                        <li :class="['nk-menu-item py-0.5 group/item', { 'active': route().current('admin.prescriptions-tracking.*') }]">
+                            <Link :href="route('admin.prescriptions-tracking.index')"
+                                class="nk-menu-link flex relative items-center align-middle py-2.5 ps-6 pe-10 font-heading font-bold tracking-snug group">
+                                <span
+                                    class="font-normal tracking-normal w-8 inline-flex flex-grow-0 flex-shrink-0 text-slate-400 group-[.active]/item:text-primary-500 group-hover:text-primary-500">
+                                    <em
+                                        class="text-xl leading-none text-current transition-all duration-300 icon ni ni-list-thumb"></em>
+                                </span>
+                                <span
+                                    class="group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0 flex-grow-1 inline-block whitespace-nowrap transition-all duration-300 text-sm text-slate-600 dark:text-slate-500 group-[.active]/item:text-primary-500 group-hover:text-primary-500">Suivi
+                                    Opérationnel</span>
+                            </Link>
+                        </li>
+                    </template>
 
                     <!-- Gestion Analyses merged into Dashboard -->
 
@@ -98,7 +113,7 @@
                                 </Link>
                             </li>
 
-                            <li
+                            <li v-if="$page.props.enabledFeatures?.journal_decaissement !== false"
                                 :class="['nk-menu-item py-0 group/item', { 'active': route().current('secretaire.journal-decaissement') }]">
                                 <Link :href="route('secretaire.journal-decaissement')"
                                     class="nk-menu-link flex relative items-center align-middle py-2 ps-5 pe-8 font-heading font-bold tracking-snug group">
@@ -369,19 +384,32 @@
                             </Link>
                         </li>
 
-                        <li
-                            :class="['nk-menu-item py-0 group/item', { 'active': route().current('admin.permissions') }]">
-                            <Link :href="route('admin.permissions')"
-                                class="nk-menu-link flex relative items-center align-middle py-2 ps-5 pe-8 font-heading font-bold tracking-snug group">
-                                <span
-                                    class="font-normal tracking-normal w-8 inline-flex flex-grow-0 flex-shrink-0 text-slate-400 group-[.active]/item:text-primary-500 group-hover:text-primary-500">
-                                    <em
-                                        class="text-xl leading-none text-current transition-all duration-300 icon ni ni-shield-check"></em>
-                                </span>
-                                <span
-                                    class="group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0 flex-grow-1 inline-block whitespace-nowrap transition-all duration-300 text-sm text-slate-600 dark:text-slate-500 group-[.active]/item:text-primary-500 group-hover:text-primary-500">Permissions</span>
-                            </Link>
-                        </li>
+                        <template v-if="$page.props.auth.user.type === 'superadmin'">
+                            <li
+                                :class="['nk-menu-item py-0 group/item', { 'active': route().current('admin.permissions') }]">
+                                <Link :href="route('admin.permissions')"
+                                    class="nk-menu-link flex relative items-center align-middle py-2 ps-5 pe-8 font-heading font-bold tracking-snug group">
+                                    <span
+                                        class="font-normal tracking-normal w-8 inline-flex flex-grow-0 flex-shrink-0 text-slate-400 group-[.active]/item:text-primary-500 group-hover:text-primary-500">
+                                        <em
+                                            class="text-xl leading-none text-current transition-all duration-300 icon ni ni-shield-check"></em>
+                                    </span>
+                                </Link>
+                            </li>
+                            <li
+                                :class="['nk-menu-item py-0 group/item', { 'active': route().current('admin.features.*') }]">
+                                <Link :href="route('admin.features.index')"
+                                    class="nk-menu-link flex relative items-center align-middle py-2 ps-5 pe-8 font-heading font-bold tracking-snug group">
+                                    <span
+                                        class="font-normal tracking-normal w-8 inline-flex flex-grow-0 flex-shrink-0 text-slate-400 group-[.active]/item:text-primary-500 group-hover:text-primary-500">
+                                        <em
+                                            class="text-xl leading-none text-current transition-all duration-300 icon ni ni-star-fill"></em>
+                                    </span>
+                                    <span
+                                        class="group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0 flex-grow-1 inline-block whitespace-nowrap transition-all duration-300 text-sm text-slate-600 dark:text-slate-500 group-[.active]/item:text-primary-500 group-hover:text-primary-500">Fonctionnalités Clt</span>
+                                </Link>
+                            </li>
+                        </template>
                     </template>
 
                     <template v-if="$page.props.auth.user && hasPermission('parametres.gerer')">

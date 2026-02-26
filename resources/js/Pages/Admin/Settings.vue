@@ -14,6 +14,9 @@ const enterpriseForm = useForm({
     nif: props.settings.nif || '',
     statut: props.settings.statut || '',
     format_unite_argent: props.settings.format_unite_argent || 'Ar',
+    adresse: props.settings.adresse || '',
+    telephone: props.settings.telephone || '',
+    email: props.settings.email || '',
     logo: null,
     favicon: null,
 });
@@ -170,6 +173,24 @@ const confirmDeletePayment = (id) => {
                                     <div class="md:col-span-2">
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Format de l'unité monétaire *</label>
                                         <input v-model="enterpriseForm.format_unite_argent" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Adresse</label>
+                                        <textarea v-model="enterpriseForm.adresse" rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
+                                        <div v-if="enterpriseForm.errors.adresse" class="text-red-500 text-xs mt-1">{{ enterpriseForm.errors.adresse }}</div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Téléphone</label>
+                                        <input v-model="enterpriseForm.telephone" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                        <div v-if="enterpriseForm.errors.telephone" class="text-red-500 text-xs mt-1">{{ enterpriseForm.errors.telephone }}</div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email de contact</label>
+                                        <input v-model="enterpriseForm.email" type="email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                        <div v-if="enterpriseForm.errors.email" class="text-red-500 text-xs mt-1">{{ enterpriseForm.errors.email }}</div>
                                     </div>
                                 </div>
 

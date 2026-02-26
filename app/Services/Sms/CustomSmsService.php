@@ -36,8 +36,6 @@ class CustomSmsService implements SmsDriverInterface
     /**
      * Envoyer un SMS.
      *
-     * @param  string  $phoneNumber
-     * @param  string  $message
      * @return array<string, mixed>
      */
     public function sendSms(string $phoneNumber, string $message): array
@@ -84,6 +82,7 @@ class CustomSmsService implements SmsDriverInterface
                 if (config('app.debug')) {
                     Log::info("Custom SMS envoyé avec succès à {$phoneNumber}.", ['response' => $response->json()]);
                 }
+
                 return ['success' => true, 'message' => 'SMS envoyé avec succès.'];
             }
 
@@ -92,11 +91,12 @@ class CustomSmsService implements SmsDriverInterface
                 'payload' => $payload,
             ]);
 
-            return ['success' => false, 'message' => "Erreur API SMS via HTTP avec le statut " . $response->status()];
+            return ['success' => false, 'message' => 'Erreur API SMS via HTTP avec le statut '.$response->status()];
 
         } catch (Exception $e) {
-            Log::error("Erreur lors de l'appel au pilote Custom SMS : " . $e->getMessage());
-            return ['success' => false, 'message' => "Erreur lors de l'appel au pilote: " . $e->getMessage()];
+            Log::error("Erreur lors de l'appel au pilote Custom SMS : ".$e->getMessage());
+
+            return ['success' => false, 'message' => "Erreur lors de l'appel au pilote: ".$e->getMessage()];
         }
     }
 
@@ -112,9 +112,9 @@ class CustomSmsService implements SmsDriverInterface
             if (empty($apiUrl)) {
                 return ['ok' => false, 'message' => "URL de l'API non configurée."];
             }
-            
+
             // Simple check conceptually, as custom endpoints vary wildly
-            return ['ok' => true, 'message' => "La configuration Custom SMS est prête."];
+            return ['ok' => true, 'message' => 'La configuration Custom SMS est prête.'];
         } catch (Exception $e) {
             return ['ok' => false, 'message' => $e->getMessage()];
         }

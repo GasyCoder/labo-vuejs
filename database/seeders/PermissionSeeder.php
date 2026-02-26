@@ -25,6 +25,10 @@ class PermissionSeeder extends Seeder
         $superadmin = Role::firstOrCreate(['name' => 'superadmin', 'guard_name' => 'web']);
         $superadmin->syncPermissions(Permission::all());
 
+        $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $adminPermissions = Permission::where('name', '!=', 'parametres.gerer')->get();
+        $admin->syncPermissions($adminPermissions);
+
         $secretaire = Role::firstOrCreate(['name' => 'secretaire', 'guard_name' => 'web']);
         $secretaire->syncPermissions([
             'prescriptions.voir',

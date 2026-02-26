@@ -7,6 +7,7 @@ use App\Models\Paiement;
 use App\Models\Patient;
 use App\Models\Prescription;
 use App\Models\Resultat;
+use App\Services\DashboardService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,6 +16,13 @@ use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
+    protected $dashboardService;
+
+    public function __construct(DashboardService $dashboardService)
+    {
+        $this->dashboardService = $dashboardService;
+    }
+
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -23,6 +31,7 @@ class DashboardController extends Controller
             abort(401, 'Utilisateur non connecté');
         }
 
+        // Shared basic stats that might still be useful for other roles
         $stats = [
             'patients' => $this->getPatientStats($user),
             'analyses' => $this->getAnalyseStats($user),
@@ -30,68 +39,28 @@ class DashboardController extends Controller
             'activites' => $this->getRecentActivities($user),
         ];
 
+        // Fetch new Strategic KPIs if user is admin/superadmin
+        $strategicData = [];
+        if (in_array($user->type, ['superadmin', 'admin'])) {
+            $strategicData = [
+                'kpis' => $this->dashboardService->getKpis(),
+                'revenueLast30Days' => $this->dashboardService->getRevenueLast30Days(),
+                'prescriptionsLast30Days' => $this->dashboardService->getPrescriptionsLast30Days(),
+                'topAnalyses' => $this->dashboardService->getTopAnalyses(),
+                'paymentRatio' => $this->dashboardService->getPaymentRatio(),
+                'monthlyComparison' => $this->dashboardService->getMonthlyComparison(),
+            ];
+        }
+
         return Inertia::render('Dashboard', [
             'stats' => $stats,
-            // PRESCRIPTION MONITORING
-            'prescriptionsList' => $this->getPrescriptionsList($request),
-            'secretaires' => \App\Models\User::where('type', 'secretaire')
-                ->orWhere('type', 'superadmin')
-                ->orderBy('name')
-                ->get(['id', 'name', 'type']),
-            'prescriptionsFilters' => [
-                'date_from' => $request->input('date_from', ''),
-                'date_to' => $request->input('date_to', ''),
-                'prescriptionSearch' => $request->input('prescriptionSearch', ''),
-                'secretaire_id' => $request->input('secretaire_id', ''),
-                'prescriptionsPerPage' => $request->input('prescriptionsPerPage', 15),
-            ],
+            'strategicData' => $strategicData,
         ]);
-    }
-
-    private function getPrescriptionsList(Request $request)
-    {
-        $query = Prescription::with(['patient', 'secretaire', 'prescripteur', 'paiements', 'analyses'])
-            ->orderBy('created_at', 'desc');
-
-        $dateFrom = $request->input('date_from');
-        $dateTo = $request->input('date_to');
-
-        if ($dateFrom && $dateTo) {
-            $query->whereBetween('created_at', [
-                Carbon::parse($dateFrom)->startOfDay(),
-                Carbon::parse($dateTo)->endOfDay(),
-            ]);
-        } elseif ($dateFrom) {
-            $query->whereDate('created_at', '>=', $dateFrom);
-        } elseif ($dateTo) {
-            $query->whereDate('created_at', '<=', $dateTo);
-        }
-
-        $secretaireId = $request->input('secretaire_id');
-        if ($secretaireId) {
-            $query->where('secretaire_id', $secretaireId);
-        }
-
-        $prescriptionSearch = $request->input('prescriptionSearch');
-        if ($prescriptionSearch) {
-            $query->where(function ($q) use ($prescriptionSearch) {
-                $q->where('reference', 'like', "%{$prescriptionSearch}%")
-                    ->orWhereHas('patient', function ($pq) use ($prescriptionSearch) {
-                        $pq->where('nom', 'like', "%{$prescriptionSearch}%")
-                            ->orWhere('prenom', 'like', "%{$prescriptionSearch}%")
-                            ->orWhere('numero_dossier', 'like', "%{$prescriptionSearch}%");
-                    });
-            });
-        }
-
-        $perPage = $request->input('prescriptionsPerPage', 15);
-
-        return $query->paginate($perPage, ['*'], 'prescriptions_page')->withQueryString();
     }
 
     private function getPatientStats($user)
     {
-        if (! in_array($user->type, ['superadmin', 'secretaire'])) {
+        if (! in_array($user->type, ['superadmin', 'admin', 'secretaire'])) {
             return [];
         }
 
@@ -108,7 +77,7 @@ class DashboardController extends Controller
 
     private function getAnalyseStats($user)
     {
-        if (! in_array($user->type, ['superadmin', 'biologiste', 'technicien'])) {
+        if (! in_array($user->type, ['superadmin', 'admin', 'biologiste', 'technicien'])) {
             return [];
         }
 
@@ -131,8 +100,8 @@ class DashboardController extends Controller
 
         try {
             if (class_exists('App\Models\Resultat')) {
-                $pathologiques = Resultat::where('interpretation', 'PATHOLOGIQUE')->count();
-                $totalResultats = Resultat::count();
+                $pathologiques = \App\Models\Resultat::where('interpretation', 'PATHOLOGIQUE')->count();
+                $totalResultats = \App\Models\Resultat::count();
             }
         } catch (\Exception $e) {
         }
@@ -146,7 +115,7 @@ class DashboardController extends Controller
 
     private function getFinanceStats($user)
     {
-        if (! in_array($user->type, ['superadmin', 'secretaire'])) {
+        if (! in_array($user->type, ['superadmin', 'admin', 'secretaire'])) {
             return [];
         }
 
@@ -175,7 +144,7 @@ class DashboardController extends Controller
         $activities = [];
 
         try {
-            if (in_array($user->type, ['superadmin', 'secretaire'])) {
+            if (in_array($user->type, ['superadmin', 'admin', 'secretaire'])) {
                 $recentPatients = Patient::latest()
                     ->limit(3)
                     ->get();
@@ -190,9 +159,9 @@ class DashboardController extends Controller
                 }
             }
 
-            if (in_array($user->type, ['superadmin', 'biologiste'])) {
+            if (in_array($user->type, ['superadmin', 'admin', 'biologiste'])) {
                 try {
-                    $recentValidations = Resultat::with(['analyse', 'prescription.patient'])
+                    $recentValidations = \App\Models\Resultat::with(['analyse', 'prescription.patient'])
                         ->where('status', 'VALIDE')
                         ->whereNotNull('validated_at')
                         ->latest('validated_at')
@@ -214,7 +183,7 @@ class DashboardController extends Controller
                 }
             }
 
-            if (in_array($user->type, ['superadmin', 'secretaire'])) {
+            if (in_array($user->type, ['superadmin', 'admin', 'secretaire'])) {
                 try {
                     $recentPayments = Paiement::with('prescription.patient')
                         ->latest()
@@ -236,7 +205,7 @@ class DashboardController extends Controller
                 }
             }
 
-            if (in_array($user->type, ['superadmin', 'technicien'])) {
+            if (in_array($user->type, ['superadmin', 'admin', 'technicien'])) {
                 $prescriptionsEnAttente = Prescription::with('patient')
                     ->where('status', 'EN_ATTENTE')
                     ->latest()
@@ -270,3 +239,4 @@ class DashboardController extends Controller
         }
     }
 }
+

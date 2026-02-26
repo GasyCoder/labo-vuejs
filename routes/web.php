@@ -15,7 +15,6 @@ use App\Http\Controllers\Laboratoire\ExamenController;
 use App\Http\Controllers\Laboratoire\PrelevementController;
 use App\Http\Controllers\Laboratoire\TypeController;
 use App\Http\Controllers\PrescriptionWorkspaceController;
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ResultatController;
 use App\Http\Controllers\RoleWorklistController;
 use App\Http\Controllers\Secretaire\PatientController;
@@ -57,12 +56,10 @@ Route::middleware(['auth', 'verified', 'role.redirect'])->group(function () {
     // Dashboard principal
     Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
 
-    // Profil utilisateur
-    Route::prefix('profile')->name('profile.')->group(function () {
-        Route::get('/', [ProfileController::class, 'edit'])->name('edit');
-        Route::patch('/', [ProfileController::class, 'update'])->name('update');
-        Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
-    });
+    // Suivi Opérationnel des Prescriptions (Gated by Premium Feature)
+    Route::middleware('feature:prescriptions_tracking')
+        ->get('/prescriptions-tracking', [\App\Http\Controllers\Admin\PrescriptionTrackingController::class, 'index'])
+        ->name('admin.prescriptions-tracking.index');
 
     // Archives
     Route::get('/archives', [\App\Http\Controllers\ArchivesController::class, 'index'])->name('archives');
@@ -73,7 +70,7 @@ Route::middleware(['auth', 'verified', 'role.redirect'])->group(function () {
 // ============================================
 // ROUTES SPÉCIFIQUES AUX SECRÉTAIRES
 // ============================================
-Route::middleware(['auth', 'verified', 'role:secretaire,superadmin'])->prefix('secretaire')->name('secretaire.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:secretaire,superadmin,admin'])->prefix('secretaire')->name('secretaire.')->group(function () {
     Route::controller(PrescriptionController::class)->group(function () {
         Route::get('prescription/listes', 'index')->name('prescription.index');
         Route::get('nouvel-prescription', 'create')->name('prescription.create');
@@ -105,6 +102,8 @@ Route::middleware(['auth', 'verified', 'role:secretaire,superadmin'])->prefix('s
         Route::get('patients', 'index')->name('patients.index');
         Route::get('patients/{patient}', 'show')->name('patient.detail');
         Route::put('patients/{patient}', 'update')->name('patient.update');
+        Route::delete('patients/{patient}', 'destroy')->name('patient.destroy');
+        Route::post('prescriptions/{prescription}/send-invoice', 'sendInvoice')->name('patient.send-invoice');
     });
     Route::controller(\App\Http\Controllers\Secretaire\PrescripteurController::class)->group(function () {
         Route::get('prescripteurs', 'index')->name('prescripteurs.index');
@@ -121,7 +120,10 @@ Route::middleware(['auth', 'verified', 'role:secretaire,superadmin'])->prefix('s
     // Route pour afficher le journal de caisse
     Route::get('/journal-caisse', [\App\Http\Controllers\JournalCaisseController::class, 'index'])->name('journal-caisse');
     Route::get('/journal-caisse/export', [\App\Http\Controllers\JournalCaisseController::class, 'exportPdf'])->name('journal-caisse.export');
-    Route::get('/journal-decaissement', [\App\Http\Controllers\JournalDecaissementController::class, 'index'])->name('journal-decaissement');
+    // Journal de decaissement (Gated by Premium Feature)
+    Route::middleware('feature:journal_decaissement')
+        ->get('journal-decaissement', [\App\Http\Controllers\JournalDecaissementController::class, 'index'])
+        ->name('journal-decaissement');
     Route::get('/journal-decaissement/export', [\App\Http\Controllers\JournalDecaissementController::class, 'exportPdf'])->name('journal-decaissement.export');
     Route::controller(\App\Http\Controllers\Secretaire\Tubes\GestionEtiquettesController::class)->group(function () {
         Route::get('/secretaire/etiquettes', 'index')->name('etiquettes');
@@ -145,7 +147,7 @@ Route::middleware(['auth', 'verified', 'role:secretaire,superadmin'])->prefix('s
 // ============================================ Résultats PDF prescriptions
 // ROUTES SPÉCIFIQUES AUX SECRETAIRES, BIOLOGISTES
 // ============================================
-Route::middleware(['auth', 'verified', 'role:secretaire,biologiste,superadmin'])->prefix('laboratoire')->name('laboratoire.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:secretaire,biologiste,superadmin,admin'])->prefix('laboratoire')->name('laboratoire.')->group(function () {
     Route::get('/prescription/{prescription}/pdf', [PrescriptionPdfController::class, 'show'])
         ->name('prescription.pdf');
 });
@@ -153,7 +155,7 @@ Route::middleware(['auth', 'verified', 'role:secretaire,biologiste,superadmin'])
 // ============================================
 // ROUTES SPÉCIFIQUES AUX TECHNICIENS
 // ============================================
-Route::middleware(['auth', 'verified', 'role:technicien'])->prefix('technicien')->name('technicien.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:technicien,superadmin,admin'])->prefix('technicien')->name('technicien.')->group(function () {
     Route::get('traitement', [\App\Http\Controllers\Technicien\TechnicienController::class, 'index'])->name('index');
     Route::post('prescription/{id}/start', [\App\Http\Controllers\Technicien\TechnicienController::class, 'startAnalysis'])->name('prescription.start');
     Route::post('prescription/{id}/continue', [\App\Http\Controllers\Technicien\TechnicienController::class, 'continueAnalysis'])->name('prescription.continue');
@@ -185,7 +187,7 @@ Route::middleware(['auth', 'verified', 'role:technicien'])->prefix('technicien')
 // ============================================
 // ROUTES SPÉCIFIQUES AUX BIOLOGISTES
 // ============================================
-Route::middleware(['auth', 'verified', 'role:biologiste'])->prefix('biologiste')->name('biologiste.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:biologiste,superadmin,admin'])->prefix('biologiste')->name('biologiste.')->group(function () {
     // Routes principales
     Route::get('/analyse-valide', [RoleWorklistController::class, 'biologiste'])->name('analyse.index');
     Route::get('/prescription/{prescription}', [PrescriptionWorkspaceController::class, 'showBiologiste'])->name('prescription.show');
@@ -199,7 +201,7 @@ Route::middleware(['auth', 'verified', 'role:biologiste'])->prefix('biologiste')
 // ============================================
 // ROUTES SPÉCIFIQUES AUX ADMINS, BIOLOGISTES, TECHNICIENS
 // ============================================
-Route::middleware(['auth', 'verified', 'role:technicien,biologiste,superadmin'])->prefix('laboratoire')->name('laboratoire.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:technicien,biologiste,superadmin,admin'])->prefix('laboratoire')->name('laboratoire.')->group(function () {
     // Section Analyses
     Route::prefix('analyses')->name('analyses.')->group(function () {
         Route::controller(ExamenController::class)->group(function () {
@@ -260,7 +262,7 @@ Route::middleware(['auth', 'verified', 'role:technicien,biologiste,superadmin'])
 // ============================================
 // ROUTES SPÉCIFIQUES AUX ADMINS
 // ============================================
-Route::middleware(['auth', 'verified', 'role:superadmin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:superadmin,admin'])->prefix('admin')->name('admin.')->group(function () {
     // Utilisateurs
     Route::controller(UserController::class)->group(function () {
         Route::get('utilisateurs', 'index')->name('users');
@@ -270,38 +272,48 @@ Route::middleware(['auth', 'verified', 'role:superadmin'])->prefix('admin')->nam
         Route::post('utilisateurs/{user}/logout', 'logoutSession')->name('users.logout');
     });
 
-    // Permissions
-    Route::controller(PermissionController::class)->group(function () {
-        Route::get('permissions', 'index')->name('permissions');
-        Route::put('permissions', 'update')->name('permissions.update');
-    });
+    // ==== ROUTES STRICTEMENT RÉSERVÉES AU SUPER ADMIN ====
+    Route::middleware(['role:superadmin'])->group(function () {
+        // Permissions
+        Route::controller(PermissionController::class)->group(function () {
+            Route::get('permissions', 'index')->name('permissions');
+            Route::put('permissions', 'update')->name('permissions.update');
+        });
+        // Paramètres
+        Route::get('logs', [SettingController::class, 'getLogs'])->name('settings.logs');
 
-    // Paramètres
-    Route::get('parametres', [SettingController::class, 'index'])->name('settings');
-    Route::controller(SettingController::class)->prefix('parametres')->name('settings.')->group(function () {
-        Route::post('entreprise', 'updateEnterprise')->name('enterprise');
-        Route::post('remove-image', 'removeImage')->name('remove-image');
-        Route::post('discount', 'updateDiscount')->name('discount');
-        Route::post('commission', 'updateCommission')->name('commission');
-        Route::post('emergency', 'updateEmergency')->name('emergency');
-        Route::post('payment-method', 'storePaymentMethod')->name('payment-method.store');
-        Route::put('payment-method/{paymentMethod}', 'updatePaymentMethod')->name('payment-method.update');
-        Route::delete('payment-method/{paymentMethod}', 'destroyPaymentMethod')->name('payment-method.destroy');
-        Route::post('test-sms', 'testSms')->name('test-sms');
-        Route::post('test-email', 'testEmail')->name('test-email');
-        Route::post('api-config', 'updateApiConfig')->name('api-config');
-    });
+        // Administration des fonctionnalités Premium SaaS
+        Route::prefix('features')->name('features.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\ClientFeatureController::class, 'index'])->name('index');
+            Route::get('/{client}/edit', [\App\Http\Controllers\Admin\ClientFeatureController::class, 'edit'])->name('edit');
+            Route::put('/{client}', [\App\Http\Controllers\Admin\ClientFeatureController::class, 'update'])->name('update');
+        });
+        Route::get('parametres', [SettingController::class, 'index'])->name('settings');
+        Route::controller(SettingController::class)->prefix('parametres')->name('settings.')->group(function () {
+            Route::post('entreprise', 'updateEnterprise')->name('enterprise');
+            Route::post('remove-image', 'removeImage')->name('remove-image');
+            Route::post('discount', 'updateDiscount')->name('discount');
+            Route::post('commission', 'updateCommission')->name('commission');
+            Route::post('emergency', 'updateEmergency')->name('emergency');
+            Route::post('payment-method', 'storePaymentMethod')->name('payment-method.store');
+            Route::put('payment-method/{paymentMethod}', 'updatePaymentMethod')->name('payment-method.update');
+            Route::delete('payment-method/{paymentMethod}', 'destroyPaymentMethod')->name('payment-method.destroy');
+            Route::post('test-sms', 'testSms')->name('test-sms');
+            Route::post('test-email', 'testEmail')->name('test-email');
+            Route::post('api-config', 'updateApiConfig')->name('api-config');
+        });
 
-    // Configuration API (Email & SMS) - Page séparée
-    Route::get('api-settings', [ApiSettingController::class, 'index'])->name('api-settings');
-    Route::controller(ApiSettingController::class)->prefix('api-settings')->name('api-settings.')->group(function () {
-        Route::post('email', 'updateEmailConfig')->name('update-email');
-        Route::post('sms', 'storeSmsProvider')->name('store-sms');
-        Route::put('sms/{provider}', 'updateSmsProvider')->name('update-sms');
-        Route::delete('sms/{provider}', 'destroySmsProvider')->name('destroy-sms');
-        Route::post('sms/{provider}/activate', 'activateSmsProvider')->name('activate-sms');
-        Route::post('test-sms', 'testSms')->name('test-sms');
-        Route::post('test-email', 'testEmail')->name('test-email');
+        // Configuration API (Email & SMS) - Page séparée
+        Route::get('api-settings', [ApiSettingController::class, 'index'])->name('api-settings');
+        Route::controller(ApiSettingController::class)->prefix('api-settings')->name('api-settings.')->group(function () {
+            Route::post('email', 'updateEmailConfig')->name('update-email');
+            Route::post('sms', 'storeSmsProvider')->name('store-sms');
+            Route::put('sms/{provider}', 'updateSmsProvider')->name('update-sms');
+            Route::delete('sms/{provider}', 'destroySmsProvider')->name('destroy-sms');
+            Route::post('sms/{provider}/activate', 'activateSmsProvider')->name('activate-sms');
+            Route::post('test-sms', 'testSms')->name('test-sms');
+            Route::post('test-email', 'testEmail')->name('test-email');
+        });
     });
 
     // Traçabilité des patients
@@ -321,6 +333,7 @@ Route::middleware(['auth', 'verified', 'role:superadmin'])->prefix('admin')->nam
 
     // Export CSV des prescriptions
     Route::get('prescriptions/export', [PrescriptionExportController::class, 'export'])->name('prescriptions.export');
+    Route::post('prescriptions/export/email', [PrescriptionExportController::class, 'sendEmail'])->name('prescriptions.export.email');
 });
 
 // ============================================

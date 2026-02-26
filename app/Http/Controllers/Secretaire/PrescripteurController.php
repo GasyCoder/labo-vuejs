@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Secretaire;
 
 use App\Http\Controllers\Controller;
 use App\Models\Prescripteur;
-use App\Models\Setting;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -61,8 +60,7 @@ class PrescripteurController extends Controller
                 'telephone' => $prescripteur->telephone,
                 'notes' => $prescripteur->notes,
                 'is_active' => $prescripteur->is_active,
-                'commission_quota' => $prescripteur->commission_quota,
-                'commission_pourcentage' => $prescripteur->commission_pourcentage,
+                'is_commissionned' => $prescripteur->is_commissionned,
                 'total_prescriptions' => $prescripteur->total_prescriptions,
                 'prescriptions_commissionnables' => $prescripteur->prescriptions_commissionnables,
                 'brute_mensuel' => $prescripteur->getBruteAnalysesMensuel(),
@@ -83,8 +81,8 @@ class PrescripteurController extends Controller
                 'sortDirection' => $sortDirection,
                 'perPage' => $perPage,
             ],
-            'defaultCommissionQuota' => Setting::getCommissionQuota(),
-            'defaultCommissionPourcentage' => Setting::getCommissionPourcentage(),
+            'globalCommissionQuota' => \App\Models\Setting::getCommissionQuota(),
+            'globalCommissionPourcentage' => \App\Models\Setting::getCommissionPourcentage(),
         ], $statistiques));
     }
 
@@ -129,12 +127,11 @@ class PrescripteurController extends Controller
             'nom' => 'required|min:2|max:100',
             'prenom' => 'nullable|max:100',
             'grade' => 'nullable|max:20',
-            'status' => 'required|in:Medecin,Professeur',
+            'status' => 'required|in:'.implode(',', array_keys(Prescripteur::getStatusDisponibles())),
             'telephone' => 'nullable|max:20',
             'notes' => 'nullable|max:1000',
             'is_active' => 'boolean',
-            'commission_quota' => 'required|numeric|min:0',
-            'commission_pourcentage' => 'required|numeric|min:0|max:100',
+            'is_commissionned' => 'boolean',
         ], [
             'nom.required' => 'Le nom est obligatoire.',
             'nom.min' => 'Le nom doit contenir au moins 2 caractères.',
@@ -153,12 +150,11 @@ class PrescripteurController extends Controller
             'nom' => 'required|min:2|max:100',
             'prenom' => 'nullable|max:100',
             'grade' => 'nullable|max:20',
-            'status' => 'required|in:Medecin,Professeur',
+            'status' => 'required|in:'.implode(',', array_keys(Prescripteur::getStatusDisponibles())),
             'telephone' => 'nullable|max:20',
             'notes' => 'nullable|max:1000',
             'is_active' => 'boolean',
-            'commission_quota' => 'required|numeric|min:0',
-            'commission_pourcentage' => 'required|numeric|min:0|max:100',
+            'is_commissionned' => 'boolean',
         ], [
             'nom.required' => 'Le nom est obligatoire.',
             'nom.min' => 'Le nom doit contenir au moins 2 caractères.',
@@ -234,9 +230,14 @@ class PrescripteurController extends Controller
         return response()->streamDownload(function () use ($prescripteurs) {
             $file = fopen('php://output', 'w');
             fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
-            fputcsv($file, ['ID', 'Nom', 'Prénom', 'Grade', 'Statut', 'Téléphone', 'Actif', 'Quota', 'Pourcentage %', 'Notes'], ';');
+            fputcsv($file, ['ID', 'Nom', 'Prénom', 'Grade', 'Statut', 'Téléphone', 'Actif', 'A Commission', 'Notes', 'Nombre de prescriptions', 'Total Commissions (Ar)'], ';');
 
             foreach ($prescripteurs as $p) {
+                // Si le prescripteur est commissionnable, on récupère les vraies stats
+                $stats = $p->is_commissionned
+                            ? $p->getStatistiquesCommissions()
+                            : ['total_prescriptions' => $p->prescriptions()->count(), 'total_commission' => 0];
+
                 fputcsv($file, [
                     $p->id,
                     $p->nom,
@@ -245,9 +246,10 @@ class PrescripteurController extends Controller
                     $p->status,
                     $p->telephone,
                     $p->is_active ? 'Oui' : 'Non',
-                    $p->commission_quota,
-                    $p->commission_pourcentage,
+                    $p->is_commissionned ? 'Oui' : 'Non',
                     $p->notes,
+                    $stats['total_prescriptions'],
+                    $stats['total_commission'],
                 ], ';');
             }
             fclose($file);
@@ -306,7 +308,7 @@ class PrescripteurController extends Controller
             $data = [
                 'prescripteur' => $prescripteur,
                 'commissionDetails' => $commissionDetails,
-                'commissionPourcentage' => $prescripteur->commission_pourcentage,
+                'commissionPourcentage' => \App\Models\Setting::getCommissionPourcentage(),
                 'dateDebut' => $dateDebut,
                 'dateFin' => $dateFin,
                 'dateEmission' => now()->format('d/m/Y'),

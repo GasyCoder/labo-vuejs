@@ -53,6 +53,9 @@ class SettingController extends Controller
             'nif' => 'nullable|string|max:100',
             'statut' => 'nullable|string|max:100',
             'format_unite_argent' => 'required|string|max:10',
+            'adresse' => 'nullable|string|max:500',
+            'telephone' => 'nullable|string|max:100',
+            'email' => 'nullable|email|max:255',
             'logo' => 'nullable|image|max:2048',
             'favicon' => 'nullable|image|max:1024',
         ]);
@@ -63,6 +66,9 @@ class SettingController extends Controller
         $setting->nif = $validated['nif'];
         $setting->statut = $validated['statut'];
         $setting->format_unite_argent = $validated['format_unite_argent'];
+        $setting->adresse = $validated['adresse'];
+        $setting->telephone = $validated['telephone'];
+        $setting->email = $validated['email'];
 
         if ($request->hasFile('logo')) {
             if ($setting->logo) {

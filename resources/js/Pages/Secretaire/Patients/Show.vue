@@ -33,6 +33,14 @@
                     Retour
                 </Link>
 
+                <button @click="showDeleteConfirm = true"
+                   class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 rounded-lg transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/>
+                    </svg>
+                    Supprimer
+                </button>
+
                 <button @click="editMode = true"
                    class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors shadow-sm">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -429,6 +437,14 @@
                                     </svg>
                                     Facture
                                 </a>
+                                <button v-if="patient.email && $page.props.enabledFeatures?.patient_invoice_email !== false" @click="sendInvoiceByEmail(paiement.prescription_id)"
+                                   :disabled="sendingInvoiceId === paiement.prescription_id"
+                                   class="inline-flex items-center px-2 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-100 dark:bg-primary-900/30 hover:bg-primary-200 dark:hover:bg-primary-900/50 rounded transition-colors disabled:opacity-50" title="Envoyer par email">
+                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                    </svg>
+                                    {{ sendingInvoiceId === paiement.prescription_id ? 'Envoi...' : 'Email' }}
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -447,12 +463,67 @@
             </div>
         </div>
     </div>
+    <!-- Delete confirmation -->
+    <Teleport to="body">
+        <div v-if="showDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-black/50" @click="showDeleteConfirm = false"></div>
+            <div class="relative bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-sm w-full p-6">
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Supprimer ce patient ?</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Cette action supprimera le patient <strong>{{ patient.nom }} {{ patient.prenom }}</strong> et toutes ses prescriptions associées. Cette action est irréversible.</p>
+                    <div class="flex items-center gap-3 w-full">
+                        <button @click="showDeleteConfirm = false"
+                           class="flex-1 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                            Annuler
+                        </button>
+                        <button @click="handleDelete" :disabled="isDeleting"
+                           class="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50">
+                            {{ isDeleting ? 'Suppression...' : 'Supprimer' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </Teleport>
+
+    <!-- Invoice confirmation -->
+    <Teleport to="body">
+        <div v-if="showInvoiceConfirm" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="fixed inset-0 bg-black/50" @click="showInvoiceConfirm = false"></div>
+            <div class="relative bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-sm w-full p-6">
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Envoyer la facture par email ?</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">La facture sera envoyée à l'adresse <strong>{{ patient.email }}</strong>.</p>
+                    <div class="flex items-center gap-3 w-full">
+                        <button @click="showInvoiceConfirm = false"
+                           class="flex-1 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                            Annuler
+                        </button>
+                        <button @click="confirmSendInvoice" :disabled="sendingInvoiceId === invoicePrescriptionId"
+                           class="flex-1 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50">
+                            {{ sendingInvoiceId === invoicePrescriptionId ? 'Envoi...' : 'Oui, envoyer' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </Teleport>
 </AppLayout>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
-import { useForm, Link } from '@inertiajs/vue3';
+import { useForm, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
 const props = defineProps({
@@ -470,6 +541,11 @@ const activeTab = ref('infos');
 const editMode = ref(false);
 const searchPrescriptions = ref('');
 const filtreStatut = ref('');
+const showDeleteConfirm = ref(false);
+const isDeleting = ref(false);
+const sendingInvoiceId = ref(null);
+const showInvoiceConfirm = ref(false);
+const invoicePrescriptionId = ref(null);
 
 const editForm = useForm({
     nom: props.patient.nom,
@@ -565,5 +641,30 @@ const cancelEdit = () => {
     editMode.value = false;
     editForm.reset();
     editForm.clearErrors();
+};
+
+const handleDelete = () => {
+    isDeleting.value = true;
+    router.delete(route('secretaire.patient.destroy', props.patient.id), {
+        onFinish: () => { isDeleting.value = false; showDeleteConfirm.value = false; },
+    });
+};
+
+const sendInvoiceByEmail = (prescriptionId) => {
+    invoicePrescriptionId.value = prescriptionId;
+    showInvoiceConfirm.value = true;
+};
+
+const confirmSendInvoice = () => {
+    if (!invoicePrescriptionId.value) return;
+
+    sendingInvoiceId.value = invoicePrescriptionId.value;
+    router.post(route('secretaire.patient.send-invoice', invoicePrescriptionId.value), {}, {
+        preserveScroll: true,
+        onFinish: () => { 
+            sendingInvoiceId.value = null; 
+            showInvoiceConfirm.value = false;
+        },
+    });
 };
 </script>

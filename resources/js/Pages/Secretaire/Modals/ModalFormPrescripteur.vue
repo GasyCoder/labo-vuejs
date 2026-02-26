@@ -72,36 +72,6 @@
                             <InputError :message="form.errors.telephone" class="mt-2" />
                         </div>
 
-                        <!-- Commission Quota -->
-                        <div>
-                            <InputLabel for="commission_quota" value="Quota mensuel de commission (Ar) *" />
-                            <TextInput
-                                id="commission_quota"
-                                type="number"
-                                step="0.01"
-                                class="mt-1 block w-full"
-                                v-model="form.commission_quota"
-                                required
-                                :class="{ 'border-red-500': form.errors.commission_quota }"
-                            />
-                            <InputError :message="form.errors.commission_quota" class="mt-2" />
-                        </div>
-
-                        <!-- Commission Pourcentage -->
-                        <div>
-                            <InputLabel for="commission_pourcentage" value="Pourcentage de commission (%) *" />
-                            <TextInput
-                                id="commission_pourcentage"
-                                type="number"
-                                step="0.01"
-                                class="mt-1 block w-full"
-                                v-model="form.commission_pourcentage"
-                                required
-                                :class="{ 'border-red-500': form.errors.commission_pourcentage }"
-                            />
-                            <InputError :message="form.errors.commission_pourcentage" class="mt-2" />
-                        </div>
-
                         <!-- Notes -->
                         <div class="md:col-span-2">
                             <InputLabel for="notes" value="Notes" />
@@ -115,13 +85,19 @@
                             <InputError :message="form.errors.notes" class="mt-2" />
                         </div>
 
-                        <!-- Actif -->
-                        <div class="md:col-span-2">
+                        <!-- Actifs et Commissions -->
+                        <div class="md:col-span-2 space-y-3">
                             <label class="flex items-center">
                                 <Checkbox name="is_active" v-model:checked="form.is_active" />
                                 <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Prescripteur actif</span>
                             </label>
-                            <InputError :message="form.errors.is_active" class="mt-2" />
+                            
+                            <label class="flex items-center">
+                                <Checkbox name="is_commissionned" v-model:checked="form.is_commissionned" />
+                                <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Touche une commission sur ses prescriptions payées</span>
+                            </label>
+                            <InputError :message="form.errors.is_active" class="mt-1" />
+                            <InputError :message="form.errors.is_commissionned" class="mt-1" />
                         </div>
                     </div>
                 </div>
@@ -155,8 +131,6 @@ const props = defineProps({
     prescripteur: Object,
     grades: Object,
     statusOptions: Object,
-    defaultCommissionQuota: [Number, String],
-    defaultCommissionPourcentage: [Number, String],
 });
 
 const emit = defineEmits(['close']);
@@ -171,8 +145,7 @@ const form = useForm({
     telephone: '',
     notes: '',
     is_active: true,
-    commission_quota: props.defaultCommissionQuota || 250000,
-    commission_pourcentage: props.defaultCommissionPourcentage || 10,
+    is_commissionned: true,
 });
 
 watch(() => props.show, (show) => {
@@ -185,12 +158,9 @@ watch(() => props.show, (show) => {
             form.telephone = props.prescripteur.telephone;
             form.notes = props.prescripteur.notes;
             form.is_active = !!props.prescripteur.is_active;
-            form.commission_quota = props.prescripteur.commission_quota;
-            form.commission_pourcentage = props.prescripteur.commission_pourcentage;
+            form.is_commissionned = !!props.prescripteur.is_commissionned;
         } else {
             form.reset();
-            form.commission_quota = props.defaultCommissionQuota || 250000;
-            form.commission_pourcentage = props.defaultCommissionPourcentage || 10;
         }
         form.clearErrors();
     }

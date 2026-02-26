@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -22,15 +23,20 @@ class UserController extends Controller
         $perPage = $request->input('perPage', 10);
 
         $users = User::query()
+            ->when(! Auth::user()->isSuperAdmin(), function ($query) {
+                $query->where('type', '!=', User::TYPE_SUPERADMIN);
+            })
             ->when($search, function ($query, $search) {
                 // Adjust this scope if search method doesn't exist on User model
                 // Assuming it searches name, username or email
                 if (method_exists(User::class, 'scopeSearch')) {
                     $query->search($search);
                 } else {
-                    $query->where('name', 'like', "%{$search}%")
-                        ->orWhere('username', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
+                    $query->where(function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('username', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    });
                 }
             })
             ->paginate($perPage)
@@ -47,11 +53,16 @@ class UserController extends Controller
             return $user;
         });
 
+        $types = User::TYPES;
+        if (! Auth::user()->isSuperAdmin()) {
+            unset($types[User::TYPE_SUPERADMIN]);
+        }
+
         return Inertia::render('Admin/Users/Index', [
             'users' => $users,
             'filters' => ['search' => $search],
             'stats' => User::getCountByType(),
-            'types' => User::TYPES,
+            'types' => $types,
         ]);
     }
 
@@ -60,10 +71,15 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        $allowedRoles = ['admin', 'secretaire', 'technicien', 'biologiste'];
+        if (Auth::user()->isSuperAdmin()) {
+            $allowedRoles[] = 'superadmin';
+        }
+
         $validated = $request->validate([
             'name' => 'required|min:3',
             'username' => 'required|string|min:3|unique:users,username',
-            'type' => ['required', Rule::in(['superadmin', 'secretaire', 'technicien', 'biologiste'])],
+            'type' => ['required', Rule::in($allowedRoles)],
             'password' => 'required|confirmed|min:6',
         ]);
 
@@ -85,10 +101,15 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
+        $allowedRoles = ['admin', 'secretaire', 'technicien', 'biologiste'];
+        if (Auth::user()->isSuperAdmin()) {
+            $allowedRoles[] = 'superadmin';
+        }
+
         $rules = [
             'name' => 'required|min:3',
             'username' => ['required', 'string', 'min:3', Rule::unique('users', 'username')->ignore($user->id)],
-            'type' => ['required', Rule::in(['superadmin', 'secretaire', 'technicien', 'biologiste'])],
+            'type' => ['required', Rule::in($allowedRoles)],
         ];
 
         if ($request->filled('password')) {
@@ -120,6 +141,11 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
+        // Administrateur simple ne peut pas supprimer un superadmin
+        if ($user->hasRole('superadmin') && ! Auth::user()->isSuperAdmin()) {
+            abort(403, 'Action non autorisée.');
+        }
+
         // Vérifier si c'est le dernier superadmin
         if ($user->hasRole('superadmin') && User::role('superadmin')->count() <= 1) {
             return redirect()->back()->with('error', 'Impossible de supprimer le dernier super administrateur!');

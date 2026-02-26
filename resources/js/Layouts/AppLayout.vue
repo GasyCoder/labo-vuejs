@@ -7,7 +7,8 @@
 
                 <Header />
 
-                <div id="pagecontent" class="nk-content mt-8 px-1.5 py-6 sm:px-5 sm:py-8 bg-slate-50 dark:bg-transparent">
+                <!-- pt-24 (96px) : l'équilibre parfait pour une navbar de 64px -->
+                <div id="pagecontent" class="nk-content pt-24 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-900">
                     <div :class="['container', container ? '' : 'max-w-none']">
                         <slot />
                     </div>
@@ -40,7 +41,6 @@ const props = defineProps({
 
 const page = usePage();
 
-// Global toast — fires on every Inertia visit success (works with preserveScroll)
 let removeListener = null;
 
 onMounted(() => {

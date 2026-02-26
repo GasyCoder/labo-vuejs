@@ -48,6 +48,12 @@ class HandleInertiaRequests extends Middleware
                     'isAdmin' => method_exists($request->user(), 'isAdmin') ? $request->user()->isAdmin() : false,
                 ] : null,
             ],
+            'enabledFeatures' => function () use ($request) {
+                if ($request->user()) {
+                    return app(\App\Services\FeatureService::class)->getAllForCurrentUser();
+                }
+                return [];
+            },
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),
