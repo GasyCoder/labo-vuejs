@@ -335,8 +335,8 @@ class Tube extends Model
             'receptionnes' => static::receptionnes()->count(),
             'non_receptionnes' => static::nonReceptionnes()->count(),
             'par_prelevement' => static::join('prelevements', 'tubes.prelevement_id', '=', 'prelevements.id')
-                ->selectRaw('prelevements.code, prelevements.denomination, COUNT(*) as total')
-                ->groupBy('prelevements.code', 'prelevements.denomination')
+                ->selectRaw('prelevements.denomination, COUNT(*) as total')
+                ->groupBy('prelevements.denomination')
                 ->orderByDesc('total')
                 ->get(),
             'par_prescription' => static::join('prescriptions', 'tubes.prescription_id', '=', 'prescriptions.id')

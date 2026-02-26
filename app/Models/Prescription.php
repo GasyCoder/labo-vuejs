@@ -136,7 +136,18 @@ class Prescription extends Model
                 DB::raw('COUNT(tubes.id) as quantite_tubes'),
                 DB::raw('GROUP_CONCAT(tubes.code_barre) as codes_barres')
             )
-            ->groupBy('prelevements.id', 'prelevements.denomination', 'prelevements.prix', 'prelevements.prix_promotion')
+            ->groupBy(
+                'prelevements.id',
+                'prelevements.denomination',
+                'prelevements.type_tube_id',
+                'prelevements.prix',
+                'prelevements.prix_promotion',
+                'prelevements.quantite',
+                'prelevements.is_active',
+                'prelevements.created_at',
+                'prelevements.updated_at',
+                'prelevements.deleted_at'
+            )
             ->get();
     }
 
