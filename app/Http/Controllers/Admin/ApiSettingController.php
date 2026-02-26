@@ -35,6 +35,7 @@ class ApiSettingController extends Controller
                 'mail_encryption' => env('MAIL_ENCRYPTION', 'tls'),
                 'mail_from_address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
                 'mail_from_name' => env('MAIL_FROM_NAME', 'La Reference'),
+                'resend_key' => env('RESEND_KEY', ''),
             ],
             'smsDrivers' => $this->smsManager->getAllDriverConfigs(),
             'availableDrivers' => $this->smsManager->getAvailableDrivers(),
@@ -50,25 +51,27 @@ class ApiSettingController extends Controller
     {
         $validated = $request->validate([
             'mail_mailer' => 'required|string',
-            'mail_host' => 'required|string',
-            'mail_port' => 'required|numeric',
+            'mail_host' => 'nullable|string',
+            'mail_port' => 'nullable|numeric',
             'mail_username' => 'nullable|string',
             'mail_password' => 'nullable|string',
             'mail_encryption' => 'nullable|string',
             'mail_from_address' => 'required|email',
             'mail_from_name' => 'required|string',
+            'resend_key' => 'nullable|string',
         ]);
 
         try {
             $replacements = [
                 'MAIL_MAILER' => $validated['mail_mailer'],
-                'MAIL_HOST' => $validated['mail_host'],
-                'MAIL_PORT' => $validated['mail_port'],
-                'MAIL_USERNAME' => $validated['mail_username'],
-                'MAIL_PASSWORD' => $validated['mail_password'],
-                'MAIL_ENCRYPTION' => $validated['mail_encryption'],
+                'MAIL_HOST' => $validated['mail_host'] ?? '',
+                'MAIL_PORT' => $validated['mail_port'] ?? '',
+                'MAIL_USERNAME' => $validated['mail_username'] ?? '',
+                'MAIL_PASSWORD' => $validated['mail_password'] ?? '',
+                'MAIL_ENCRYPTION' => $validated['mail_encryption'] ?? '',
                 'MAIL_FROM_ADDRESS' => $validated['mail_from_address'],
                 'MAIL_FROM_NAME' => '"'.trim($validated['mail_from_name'], '"').'"',
+                'RESEND_KEY' => $validated['resend_key'] ?? '',
             ];
 
             $this->updateEnvFile($replacements);

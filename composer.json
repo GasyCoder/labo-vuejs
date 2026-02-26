@@ -20,6 +20,7 @@
         "livewire/livewire": "^3.6",
         "php-flasher/flasher-laravel": "^2.1",
         "picqer/php-barcode-generator": "^3.2",
+        "resend/resend-laravel": "^1.3",
         "spatie/laravel-permission": "^7.2",
         "tightenco/ziggy": "^2.6"
     },
