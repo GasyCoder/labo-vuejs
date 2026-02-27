@@ -27,15 +27,15 @@ class ApiSettingController extends Controller
 
         return Inertia::render('Admin/ApiSettings', [
             'emailConfig' => [
-                'mail_mailer' => env('MAIL_MAILER', 'smtp'),
-                'mail_host' => env('MAIL_HOST', 'mailpit'),
-                'mail_port' => env('MAIL_PORT', 1025),
-                'mail_username' => env('MAIL_USERNAME', ''),
-                'mail_password' => env('MAIL_PASSWORD', ''),
-                'mail_encryption' => env('MAIL_ENCRYPTION', 'tls'),
-                'mail_from_address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-                'mail_from_name' => env('MAIL_FROM_NAME', 'La Reference'),
-                'resend_key' => env('RESEND_KEY', ''),
+                'mail_mailer' => config('mail.default'),
+                'mail_host' => config('mail.mailers.smtp.host'),
+                'mail_port' => config('mail.mailers.smtp.port'),
+                'mail_username' => config('mail.mailers.smtp.username'),
+                'mail_password' => config('mail.mailers.smtp.password'),
+                'mail_encryption' => config('mail.mailers.smtp.encryption'),
+                'mail_from_address' => config('mail.from.address'),
+                'mail_from_name' => config('mail.from.name'),
+                'resend_key' => config('services.resend.key'),
             ],
             'smsDrivers' => $this->smsManager->getAllDriverConfigs(),
             'availableDrivers' => $this->smsManager->getAvailableDrivers(),
@@ -64,6 +64,7 @@ class ApiSettingController extends Controller
         try {
             $replacements = [
                 'MAIL_MAILER' => $validated['mail_mailer'],
+                'MAIL_MAILER_DEFAULT' => $validated['mail_mailer'], // Force override for system env vars
                 'MAIL_HOST' => $validated['mail_host'] ?? '',
                 'MAIL_PORT' => $validated['mail_port'] ?? '',
                 'MAIL_USERNAME' => $validated['mail_username'] ?? '',
