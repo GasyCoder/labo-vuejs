@@ -56,10 +56,10 @@ class UserSeeder extends Seeder
         string $role
     ): void {
         $user = User::updateOrCreate(
-            ['username' => $username], // clé unique
+            ['email' => $email], // Utiliser l'email comme clé de recherche plus stable
             [
                 'name' => $name,
-                'email' => $email,
+                'username' => $username,
                 'type' => $type,
                 'password' => Hash::make($password),
             ]
