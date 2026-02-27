@@ -87,10 +87,12 @@
         padding: 0 35px;
     }
 
-    /* ✅ Entre examens - ULTRA-COMPACT */
+    /* ✅ Entre examens - GESTION DES SAUTS DE PAGE */
     .examen-wrapper {
-        margin-bottom: 5px;
-        page-break-inside: auto;
+        margin-bottom: 15px;
+        page-break-inside: avoid !important;
+        display: block;
+        width: 100%;
     }
 
     .examen-wrapper::before {
@@ -147,6 +149,11 @@
         border-collapse: collapse;
         margin: 0;
         padding: 0;
+        page-break-inside: auto;
+    }
+
+    .main-table tr {
+        page-break-inside: avoid !important;
     }
 
     .main-table td {
