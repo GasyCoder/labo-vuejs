@@ -9,6 +9,7 @@ use App\Models\Examen;
 use App\Models\Prescription;
 use App\Models\PrescriptionExamenConclusion;
 use App\Models\Resultat;
+use App\Models\PdfBranding;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -504,6 +505,7 @@ class ResultatPdfShow
             'prescription' => $prescription,
             'examens' => $examens,
             'type_pdf' => $type,
+            'branding' => PdfBranding::active(),
             'laboratoire_name' => config('app.laboratoire_name', 'LABORATOIRE D\'ANALYSE CTB NOSYBE'),
             'date_generation' => now()->format('d/m/Y H:i'),
             'total_anteriorites' => $totalAnteriorites, // ✅ NOUVEAU
