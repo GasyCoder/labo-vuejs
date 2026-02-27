@@ -71,6 +71,7 @@ class HandleInertiaRequests extends Middleware
                 'error' => $request->session()->get('error'),
                 '_ts' => now()->timestamp,
             ],
+            'skeleton' => $request->session()->get('skeleton'),
             'settings' => [
                 'logo' => \App\Models\Setting::getLogo(),
                 'nom_entreprise' => \App\Models\Setting::getNomEntreprise(),

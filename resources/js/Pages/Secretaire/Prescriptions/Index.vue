@@ -541,7 +541,7 @@ const btnColor = (color) => {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-50 dark:divide-slate-700/50">
-                            <tr v-for="prescription in prescriptions.data" :key="prescription.id" class="group transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-700/20" :class="{'bg-primary-50/30 dark:bg-primary-900/10': selectedIds.includes(prescription.id)}">
+                            <tr v-for="(prescription, idx) in prescriptions.data" :key="prescription.id" class="group transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-700/20" :class="{'bg-primary-50/30 dark:bg-primary-900/10': selectedIds.includes(prescription.id)}">
                                 <td class="px-4 py-3.5">
                                     <input 
                                         type="checkbox" 

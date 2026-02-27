@@ -4,8 +4,10 @@ import { createApp, h } from 'vue';
 import { createInertiaApp, router } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
+import { useLoadingStore } from './Composables/useLoadingStore';
 
 const appName = window.document.getElementsByTagName('title')[0]?.innerText || 'Laravel';
+const { startLoading, stopLoading } = useLoadingStore();
 
 const resetSidebarOverlayState = () => {
     const sidebar = window.document.querySelector('.nk-sidebar');
@@ -23,6 +25,7 @@ const resetSidebarOverlayState = () => {
 const fallbackToBrowserVisit = (event) => {
     event.preventDefault();
     resetSidebarOverlayState();
+    stopLoading();
 
     const responseUrl = event?.detail?.response?.url;
     const visitUrl = event?.detail?.visit?.url;
@@ -53,6 +56,19 @@ createInertiaApp({
 
 router.on('start', () => {
     resetSidebarOverlayState();
+    startLoading();
+});
+
+router.on('finish', () => {
+    stopLoading();
+});
+
+router.on('error', () => {
+    stopLoading();
+});
+
+router.on('cancel', () => {
+    stopLoading();
 });
 
 router.on('success', () => {
