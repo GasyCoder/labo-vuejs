@@ -517,8 +517,8 @@ const btnColor = (color) => {
                 <button type="button" class="text-xs text-slate-400 underline hover:text-slate-600 dark:hover:text-slate-300" @click="clearAllFilters">Tout effacer</button>
             </div>
 
-            <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
-                <div class="hidden overflow-x-auto lg:block">
+            <div class="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                <div class="hidden lg:block">
                     <table class="w-full">
                         <thead>
                             <tr class="border-b border-slate-100 dark:border-slate-700">
@@ -564,7 +564,12 @@ const btnColor = (color) => {
                                 </td>
                                 <td class="px-4 py-3.5"><span class="text-sm text-slate-600 dark:text-slate-300">{{ truncate(prescription.prescripteur?.nom || 'N/A', 20) }}</span></td>
                                 <td class="px-4 py-3.5">
-                                    <div class="flex flex-wrap gap-1 max-w-[220px]">
+                                    <div class="flex flex-wrap items-center gap-1.5 max-w-[250px]">
+                                        <!-- Total Count Badge -->
+                                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300 text-[11px] font-black border border-primary-200 dark:border-primary-800 shadow-sm mr-1" title="Total des analyses">
+                                            {{ prescription.analyses_count }}
+                                        </span>
+
                                         <span v-for="(analyse, idx) in prescription.analyses.slice(0, 3)" :key="idx" 
                                             class="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-100/50 dark:border-blue-800/50 whitespace-nowrap"
                                             :title="analyse.designation">
@@ -575,15 +580,20 @@ const btnColor = (color) => {
                                             <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-400 cursor-help">
                                                 +{{ prescription.analyses.length - 3 }}
                                             </span>
-                                            <!-- Custom Tooltip -->
-                                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tooltip:block z-[70] w-max max-w-[300px] p-2 bg-slate-900 text-white text-[10px] rounded-lg shadow-2xl border border-slate-700 animate-in fade-in zoom-in duration-200">
+                                            <!-- Custom Tooltip: Dynamically position top or bottom based on index to avoid header masking -->
+                                            <div :class="[
+                                                'absolute left-1/2 -translate-x-1/2 hidden group-hover/tooltip:block z-[100] w-max max-w-[300px] p-2 bg-slate-900 text-white text-[10px] rounded-lg shadow-2xl border border-slate-700 animate-in fade-in zoom-in duration-200',
+                                                idx < 2 ? 'top-full mt-2' : 'bottom-full mb-2'
+                                            ]">
                                                 <div class="flex flex-col gap-1.5">
                                                     <div v-for="(allAnalyse, aIdx) in prescription.analyses" :key="aIdx" class="flex items-start gap-2 border-b border-slate-800 pb-1 last:border-0 last:pb-0">
                                                         <span class="font-bold text-primary-400 min-w-[40px]">{{ allAnalyse.code }}</span>
                                                         <span class="text-slate-300">{{ allAnalyse.designation }}</span>
                                                     </div>
                                                 </div>
-                                                <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900"></div>
+                                                <!-- Arrow direction -->
+                                                <div v-if="idx < 2" class="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-slate-900"></div>
+                                                <div v-else class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900"></div>
                                             </div>
                                         </div>
 
@@ -692,7 +702,12 @@ const btnColor = (color) => {
 
                         <div class="flex items-center justify-between pt-1">
                             <div class="flex flex-col gap-2 flex-1 min-w-0">
-                                <div class="flex flex-wrap gap-1">
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    <!-- Total Count Badge Mobile -->
+                                    <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300 text-[10px] font-black border border-primary-200 dark:border-primary-800 shadow-sm mr-0.5">
+                                        {{ prescription.analyses_count }}
+                                    </span>
+
                                     <span v-for="(analyse, idx) in prescription.analyses.slice(0, 4)" :key="idx" 
                                         class="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[9px] font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-100/50">
                                         {{ analyse.code }}
