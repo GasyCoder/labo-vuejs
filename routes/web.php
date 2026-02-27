@@ -32,6 +32,7 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Technicien\TechnicienController;
 use App\Http\Controllers\Admin\TracePatientController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\PdfBrandingController;
 use App\Http\Controllers\Admin\LogController;
 use App\Models\Prescription;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
@@ -327,6 +328,8 @@ Route::middleware(['auth', 'verified', 'role:superadmin,admin'])->prefix('admin'
 
         // Configuration API (Email & SMS) - Page séparée
         Route::get('api-settings', [ApiSettingController::class, 'index'])->name('api-settings');
+        Route::get('pdf-branding', [PdfBrandingController::class, 'index'])->name('pdf-branding');
+        Route::post('pdf-branding', [PdfBrandingController::class, 'store'])->name('pdf-branding.store');
         Route::get('logs-viewer', [LogController::class, 'index'])->name('logs.viewer');
         Route::post('logs-viewer/{file}/clear', [LogController::class, 'clear'])->name('logs.clear');
         Route::get('logs-viewer/{file}/download', [LogController::class, 'download'])->name('logs.download');

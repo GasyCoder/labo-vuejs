@@ -439,6 +439,18 @@
                                     class="group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0 flex-grow-1 inline-block whitespace-nowrap transition-all duration-300 text-sm text-slate-600 dark:text-slate-500 group-[.active]/item:text-primary-500 group-hover:text-primary-500">API & Notifications</span>
                             </Link>
                         </li>
+                        <li v-if="$page.props.auth.user.type === 'superadmin'" :class="['nk-menu-item py-0 group/item', { 'active': route().current('admin.pdf-branding') }]">
+                            <Link :href="route('admin.pdf-branding')"
+                                class="nk-menu-link flex relative items-center align-middle py-2 ps-5 pe-8 font-heading font-bold tracking-snug group">
+                                <span
+                                    class="font-normal tracking-normal w-8 inline-flex flex-grow-0 flex-shrink-0 text-slate-400 group-[.active]/item:text-primary-500 group-hover:text-primary-500">
+                                    <em
+                                        class="text-xl leading-none text-current transition-all duration-300 icon ni ni-file-pdf"></em>
+                                </span>
+                                <span
+                                    class="group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0 flex-grow-1 inline-block whitespace-nowrap transition-all duration-300 text-sm text-slate-600 dark:text-slate-500 group-[.active]/item:text-primary-500 group-hover:text-primary-500">Branding PDF</span>
+                            </Link>
+                        </li>
                         <li v-if="$page.props.auth.user.type === 'superadmin'" :class="['nk-menu-item py-0 group/item', { 'active': route().current('admin.logs.viewer') }]">
                             <Link :href="route('admin.logs.viewer')"
                                 class="nk-menu-link flex relative items-center align-middle py-2 ps-5 pe-8 font-heading font-bold tracking-snug group">

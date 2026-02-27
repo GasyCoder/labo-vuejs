@@ -156,7 +156,7 @@
     }
 
     .red-line {
-        border-top: 0.5px solid #d10000;
+        border-top: 0.5px solid {{ $branding->highlight_color ?? '#d10000' }};
         margin: 0.5px 0;
         width: 100%;
     }
@@ -190,7 +190,7 @@
     /* Titres */
     .section-title,
     .title-section {
-        color: #d10000;
+        color: {{ $branding->exam_color ?? '#d10000' }};
         font-weight: 700;
         text-transform: uppercase;
         page-break-after: avoid;

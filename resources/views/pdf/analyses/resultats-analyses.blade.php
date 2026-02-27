@@ -15,7 +15,11 @@
 
     {{-- En-tête avec logo (première page seulement) --}}
     <div class="header-section">
-        <img src="{{ public_path('assets/images/logo.png') }}" alt="LABORATOIRE LA REFERENCE" class="header-logo">
+        @if($branding && $branding->logo_path)
+            <img src="{{ public_path('storage/' . $branding->logo_path) }}" alt="LOGO" class="header-logo">
+        @else
+            <img src="{{ public_path('assets/images/logo.png') }}" alt="LABORATOIRE LA REFERENCE" class="header-logo">
+        @endif
     </div>
     
     <div class="red-line"></div>
@@ -102,7 +106,11 @@
 
     {{-- Signature --}}
     <div class="signature">
-        <img src="{{ public_path('assets/images/signe.png') }}" alt="Signature" style="max-width: 150px;">
+        @if($branding && $branding->signature_image_path)
+            <img src="{{ public_path('storage/' . $branding->signature_image_path) }}" alt="Signature" style="max-width: 150px;">
+        @else
+            <img src="{{ public_path('assets/images/signe.png') }}" alt="Signature" style="max-width: 150px;">
+        @endif
     </div>
 
     </div>
