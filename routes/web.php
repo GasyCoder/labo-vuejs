@@ -31,7 +31,7 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Technicien\TechnicienController;
 use App\Http\Controllers\Admin\TracePatientController;
 use App\Http\Controllers\Admin\UserController;
-use Rap2hpoutre\LaravelLogViewer\LogViewerController;
+use App\Http\Controllers\Admin\LogController;
 use App\Models\Prescription;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Illuminate\Support\Facades\Auth;
@@ -302,9 +302,7 @@ Route::middleware(['auth', 'verified', 'role:superadmin,admin'])->prefix('admin'
             Route::get('permissions', 'index')->name('permissions');
             Route::put('permissions', 'update')->name('permissions.update');
         });
-        // Paramètres
-        Route::get('logs', [SettingController::class, 'getLogs'])->name('settings.logs');
-
+        
         // Administration des fonctionnalités Premium SaaS
         Route::prefix('features')->name('features.')->group(function () {
             Route::get('/', [ClientFeatureController::class, 'index'])->name('index');
@@ -328,7 +326,10 @@ Route::middleware(['auth', 'verified', 'role:superadmin,admin'])->prefix('admin'
 
         // Configuration API (Email & SMS) - Page séparée
         Route::get('api-settings', [ApiSettingController::class, 'index'])->name('api-settings');
-        Route::get('logs-viewer', [LogViewerController::class, 'index'])->name('logs.viewer');
+        Route::get('logs-viewer', [LogController::class, 'index'])->name('logs.viewer');
+        Route::post('logs-viewer/{file}/clear', [LogController::class, 'clear'])->name('logs.clear');
+        Route::get('logs-viewer/{file}/download', [LogController::class, 'download'])->name('logs.download');
+        Route::delete('logs-viewer/{file}', [LogController::class, 'delete'])->name('logs.delete');
         Route::controller(ApiSettingController::class)->prefix('api-settings')->name('api-settings.')->group(function () {
             Route::post('email', 'updateEmailConfig')->name('update-email');
             Route::post('sms', 'storeSmsProvider')->name('store-sms');
