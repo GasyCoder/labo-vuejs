@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\PrescriptionExportController;
 use App\Http\Controllers\Biologiste\PrescriptionPdfController;
 use App\Http\Controllers\PrescriptionWorkspaceController;
 use App\Http\Controllers\ResultatController;
+use App\Http\Controllers\Technicien\ResultatController as TechnicienResultatController;
 use App\Http\Controllers\RoleWorklistController;
 use App\Http\Controllers\Secretaire\NotificationController;
 use App\Http\Controllers\Secretaire\PaiementController;
@@ -187,24 +188,24 @@ Route::middleware(['auth', 'verified', 'role:technicien,superadmin,admin'])->pre
     Route::get('prescription/{prescription}/progression', [PrescriptionWorkspaceController::class, 'getProgression'])->name('prescription.progression');
 
     // API endpoints pour la saisie des résultats
-    Route::post('resultats/save', [ResultatController::class, 'save'])->name('resultats.save');
-    Route::post('resultats/save-all', [ResultatController::class, 'saveAll'])->name('resultats.saveAll');
+    Route::post('resultats/save', [TechnicienResultatController::class, 'save'])->name('resultats.save');
+    Route::post('resultats/save-all', [TechnicienResultatController::class, 'saveAll'])->name('resultats.saveAll');
 
     // Nouveaux endpoints pour les notes et conclusions
-    Route::post('resultats/group-conclusion', [ResultatController::class, 'saveGroupConclusion'])->name('resultats.groupConclusion');
-    Route::post('resultats/notes', [ResultatController::class, 'addConclusionNote'])->name('resultats.addNote');
-    Route::put('resultats/notes/{id}', [ResultatController::class, 'updateConclusionNote'])->name('resultats.updateNote');
-    Route::delete('resultats/notes/{id}', [ResultatController::class, 'deleteConclusionNote'])->name('resultats.deleteNote');
+    Route::post('resultats/group-conclusion', [TechnicienResultatController::class, 'saveGroupConclusion'])->name('resultats.groupConclusion');
+    Route::post('resultats/notes', [TechnicienResultatController::class, 'addConclusionNote'])->name('resultats.addNote');
+    Route::put('resultats/notes/{id}', [TechnicienResultatController::class, 'updateConclusionNote'])->name('resultats.updateNote');
+    Route::delete('resultats/notes/{id}', [TechnicienResultatController::class, 'deleteConclusionNote'])->name('resultats.deleteNote');
 
     // Nouveaux endpoints pour Antibiogrammes (Germe/Culture)
-    Route::post('resultats/antibiogrammes/sync', [ResultatController::class, 'syncAntibiogrammes'])->name('resultats.antibiogrammes.sync');
-    Route::post('resultats/antibiogrammes/data', [ResultatController::class, 'getAntibiogrammesData'])->name('resultats.antibiogrammes.data');
-    Route::post('resultats/antibiogrammes', [ResultatController::class, 'addAntibiotique'])->name('resultats.antibiogrammes.add');
-    Route::put('resultats/antibiogrammes/{id}', [ResultatController::class, 'updateResultatAntibiotique'])->name('resultats.antibiogrammes.update');
-    Route::delete('resultats/antibiogrammes/{id}', [ResultatController::class, 'deleteResultatAntibiotique'])->name('resultats.antibiogrammes.delete');
+    Route::post('resultats/antibiogrammes/sync', [TechnicienResultatController::class, 'syncAntibiogrammes'])->name('resultats.antibiogrammes.sync');
+    Route::post('resultats/antibiogrammes/data', [TechnicienResultatController::class, 'getAntibiogrammesData'])->name('resultats.antibiogrammes.data');
+    Route::post('resultats/antibiogrammes', [TechnicienResultatController::class, 'addAntibiotique'])->name('resultats.antibiogrammes.add');
+    Route::put('resultats/antibiogrammes/{id}', [TechnicienResultatController::class, 'updateResultatAntibiotique'])->name('resultats.antibiogrammes.update');
+    Route::delete('resultats/antibiogrammes/{id}', [TechnicienResultatController::class, 'deleteResultatAntibiotique'])->name('resultats.antibiogrammes.delete');
 
-    Route::post('analyse/{id}/complete', [ResultatController::class, 'completeAnalyse'])->name('analyse.complete');
-    Route::post('prescription/{id}/complete', [ResultatController::class, 'completePrescription'])->name('prescription.finalize');
+    Route::post('analyse/{id}/complete', [TechnicienResultatController::class, 'completeAnalyse'])->name('analyse.complete');
+    Route::post('prescription/{id}/complete', [TechnicienResultatController::class, 'completePrescription'])->name('prescription.finalize');
 });
 
 // ============================================
