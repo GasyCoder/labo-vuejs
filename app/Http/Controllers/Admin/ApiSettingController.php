@@ -64,13 +64,14 @@ class ApiSettingController extends Controller
         try {
             $replacements = [
                 'MAIL_MAILER' => $validated['mail_mailer'],
-                'MAIL_MAILER_DEFAULT' => $validated['mail_mailer'], // Force override for system env vars
+                'MAIL_MAILER_DEFAULT' => $validated['mail_mailer'], // Force l'override
                 'MAIL_HOST' => $validated['mail_host'] ?? '',
                 'MAIL_PORT' => $validated['mail_port'] ?? '',
                 'MAIL_USERNAME' => $validated['mail_username'] ?? '',
                 'MAIL_PASSWORD' => $validated['mail_password'] ?? '',
                 'MAIL_ENCRYPTION' => $validated['mail_encryption'] ?? '',
                 'MAIL_FROM_ADDRESS' => $validated['mail_from_address'],
+                'MAIL_FROM_ADDRESS_DEFAULT' => $validated['mail_from_address'], // Force l'override
                 'MAIL_FROM_NAME' => '"'.trim($validated['mail_from_name'], '"').'"',
                 'RESEND_KEY' => $validated['resend_key'] ?? '',
             ];
