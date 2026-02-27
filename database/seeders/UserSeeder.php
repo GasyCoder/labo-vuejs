@@ -8,42 +8,66 @@ use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
-    public function run()
+    public function run(): void
     {
-        $admin = User::create([
-            'name' => 'Administrateur Principal',
-            'username' => 'adminlabo',
-            'email' => 'admin@labo.com',
-            'type' => 'superadmin',
-            'password' => Hash::make('adminlabo'),
-        ]);
-        $admin->assignRole('superadmin');
+        $this->createOrUpdateUser(
+            name: 'Administrateur Principal',
+            username: 'adminlabo',
+            email: 'admin@labo.com',
+            type: 'superadmin',
+            password: 'adminlabo',
+            role: 'superadmin'
+        );
 
-        $secretaire = User::create([
-            'name' => 'Secretaire Test',
-            'username' => 'secretaire',
-            'email' => 'secretaire@labo.com',
-            'type' => 'secretaire',
-            'password' => Hash::make('password'),
-        ]);
-        $secretaire->assignRole('secretaire');
+        $this->createOrUpdateUser(
+            name: 'Secretaire Test',
+            username: 'secretaire',
+            email: 'secretaire@labo.com',
+            type: 'secretaire',
+            password: 'password',
+            role: 'secretaire'
+        );
 
-        $technicien = User::create([
-            'name' => 'Technicien Test',
-            'username' => 'technicien',
-            'email' => 'technicien@labo.com',
-            'type' => 'technicien',
-            'password' => Hash::make('password'),
-        ]);
-        $technicien->assignRole('technicien');
+        $this->createOrUpdateUser(
+            name: 'Technicien Test',
+            username: 'technicien',
+            email: 'technicien@labo.com',
+            type: 'technicien',
+            password: 'password',
+            role: 'technicien'
+        );
 
-        $biologiste = User::create([
-            'name' => 'Biologiste Test',
-            'username' => 'biologiste',
-            'email' => 'biologiste@labo.com',
-            'type' => 'biologiste',
-            'password' => Hash::make('password'),
-        ]);
-        $biologiste->assignRole('biologiste');
+        $this->createOrUpdateUser(
+            name: 'Biologiste Test',
+            username: 'biologiste',
+            email: 'biologiste@labo.com',
+            type: 'biologiste',
+            password: 'password',
+            role: 'biologiste'
+        );
+    }
+
+    private function createOrUpdateUser(
+        string $name,
+        string $username,
+        string $email,
+        string $type,
+        string $password,
+        string $role
+    ): void {
+        $user = User::updateOrCreate(
+            ['username' => $username], // clé unique
+            [
+                'name' => $name,
+                'email' => $email,
+                'type' => $type,
+                'password' => Hash::make($password),
+            ]
+        );
+
+        // Évite duplication des rôles
+        if (!$user->hasRole($role)) {
+            $user->syncRoles([$role]);
+        }
     }
 }
