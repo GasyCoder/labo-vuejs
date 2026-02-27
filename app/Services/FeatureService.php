@@ -75,8 +75,17 @@ class FeatureService
     public function isEnabledForCurrentUser(string $featureKey): bool
     {
         $user = auth()->user();
-        if (! $user || ! $user->client_id) {
-            return false; // Or true if Superadmin dictates. We keep it strictly restricted.
+        if (! $user) {
+            return false;
+        }
+
+        // Superadmins bypass all feature restrictions
+        if ($user->type === 'superadmin') {
+            return true;
+        }
+
+        if (! $user->client_id) {
+            return false;
         }
 
         return $this->isEnabled($user->client_id, $featureKey);
