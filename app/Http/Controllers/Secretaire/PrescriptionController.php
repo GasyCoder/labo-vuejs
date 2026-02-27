@@ -43,6 +43,7 @@ class PrescriptionController extends Controller
                 'patient:id,nom,prenom,telephone,email',
                 'prescripteur:id,nom',
                 'paiements:id,prescription_id,status,date_paiement',
+                'analyses:id,code,designation',
             ])
             ->withCount('analyses')
             ->whereHas('patient', fn ($q) => $q->whereNull('deleted_at'));
@@ -97,6 +98,10 @@ class PrescriptionController extends Controller
                         default => $prescription->status,
                     },
                     'analyses_count' => $prescription->analyses_count,
+                    'analyses' => $prescription->analyses->map(fn($a) => [
+                        'code' => $a->code,
+                        'designation' => $a->designation
+                    ]),
                     'created_at' => $prescription->created_at?->format('d/m/Y H:i'),
                     'created_at_relative' => $prescription->created_at?->diffForHumans(),
                     'deleted_at' => $prescription->deleted_at?->format('d/m/Y H:i'),
@@ -573,6 +578,29 @@ class PrescriptionController extends Controller
             Log::error('Erreur suppression prescription', ['error' => $e->getMessage()]);
 
             return back()->with('error', 'Erreur lors de la suppression.');
+        }
+    }
+
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $user = Auth::user();
+        if (! $user->hasPermission('prescriptions.supprimer')) {
+            return back()->with('error', 'Vous n\'avez pas la permission de supprimer des prescriptions.');
+        }
+
+        $ids = $request->input('ids', []);
+        if (empty($ids)) {
+            return back()->with('error', 'Aucune prescription sélectionnée.');
+        }
+
+        try {
+            Prescription::whereIn('id', $ids)->delete();
+
+            return back()->with('success', count($ids).' prescriptions mises en corbeille.');
+        } catch (\Exception $e) {
+            Log::error('Erreur suppression groupée prescriptions', ['error' => $e->getMessage()]);
+
+            return back()->with('error', 'Erreur lors de la suppression groupée.');
         }
     }
 

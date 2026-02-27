@@ -101,6 +101,7 @@ Route::middleware(['auth', 'verified', 'role:secretaire,superadmin,admin'])->pre
         Route::post('prescription/workspace/store', 'store')->name('prescription.store');
         Route::get('prescription/edit/{prescriptionId}', 'edit')->name('prescription.edit');
         Route::delete('prescription/{id}', 'destroy')->name('prescription.destroy');
+        Route::post('prescriptions/bulk-delete', 'bulkDestroy')->name('prescription.bulkDestroy');
         Route::post('prescription/{id}/restore', 'restore')->name('prescription.restore');
         Route::delete('prescription/{id}/force-delete', 'forceDelete')->name('prescription.forceDelete');
         Route::post('prescription/{id}/archive', 'archive')->name('prescription.archive');
