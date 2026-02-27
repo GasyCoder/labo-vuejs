@@ -327,6 +327,7 @@ Route::middleware(['auth', 'verified', 'role:superadmin,admin'])->prefix('admin'
 
         // Configuration API (Email & SMS) - Page séparée
         Route::get('api-settings', [ApiSettingController::class, 'index'])->name('api-settings');
+        Route::get('logs-viewer', [\Rap2hpoutre\LaravelLogViewer\LogViewerController::class, 'index'])->name('logs.viewer');
         Route::controller(ApiSettingController::class)->prefix('api-settings')->name('api-settings.')->group(function () {
             Route::post('email', 'updateEmailConfig')->name('update-email');
             Route::post('sms', 'storeSmsProvider')->name('store-sms');
