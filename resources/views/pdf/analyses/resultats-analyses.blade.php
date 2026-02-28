@@ -28,90 +28,92 @@
         {{-- Informations patient --}}
         @include('pdf.analyses.header')
         
-    {{-- ✅ Boucle examens --}}
-    @foreach($examens as $examen)
-        @php
-            $hasValidResults = $examen->analyses->some(function($analyse) {
+    @php
+        $validExamens = $examens->filter(function($examen) {
+            return $examen->analyses->some(function($analyse) {
                 return $analyse->resultats->isNotEmpty() ||
                     ($analyse->children && $analyse->children->some(fn($child) => $child->resultats->isNotEmpty())) ||
                     ($analyse->antibiogrammes && $analyse->antibiogrammes->isNotEmpty());
             });
+        });
+    @endphp
 
-            if (!$hasValidResults) continue;
-        @endphp
-
+    {{-- ✅ Boucle examens --}}
+    @foreach($validExamens as $examen)
         {{-- ✅ Contenu de chaque examen --}}
-        <div class="examen-wrapper">
-        {{-- ✅ Garde tes séparateurs + ajoute seulement un THEAD répété pour créer l’espace en haut sur page 2+ --}}
-        <table class="main-table">
-            <thead class="repeat-gap">
-                {{-- ✅ Espace en haut quand la table continue sur une nouvelle page --}}
-                <tr>
-                    <td colspan="4" class="repeat-gap-cell"></td>
-                </tr>
+        <div class="examen-wrapper" @if($loop->last) style="page-break-inside: avoid !important;" @endif>
+            {{-- ✅ Garde tes séparateurs + ajoute seulement un THEAD répété pour créer l’espace en haut sur page 2+ --}}
+            <table class="main-table">
+                <thead class="repeat-gap">
+                    {{-- ✅ Espace en haut quand la table continue sur une nouvelle page --}}
+                    <tr>
+                        <td colspan="4" class="repeat-gap-cell"></td>
+                    </tr>
 
-                {{-- ✅ Header colonnes (ton code) --}}
-                <tr>
-                    <td class="col-designation section-title title-section">{{ strtoupper($examen->name) }}</td>
-                    <td class="col-resultat header-cols">Résultat</td>
-                    <td class="col-valref header-cols">Val Réf</td>
-                    <td class="col-anteriorite header-cols">Antériorité</td>
-                </tr>
+                    {{-- ✅ Header colonnes (ton code) --}}
+                    <tr>
+                        <td class="col-designation section-title title-section">{{ strtoupper($examen->name) }}</td>
+                        <td class="col-resultat header-cols">Résultat</td>
+                        <td class="col-valref header-cols">Val Réf</td>
+                        <td class="col-anteriorite header-cols">Antériorité</td>
+                    </tr>
 
-                {{-- ✅ séparateurs IMPORTANTS (dans le THEAD pour être répétés aussi) --}}
-                <tr>
-                    <td colspan="4" class="thead-sep">
-                        <div class="red-line"></div>
-                        <div class="spacing"></div>
-                    </td>
-                </tr>
-            </thead>
+                    {{-- ✅ séparateurs IMPORTANTS (dans le THEAD pour être répétés aussi) --}}
+                    <tr>
+                        <td colspan="4" class="thead-sep">
+                            <div class="red-line"></div>
+                            <div class="spacing"></div>
+                        </td>
+                    </tr>
+                </thead>
 
-            <tbody>
-                @foreach($examen->analyses as $analyse)
-                    @if($analyse->level === 'PARENT' || is_null($analyse->parent_id))
-                        @include('pdf.analyses.analyse-row', ['analyse' => $analyse, 'level' => 1])
-                        @if($analyse->children && $analyse->children->count() > 0)
-                            @include('pdf.analyses.analyse-children', ['children' => $analyse->children, 'level' => 2])
+                <tbody>
+                    @foreach($examen->analyses as $analyse)
+                        @if($analyse->level === 'PARENT' || is_null($analyse->parent_id))
+                            @include('pdf.analyses.analyse-row', ['analyse' => $analyse, 'level' => 1])
+                            @if($analyse->children && $analyse->children->count() > 0)
+                                @include('pdf.analyses.analyse-children', ['children' => $analyse->children, 'level' => 2])
+                            @endif
                         @endif
-                    @endif
-                @endforeach
-            </tbody>
-        </table>
+                    @endforeach
+                </tbody>
+            </table>
 
-        @php
-            $groupConclusion = $groupConclusions[$examen->id] ?? null;
-        @endphp
+            @php
+                $groupConclusion = $groupConclusions[$examen->id] ?? null;
+            @endphp
 
-        @if($groupConclusion && !empty($groupConclusion->conclusion))
-            <div class="conclusion-section conclusion-general">
-                <div class="conclusion-title">Conclusion générale</div>
-                <div class="conclusion-content">
-                    {!! nl2br(e($groupConclusion->conclusion)) !!}
+            @if($groupConclusion && !empty($groupConclusion->conclusion))
+                <div class="conclusion-section conclusion-general">
+                    <div class="conclusion-title">Conclusion générale</div>
+                    <div class="conclusion-content">
+                        {!! nl2br(e($groupConclusion->conclusion)) !!}
+                    </div>
                 </div>
-            </div>
-        @endif
+            @endif
+
+            {{-- ✅ SI DERNIER EXAMEN : ATTACHeR LE FOOTER ICI --}}
+            @if($loop->last)
+                {{-- Pied de page (nom patient) --}}
+                <div class="mini-separator" style="margin-top:15px; border-top: 0.5px solid #e0e0e0;">
+                    <div style="text-align: center; padding: 5px 0;">
+                        <div style="font-size: 8pt; color: #042379ff;">
+                            {{ $patientFullName }} - Dossier n° {{ $prescription->patient->numero_dossier ?? $prescription->reference }}
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Signature --}}
+                <div class="signature">
+                    @if($branding && $branding->signature_image_path)
+                        <img src="{{ public_path('storage/' . $branding->signature_image_path) }}" alt="Signature" style="max-width: 150px;">
+                    @else
+                        <img src="{{ public_path('assets/images/signe.png') }}" alt="Signature" style="max-width: 150px;">
+                    @endif
+                </div>
+            @endif
         </div>
     @endforeach
-
-    {{-- ✅ Une seule fois à la fin du document --}}
-    <div class="mini-separator" style="page-break-inside: avoid; margin-top:10px;">
-        <div style="text-align: center; margin: 8px 0; padding: 5px 0; border-top: 0.5px solid #e0e0e0;">
-            <div style="font-size: 8pt; color: #042379ff;">
-                {{ $patientFullName }} - Dossier n° {{ $prescription->patient->numero_dossier ?? $prescription->reference }}
-            </div>
-        </div>
-    </div>
-
-
-    {{-- Signature --}}
-    <div class="signature">
-        @if($branding && $branding->signature_image_path)
-            <img src="{{ public_path('storage/' . $branding->signature_image_path) }}" alt="Signature" style="max-width: 150px;">
-        @else
-            <img src="{{ public_path('assets/images/signe.png') }}" alt="Signature" style="max-width: 150px;">
-        @endif
-    </div>
 
     </div>
 </body>

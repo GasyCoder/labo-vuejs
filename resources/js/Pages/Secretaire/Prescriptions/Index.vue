@@ -1,11 +1,317 @@
+<script setup>
+import { computed, reactive, ref, watch } from 'vue';
+import { Link, router, usePage } from '@inertiajs/vue3';
+import debounce from 'lodash/debounce';
+import AppLayout from '@/Layouts/AppLayout.vue';
+import Pagination from '@/Components/Pagination.vue';
+import Swal from 'sweetalert2';
+
+const page = usePage();
+
+const props = defineProps({
+    prescriptions: { type: Object, required: true },
+    filters: { type: Object, default: () => ({}) },
+    counts: { type: Object, default: () => ({}) },
+    permissions: { type: Object, default: () => ({}) },
+});
+
+const form = reactive({
+    search: props.filters.search || '',
+    tab: props.filters.tab || 'actives',
+    perPage: props.filters.perPage || 10,
+    payment: props.filters.payment || '',
+});
+
+const perm = computed(() => ({
+    canCreate: props.permissions.canCreate ?? false,
+    canEdit: props.permissions.canEdit ?? false,
+    canDelete: props.permissions.canDelete ?? false,
+    canAccessTrash: props.permissions.canAccessTrash ?? false,
+    canAccessArchive: props.permissions.canAccessArchive ?? false,
+    canViewPrescription: props.permissions.canViewPrescription ?? false,
+}));
+
+// Selection logic
+const selectedIds = ref([]);
+const isAllSelected = computed(() => {
+    return props.prescriptions.data.length > 0 && selectedIds.value.length === props.prescriptions.data.length;
+});
+
+const toggleSelectAll = () => {
+    if (isAllSelected.value) {
+        selectedIds.value = [];
+    } else {
+        selectedIds.value = props.prescriptions.data.map(p => p.id);
+    }
+};
+
+const toggleSelect = (id) => {
+    const index = selectedIds.value.indexOf(id);
+    if (index === -1) {
+        selectedIds.value.push(id);
+    } else {
+        selectedIds.value.splice(index, 1);
+    }
+};
+
+// Reset selection when tab changes or search changes
+watch(() => [form.tab, form.search, form.payment], () => {
+    selectedIds.value = [];
+});
+
+const handleBulkDelete = () => {
+    if (selectedIds.value.length === 0) return;
+
+    Swal.fire({
+        title: 'Suppression groupée',
+        text: `Êtes-vous sûr de vouloir mettre ${selectedIds.value.length} prescriptions en corbeille ?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Oui, supprimer tout',
+        cancelButtonText: 'Annuler'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.post(route('secretaire.prescription.bulkDestroy'), {
+                ids: selectedIds.value
+            }, {
+                onSuccess: () => {
+                    selectedIds.value = [];
+                    Swal.fire('Supprimé !', 'Les prescriptions ont été mises en corbeille.', 'success');
+                }
+            });
+        }
+    });
+};
+
+// Legacy computed kept for template backward compat
+const canCreate = computed(() => perm.value.canCreate);
+const canAccessTrash = computed(() => perm.value.canAccessTrash);
+
+// Modal state
+const modal = reactive({
+    show: false,
+    type: '', // delete, restore, permanentDelete, archive, unarchive, pay, unpay
+    prescriptionId: null,
+    processing: false,
+});
+
+const openModal = (type, id) => {
+    if (type === 'notify') return; // handled by openNotifyModal now
+    modal.type = type;
+    modal.prescriptionId = id;
+    modal.show = true;
+    modal.processing = false;
+};
+
+const closeModal = () => {
+    modal.show = false;
+    modal.type = '';
+    modal.prescriptionId = null;
+    modal.processing = false;
+};
+
+const modalConfig = computed(() => {
+    const configs = {
+        delete: { title: 'Mettre en corbeille ?', desc: 'Cette action peut etre annulee depuis la corbeille.', color: 'red', btn: 'Supprimer', routeName: 'secretaire.prescription.destroy', method: 'delete' },
+        restore: { title: 'Restaurer cette prescription ?', desc: 'Elle sera remise dans la liste active.', color: 'amber', btn: 'Restaurer', routeName: 'secretaire.prescription.restore', method: 'post' },
+        permanentDelete: { title: 'Supprimer definitivement ?', desc: 'Cette action est irreversible.', color: 'red', btn: 'Supprimer', routeName: 'secretaire.prescription.forceDelete', method: 'delete' },
+        archive: { title: 'Archiver cette prescription ?', desc: 'Elle sera deplacee vers les archives.', color: 'slate', btn: 'Archiver', routeName: 'secretaire.prescription.archive', method: 'post' },
+        unarchive: { title: 'Desarchiver cette prescription ?', desc: 'Elle sera remise dans les prescriptions validees.', color: 'amber', btn: 'Desarchiver', routeName: 'secretaire.prescription.unarchive', method: 'post' },
+        pay: { title: 'Confirmer le paiement', desc: 'Marquer comme paye ? La date sera enregistree automatiquement.', color: 'emerald', btn: 'Confirmer', routeName: 'secretaire.prescription.togglePayment', method: 'post' },
+        unpay: { title: 'Annuler le paiement', desc: 'Marquer comme non paye ? La date de paiement sera supprimee.', color: 'red', btn: 'Confirmer', routeName: 'secretaire.prescription.togglePayment', method: 'post' },
+    };
+    return configs[modal.type] || {};
+});
+
+const executeModalAction = () => {
+    if (!modal.prescriptionId || modal.processing) return;
+    modal.processing = true;
+    const cfg = modalConfig.value;
+    const url = route(cfg.routeName, modal.prescriptionId);
+    const opts = {
+        preserveScroll: true,
+        onSuccess: () => closeModal(),
+        onError: () => { modal.processing = false; },
+        onFinish: () => { modal.processing = false; },
+    };
+    if (cfg.method === 'delete') {
+        router.delete(url, opts);
+    } else {
+        router[cfg.method](url, {}, opts);
+    }
+};
+
+// Notification modal state
+const patientName = (p) => {
+    if (!p?.patient) return '';
+    return (p.patient.nom_complet || `${p.patient.nom || ''} ${p.patient.prenom || ''}`).trim().split(/\s+/)[0] || 'Patient';
+};
+
+const DEFAULT_SMS = (prescription) => {
+    const nom = patientName(prescription);
+    return `Bonjour ${nom}, vos résultats d'analyses (${prescription.reference}) sont disponibles au laboratoire. Merci de passer les récupérer. - Lareference`;
+};
+
+const DEFAULT_EMAIL = (prescription) => {
+    const nom = patientName(prescription);
+    const pdfUrl = route('laboratoire.prescription.pdf', prescription.id);
+    return `Bonjour ${nom},\n\nNous avons le plaisir de vous informer que les résultats de vos analyses (${prescription.reference}) sont désormais disponibles.\n\nVous pouvez les consulter et télécharger via le lien suivant :\n${pdfUrl}\n\nOu passer les récupérer directement au laboratoire.\n\nCordialement,\nLaboratoire Lareference`;
+};
+
+const notify = reactive({
+    show: false,
+    prescription: null,
+    channel: '',
+    message: '',
+    processing: false,
+});
+
+const hasPhone = computed(() => !!notify.prescription?.patient?.telephone);
+const hasEmail = computed(() => !!notify.prescription?.patient?.email);
+const hasAnyContact = computed(() => hasPhone.value || hasEmail.value);
+
+const openNotifyModal = (prescription) => {
+    notify.prescription = prescription;
+    const phone = !!prescription.patient?.telephone;
+    const email = !!prescription.patient?.email;
+    notify.channel = phone ? 'sms' : (email ? 'email' : '');
+    notify.message = phone ? DEFAULT_SMS(prescription) : (email ? DEFAULT_EMAIL(prescription) : '');
+    notify.processing = false;
+    notify.show = true;
+};
+
+const closeNotifyModal = () => {
+    notify.show = false;
+    notify.prescription = null;
+    notify.processing = false;
+};
+
+const setDefaultMessage = () => {
+    if (!notify.prescription) return;
+    notify.message = notify.channel === 'sms' ? DEFAULT_SMS(notify.prescription) : DEFAULT_EMAIL(notify.prescription);
+};
+
+const sendNotification = () => {
+    if (!notify.prescription || notify.processing || !notify.message.trim() || !notify.channel) return;
+    notify.processing = true;
+
+    const routeName = notify.channel === 'sms' ? 'secretaire.prescription.send-sms' : 'secretaire.prescription.send-email';
+    const data = { message: notify.message };
+
+    if (notify.channel === 'email') {
+        data.lien_pdf = route('laboratoire.prescription.pdf', notify.prescription.id);
+    }
+
+    router.post(route(routeName, notify.prescription.id), data, {
+        preserveScroll: true,
+        onSuccess: () => closeNotifyModal(),
+        onError: () => { notify.processing = false; },
+        onFinish: () => { notify.processing = false; },
+    });
+};
+
+const handlePaymentToggle = (prescription) => {
+    if (!prescription.paiement) return;
+    openModal(prescription.paiement.status ? 'unpay' : 'pay', prescription.id);
+};
+
+const totalCount = computed(() => {
+    return Number(props.counts.countActives || props.counts.actives || 0)
+        + Number(props.counts.countValide || props.counts.valide || 0)
+        + Number(props.counts.countDeleted || props.counts.deleted || 0);
+});
+
+const paymentRate = computed(() => {
+    const paid = Number(props.counts.countPaye || 0);
+    const unpaid = Number(props.counts.countNonPaye || 0);
+    const total = paid + unpaid;
+    return total === 0 ? 0 : Math.round((paid / total) * 100);
+});
+
+const progressRate = computed(() => {
+    const enCours = Number(props.counts.countEnCours || 0);
+    const termine = Number(props.counts.countTermine || 0);
+    const valide = Number(props.counts.countValide || props.counts.valide || 0);
+    const total = totalCount.value;
+    return total === 0 ? 0 : Math.round(((enCours + termine + valide) / total) * 100);
+});
+
+const efficiencyRate = computed(() => {
+    const termine = Number(props.counts.countTermine || 0);
+    const valide = Number(props.counts.countValide || props.counts.valide || 0);
+    const total = totalCount.value;
+    return total === 0 ? 0 : Math.round(((termine + valide) / total) * 100);
+});
+
+const applyFilters = () => {
+    router.get(route('secretaire.prescription.index'), form, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+    });
+};
+
+const debouncedApplyFilters = debounce(() => applyFilters(), 300);
+
+const changeTab = (tab) => { form.tab = tab; applyFilters(); };
+const filterByPaymentStatus = (s) => { form.payment = s; applyFilters(); };
+const clearSearch = () => { form.search = ''; applyFilters(); };
+const clearAllFilters = () => { form.search = ''; form.payment = ''; applyFilters(); };
+
+const tabClass = (tab) => form.tab === tab
+    ? 'text-primary-600 dark:text-primary-400'
+    : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300';
+
+const statusClass = (status) => {
+    const map = {
+        EN_ATTENTE: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+        EN_COURS: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+        TERMINE: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+        VALIDE: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+        ARCHIVE: 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300',
+    };
+    return map[status] || 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300';
+};
+
+const initials = (p) => {
+    const parts = String(p.patient?.nom_complet || 'NA').trim().split(/\s+/).filter(Boolean);
+    return `${parts[0]?.charAt(0) || 'N'}${parts[1]?.charAt(0) || 'A'}`.toUpperCase();
+};
+
+const truncate = (v, max) => { const t = String(v || ''); return t.length <= max ? t : `${t.slice(0, max)}...`; };
+const number = (v) => Number(v || 0).toLocaleString('fr-FR');
+
+const btnColor = (color) => {
+    const map = { red: 'bg-red-600 hover:bg-red-700', amber: 'bg-amber-600 hover:bg-amber-700', slate: 'bg-slate-600 hover:bg-slate-700', emerald: 'bg-emerald-600 hover:bg-emerald-700' };
+    return map[color] || 'bg-primary-600 hover:bg-primary-700';
+};
+</script>
+
 <template>
     <AppLayout>
         <div class="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
-            <div class="mb-6 flex items-center gap-3">
-                <div class="flex h-8 w-8 items-center justify-center rounded bg-primary-900/40 text-primary-400">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
+            <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="flex h-8 w-8 items-center justify-center rounded bg-primary-900/40 text-primary-400">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
+                    </div>
+                    <h1 class="text-xl font-bold text-slate-900 dark:text-white">Liste des prescriptions</h1>
                 </div>
-                <h1 class="text-xl font-bold text-slate-900 dark:text-white">Liste des prescriptions</h1>
+
+                <div v-if="selectedIds.length > 0" class="flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <span class="text-sm font-medium text-slate-600 dark:text-slate-400">
+                        {{ selectedIds.length }} sélectionné(s)
+                    </span>
+                    <button 
+                        @click="handleBulkDelete"
+                        class="inline-flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition-all hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
+                    >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+                        Supprimer la sélection
+                    </button>
+                </div>
             </div>
 
             <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -211,15 +517,23 @@
                 <button type="button" class="text-xs text-slate-400 underline hover:text-slate-600 dark:hover:text-slate-300" @click="clearAllFilters">Tout effacer</button>
             </div>
 
-            <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
-                <div class="hidden overflow-x-auto lg:block">
+            <div class="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                <div class="hidden lg:block">
                     <table class="w-full">
                         <thead>
                             <tr class="border-b border-slate-100 dark:border-slate-700">
+                                <th class="w-10 px-4 py-3">
+                                    <input 
+                                        type="checkbox" 
+                                        :checked="isAllSelected"
+                                        @change="toggleSelectAll"
+                                        class="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 dark:border-slate-600 dark:bg-slate-700"
+                                    >
+                                </th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Reference</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Patient</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Prescripteur</th>
-                                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Analyses</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Analyses</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Statut</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Paiement</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date</th>
@@ -227,7 +541,15 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-50 dark:divide-slate-700/50">
-                            <tr v-for="prescription in prescriptions.data" :key="prescription.id" class="group transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-700/20">
+                            <tr v-for="(prescription, idx) in prescriptions.data" :key="prescription.id" class="group transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-700/20" :class="{'bg-primary-50/30 dark:bg-primary-900/10': selectedIds.includes(prescription.id)}">
+                                <td class="px-4 py-3.5">
+                                    <input 
+                                        type="checkbox" 
+                                        :checked="selectedIds.includes(prescription.id)"
+                                        @change="toggleSelect(prescription.id)"
+                                        class="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 dark:border-slate-600 dark:bg-slate-700"
+                                    >
+                                </td>
                                 <td class="px-4 py-3.5"><span class="text-sm font-semibold text-slate-900 dark:text-white">{{ prescription.reference }}</span></td>
                                 <td class="px-4 py-3.5">
                                     <div class="flex items-center gap-2.5">
@@ -241,8 +563,42 @@
                                     </div>
                                 </td>
                                 <td class="px-4 py-3.5"><span class="text-sm text-slate-600 dark:text-slate-300">{{ truncate(prescription.prescripteur?.nom || 'N/A', 20) }}</span></td>
-                                <td class="px-4 py-3.5 text-center">
-                                    <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">{{ prescription.analyses_count || 0 }}</span>
+                                <td class="px-4 py-3.5">
+                                    <div class="flex flex-wrap items-center gap-1.5 max-w-[250px]">
+                                        <!-- Total Count Badge -->
+                                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300 text-[11px] font-black border border-primary-200 dark:border-primary-800 shadow-sm mr-1" title="Total des analyses">
+                                            {{ prescription.analyses_count }}
+                                        </span>
+
+                                        <span v-for="(analyse, idx) in prescription.analyses.slice(0, 3)" :key="idx" 
+                                            class="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-100/50 dark:border-blue-800/50 whitespace-nowrap"
+                                            :title="analyse.designation">
+                                            {{ analyse.code }}
+                                        </span>
+                                        
+                                        <div v-if="prescription.analyses.length > 3" class="relative group/tooltip">
+                                            <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-400 cursor-help">
+                                                +{{ prescription.analyses.length - 3 }}
+                                            </span>
+                                            <!-- Custom Tooltip: Dynamically position top or bottom based on index to avoid header masking -->
+                                            <div :class="[
+                                                'absolute left-1/2 -translate-x-1/2 hidden group-hover/tooltip:block z-[100] w-max max-w-[300px] p-2 bg-slate-900 text-white text-[10px] rounded-lg shadow-2xl border border-slate-700 animate-in fade-in zoom-in duration-200',
+                                                idx < 2 ? 'top-full mt-2' : 'bottom-full mb-2'
+                                            ]">
+                                                <div class="flex flex-col gap-1.5">
+                                                    <div v-for="(allAnalyse, aIdx) in prescription.analyses" :key="aIdx" class="flex items-start gap-2 border-b border-slate-800 pb-1 last:border-0 last:pb-0">
+                                                        <span class="font-bold text-primary-400 min-w-[40px]">{{ allAnalyse.code }}</span>
+                                                        <span class="text-slate-300">{{ allAnalyse.designation }}</span>
+                                                    </div>
+                                                </div>
+                                                <!-- Arrow direction -->
+                                                <div v-if="idx < 2" class="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-slate-900"></div>
+                                                <div v-else class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900"></div>
+                                            </div>
+                                        </div>
+
+                                        <span v-if="prescription.analyses.length === 0" class="text-xs italic text-slate-400">Aucune</span>
+                                    </div>
                                 </td>
                                 <td class="px-4 py-3.5"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold" :class="statusClass(prescription.status)">{{ prescription.status_label }}</span></td>
                                 <td class="px-4 py-3.5">
@@ -303,7 +659,7 @@
                             </tr>
 
                             <tr v-if="prescriptions.data.length === 0">
-                                <td colspan="8" class="py-16 text-center">
+                                <td colspan="9" class="py-16 text-center">
                                     <div class="flex flex-col items-center">
                                         <div class="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700">
                                             <svg class="h-5 w-5 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -320,9 +676,17 @@
                 </div>
 
                 <div class="divide-y divide-slate-100 dark:divide-slate-700/50 lg:hidden">
-                    <div v-for="prescription in prescriptions.data" :key="`m-${prescription.id}`" class="space-y-3 p-4">
+                    <div v-for="prescription in prescriptions.data" :key="`m-${prescription.id}`" class="space-y-3 p-4" :class="{'bg-primary-50/30 dark:bg-primary-900/10': selectedIds.includes(prescription.id)}">
                         <div class="flex items-center justify-between">
-                            <span class="text-sm font-bold text-slate-900 dark:text-white">{{ prescription.reference }}</span>
+                            <div class="flex items-center gap-2">
+                                <input 
+                                    type="checkbox" 
+                                    :checked="selectedIds.includes(prescription.id)"
+                                    @change="toggleSelect(prescription.id)"
+                                    class="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 dark:border-slate-600 dark:bg-slate-700"
+                                >
+                                <span class="text-sm font-bold text-slate-900 dark:text-white">{{ prescription.reference }}</span>
+                            </div>
                             <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold" :class="statusClass(prescription.status)">{{ prescription.status_label }}</span>
                         </div>
 
@@ -337,12 +701,27 @@
                         </div>
 
                         <div class="flex items-center justify-between pt-1">
-                            <div class="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-                                <span>{{ prescription.analyses_count || 0 }} analyses</span>
-                                <span v-if="prescription.paiement" :class="prescription.paiement.status ? 'text-emerald-500' : 'text-red-500'">
-                                    {{ prescription.paiement.status ? 'Paye' : 'Non paye' }}
-                                </span>
-                                <span>{{ prescription.created_at }}</span>
+                            <div class="flex flex-col gap-2 flex-1 min-w-0">
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    <!-- Total Count Badge Mobile -->
+                                    <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300 text-[10px] font-black border border-primary-200 dark:border-primary-800 shadow-sm mr-0.5">
+                                        {{ prescription.analyses_count }}
+                                    </span>
+
+                                    <span v-for="(analyse, idx) in prescription.analyses.slice(0, 4)" :key="idx" 
+                                        class="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[9px] font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-100/50">
+                                        {{ analyse.code }}
+                                    </span>
+                                    <span v-if="prescription.analyses.length > 4" class="text-[9px] font-bold text-slate-400 self-center">
+                                        +{{ prescription.analyses.length - 4 }}
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                                    <span v-if="prescription.paiement" :class="prescription.paiement.status ? 'text-emerald-500' : 'text-red-500'">
+                                        {{ prescription.paiement.status ? 'Paye' : 'Non paye' }}
+                                    </span>
+                                    <span>{{ prescription.created_at }}</span>
+                                </div>
                             </div>
                             <div class="flex items-center gap-1">
                                 <!-- Edit + Delete: Only on Active tab -->
@@ -400,12 +779,12 @@
             </div>
         </div>
 
-        <!-- Confirmation Modal (delete, restore, payment, etc.) -->
+        <!-- Confirmation Modal -->
         <Teleport to="body">
             <div v-if="modal.show" class="fixed inset-0 z-[60] overflow-y-auto">
                 <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" @click="closeModal"></div>
                 <div class="flex min-h-full items-center justify-center p-4">
-                    <div class="relative w-full max-w-sm rounded-2xl bg-white shadow-xl dark:bg-slate-800" @click.stop>
+                    <div class="relative w-full max-sm rounded-2xl bg-white shadow-xl dark:bg-slate-800" @click.stop>
                         <div class="p-6 text-center">
                             <div class="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full" :class="{
                                 'bg-red-100 dark:bg-red-900/30': modalConfig.color === 'red',
@@ -440,29 +819,22 @@
                 <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" @click="closeNotifyModal"></div>
                 <div class="flex min-h-full items-end sm:items-center justify-center p-0 sm:p-4">
                     <div class="relative w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl bg-white shadow-xl dark:bg-slate-800" @click.stop>
-                        <!-- Drag handle mobile -->
                         <div class="sm:hidden flex justify-center pt-3">
                             <div class="w-10 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
                         </div>
-
                         <div class="p-5 sm:p-6">
-                            <!-- Header -->
                             <div class="flex items-start gap-3 mb-5">
                                 <div class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                                     <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
                                 </div>
                                 <div class="min-w-0">
                                     <h3 class="text-lg font-bold text-slate-900 dark:text-white">Notifier le patient</h3>
-                                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-                                        {{ notify.prescription?.reference }} — {{ notify.prescription?.patient?.nom_complet || 'Patient' }}
-                                    </p>
+                                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{{ notify.prescription?.reference }} — {{ notify.prescription?.patient?.nom_complet || 'Patient' }}</p>
                                 </div>
                                 <button type="button" class="ml-auto flex-shrink-0 p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-300 dark:hover:bg-slate-700 transition-colors" @click="closeNotifyModal">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                                 </button>
                             </div>
-
-                            <!-- No contact info -->
                             <div v-if="!hasAnyContact" class="text-center py-6">
                                 <div class="mx-auto w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center mb-3">
                                     <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
@@ -470,9 +842,7 @@
                                 <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Aucun moyen de contact</p>
                                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Ce patient n'a ni téléphone ni email enregistré.</p>
                             </div>
-
                             <template v-else>
-                                <!-- Channel radio -->
                                 <div class="mb-4">
                                     <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Canal d'envoi</label>
                                     <div class="flex gap-2" :class="hasPhone && hasEmail ? 'grid grid-cols-2' : ''">
@@ -482,60 +852,29 @@
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                                             </div>
                                             <p class="text-sm font-semibold text-slate-900 dark:text-white">SMS</p>
-                                            <div v-if="notify.channel === 'sms'" class="absolute top-2 right-2">
-                                                <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                            </div>
                                         </label>
-
                                         <label v-if="hasEmail" class="relative flex items-center gap-3 rounded-xl border-2 p-3 cursor-pointer transition-all" :class="notify.channel === 'email' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400' : 'border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500'">
                                             <input type="radio" v-model="notify.channel" value="email" class="sr-only" @change="setDefaultMessage">
                                             <div class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center" :class="notify.channel === 'email' ? 'bg-blue-500 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
                                             </div>
                                             <p class="text-sm font-semibold text-slate-900 dark:text-white">Email</p>
-                                            <div v-if="notify.channel === 'email'" class="absolute top-2 right-2">
-                                                <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                            </div>
                                         </label>
                                     </div>
                                 </div>
-
-                                <!-- Message -->
                                 <div class="mb-4">
                                     <div class="flex items-center justify-between mb-2">
                                         <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Message</label>
                                         <span v-if="notify.channel === 'sms'" class="text-[11px] font-medium" :class="notify.message.length > 160 ? 'text-red-500' : 'text-slate-400'">{{ notify.message.length }}/160</span>
                                     </div>
-                                    <textarea
-                                        v-model="notify.message"
-                                        :rows="notify.channel === 'sms' ? 3 : 6"
-                                        :maxlength="notify.channel === 'sms' ? 160 : undefined"
-                                        class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-700/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none transition-colors"
-                                        placeholder="Saisissez votre message..."
-                                    ></textarea>
-                                </div>
-
-                                <!-- Notified badge -->
-                                <div v-if="notify.prescription?.notified_at" class="mb-4 flex items-center gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2">
-                                    <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
-                                    <span class="text-xs text-amber-700 dark:text-amber-300">Patient déjà notifié le {{ notify.prescription.notified_at }}</span>
+                                    <textarea v-model="notify.message" :rows="notify.channel === 'sms' ? 3 : 6" :maxlength="notify.channel === 'sms' ? 160 : undefined" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-700/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none transition-colors" placeholder="Saisissez votre message..."></textarea>
                                 </div>
                             </template>
-
-                            <!-- Buttons -->
                             <div class="flex items-center justify-end gap-3" :class="{ 'mt-4': !hasAnyContact }">
-                                <button type="button" class="h-10 px-5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors" @click="closeNotifyModal">
-                                    {{ hasAnyContact ? 'Annuler' : 'Fermer' }}
-                                </button>
-                                <button
-                                    v-if="hasAnyContact"
-                                    type="button"
-                                    class="h-10 px-5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                    :disabled="!notify.message.trim() || notify.processing || !notify.channel || (notify.channel === 'sms' && notify.message.length > 160)"
-                                    @click="sendNotification"
-                                >
+                                <button type="button" class="h-10 px-5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors" @click="closeNotifyModal">{{ hasAnyContact ? 'Annuler' : 'Fermer' }}</button>
+                                <button v-if="hasAnyContact" type="button" class="h-10 px-5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2" :disabled="!notify.message.trim() || notify.processing || !notify.channel || (notify.channel === 'sms' && notify.message.length > 160)" @click="sendNotification">
                                     <svg v-if="notify.processing" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-                                    <span>{{ notify.processing ? 'Envoi...' : (notify.channel === 'sms' ? 'Envoyer SMS' : 'Envoyer Email') }}</span>
+                                    <span>{{ notify.processing ? 'Envoi...' : (notify.channel === 'sms' ? 'Envoyer' : 'Envoyer') }}</span>
                                 </button>
                             </div>
                         </div>
@@ -546,241 +885,22 @@
     </AppLayout>
 </template>
 
-<script setup>
-import { computed, reactive, ref } from 'vue';
-import { Link, router, usePage } from '@inertiajs/vue3';
-import debounce from 'lodash/debounce';
-import AppLayout from '@/Layouts/AppLayout.vue';
-import Pagination from '@/Components/Pagination.vue';
-
-const page = usePage();
-
-const props = defineProps({
-    prescriptions: { type: Object, required: true },
-    filters: { type: Object, default: () => ({}) },
-    counts: { type: Object, default: () => ({}) },
-    permissions: { type: Object, default: () => ({}) },
-});
-
-const form = reactive({
-    search: props.filters.search || '',
-    tab: props.filters.tab || 'actives',
-    perPage: props.filters.perPage || 10,
-    payment: props.filters.payment || '',
-});
-
-const perm = computed(() => ({
-    canCreate: props.permissions.canCreate ?? false,
-    canEdit: props.permissions.canEdit ?? false,
-    canDelete: props.permissions.canDelete ?? false,
-    canAccessTrash: props.permissions.canAccessTrash ?? false,
-    canAccessArchive: props.permissions.canAccessArchive ?? false,
-    canViewPrescription: props.permissions.canViewPrescription ?? false,
-}));
-
-// Legacy computed kept for template backward compat
-const canCreate = computed(() => perm.value.canCreate);
-const canAccessTrash = computed(() => perm.value.canAccessTrash);
-
-// Modal state
-const modal = reactive({
-    show: false,
-    type: '', // delete, restore, permanentDelete, archive, unarchive, pay, unpay
-    prescriptionId: null,
-    processing: false,
-});
-
-const openModal = (type, id) => {
-    if (type === 'notify') return; // handled by openNotifyModal now
-    modal.type = type;
-    modal.prescriptionId = id;
-    modal.show = true;
-    modal.processing = false;
-};
-
-const closeModal = () => {
-    modal.show = false;
-    modal.type = '';
-    modal.prescriptionId = null;
-    modal.processing = false;
-};
-
-const modalConfig = computed(() => {
-    const configs = {
-        delete: { title: 'Mettre en corbeille ?', desc: 'Cette action peut etre annulee depuis la corbeille.', color: 'red', btn: 'Supprimer', routeName: 'secretaire.prescription.destroy', method: 'delete' },
-        restore: { title: 'Restaurer cette prescription ?', desc: 'Elle sera remise dans la liste active.', color: 'amber', btn: 'Restaurer', routeName: 'secretaire.prescription.restore', method: 'post' },
-        permanentDelete: { title: 'Supprimer definitivement ?', desc: 'Cette action est irreversible.', color: 'red', btn: 'Supprimer', routeName: 'secretaire.prescription.forceDelete', method: 'delete' },
-        archive: { title: 'Archiver cette prescription ?', desc: 'Elle sera deplacee vers les archives.', color: 'slate', btn: 'Archiver', routeName: 'secretaire.prescription.archive', method: 'post' },
-        unarchive: { title: 'Desarchiver cette prescription ?', desc: 'Elle sera remise dans les prescriptions validees.', color: 'amber', btn: 'Desarchiver', routeName: 'secretaire.prescription.unarchive', method: 'post' },
-        pay: { title: 'Confirmer le paiement', desc: 'Marquer comme paye ? La date sera enregistree automatiquement.', color: 'emerald', btn: 'Confirmer', routeName: 'secretaire.prescription.togglePayment', method: 'post' },
-        unpay: { title: 'Annuler le paiement', desc: 'Marquer comme non paye ? La date de paiement sera supprimee.', color: 'red', btn: 'Confirmer', routeName: 'secretaire.prescription.togglePayment', method: 'post' },
-    };
-    return configs[modal.type] || {};
-});
-
-const executeModalAction = () => {
-    if (!modal.prescriptionId || modal.processing) return;
-    modal.processing = true;
-    const cfg = modalConfig.value;
-    const url = route(cfg.routeName, modal.prescriptionId);
-    const opts = {
-        preserveScroll: true,
-        onSuccess: () => closeModal(),
-        onError: () => { modal.processing = false; },
-        onFinish: () => { modal.processing = false; },
-    };
-    // router.delete(url, options) — no data arg
-    // router.post(url, data, options)
-    if (cfg.method === 'delete') {
-        router.delete(url, opts);
-    } else {
-        router[cfg.method](url, {}, opts);
+<style scoped>
+.animate-in {
+    animation-duration: 0.3s;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+.slide-in-from-top-2 {
+    animation-name: slide-in-from-top-2;
+}
+@keyframes slide-in-from-top-2 {
+    from {
+        transform: translateY(-0.5rem);
+        opacity: 0;
     }
-};
-
-// Notification modal state
-const patientName = (p) => {
-    if (!p?.patient) return '';
-    return (p.patient.nom_complet || `${p.patient.nom || ''} ${p.patient.prenom || ''}`).trim().split(/\s+/)[0] || 'Patient';
-};
-
-const DEFAULT_SMS = (prescription) => {
-    const nom = patientName(prescription);
-    return `Bonjour ${nom}, vos résultats d'analyses (${prescription.reference}) sont disponibles au laboratoire. Merci de passer les récupérer. - Lareference`;
-};
-
-const DEFAULT_EMAIL = (prescription) => {
-    const nom = patientName(prescription);
-    const pdfUrl = route('laboratoire.prescription.pdf', prescription.id);
-    return `Bonjour ${nom},\n\nNous avons le plaisir de vous informer que les résultats de vos analyses (${prescription.reference}) sont désormais disponibles.\n\nVous pouvez les consulter et télécharger via le lien suivant :\n${pdfUrl}\n\nOu passer les récupérer directement au laboratoire.\n\nCordialement,\nLaboratoire Lareference`;
-};
-
-const notify = reactive({
-    show: false,
-    prescription: null,
-    channel: '',
-    message: '',
-    processing: false,
-});
-
-const hasPhone = computed(() => !!notify.prescription?.patient?.telephone);
-const hasEmail = computed(() => !!notify.prescription?.patient?.email);
-const hasAnyContact = computed(() => hasPhone.value || hasEmail.value);
-
-const openNotifyModal = (prescription) => {
-    notify.prescription = prescription;
-    // Auto-select first available channel
-    const phone = !!prescription.patient?.telephone;
-    const email = !!prescription.patient?.email;
-    notify.channel = phone ? 'sms' : (email ? 'email' : '');
-    notify.message = phone ? DEFAULT_SMS(prescription) : (email ? DEFAULT_EMAIL(prescription) : '');
-    notify.processing = false;
-    notify.show = true;
-};
-
-const closeNotifyModal = () => {
-    notify.show = false;
-    notify.prescription = null;
-    notify.processing = false;
-};
-
-const setDefaultMessage = () => {
-    if (!notify.prescription) return;
-    notify.message = notify.channel === 'sms' ? DEFAULT_SMS(notify.prescription) : DEFAULT_EMAIL(notify.prescription);
-};
-
-const sendNotification = () => {
-    if (!notify.prescription || notify.processing || !notify.message.trim() || !notify.channel) return;
-    notify.processing = true;
-
-    const routeName = notify.channel === 'sms' ? 'secretaire.prescription.send-sms' : 'secretaire.prescription.send-email';
-    const data = { message: notify.message };
-
-    if (notify.channel === 'email') {
-        data.lien_pdf = route('laboratoire.prescription.pdf', notify.prescription.id);
+    to {
+        transform: translateY(0);
+        opacity: 1;
     }
-
-    router.post(route(routeName, notify.prescription.id), data, {
-        preserveScroll: true,
-        onSuccess: () => closeNotifyModal(),
-        onError: () => { notify.processing = false; },
-        onFinish: () => { notify.processing = false; },
-    });
-};
-
-const handlePaymentToggle = (prescription) => {
-    if (!prescription.paiement) return;
-    openModal(prescription.paiement.status ? 'unpay' : 'pay', prescription.id);
-};
-
-const totalCount = computed(() => {
-    return Number(props.counts.countActives || props.counts.actives || 0)
-        + Number(props.counts.countValide || props.counts.valide || 0)
-        + Number(props.counts.countDeleted || props.counts.deleted || 0);
-});
-
-const paymentRate = computed(() => {
-    const paid = Number(props.counts.countPaye || 0);
-    const unpaid = Number(props.counts.countNonPaye || 0);
-    const total = paid + unpaid;
-    return total === 0 ? 0 : Math.round((paid / total) * 100);
-});
-
-const progressRate = computed(() => {
-    const enCours = Number(props.counts.countEnCours || 0);
-    const termine = Number(props.counts.countTermine || 0);
-    const valide = Number(props.counts.countValide || props.counts.valide || 0);
-    const total = totalCount.value;
-    return total === 0 ? 0 : Math.round(((enCours + termine + valide) / total) * 100);
-});
-
-const efficiencyRate = computed(() => {
-    const termine = Number(props.counts.countTermine || 0);
-    const valide = Number(props.counts.countValide || props.counts.valide || 0);
-    const total = totalCount.value;
-    return total === 0 ? 0 : Math.round(((termine + valide) / total) * 100);
-});
-
-const applyFilters = () => {
-    router.get(route('secretaire.prescription.index'), form, {
-        preserveState: true,
-        preserveScroll: true,
-        replace: true,
-    });
-};
-
-const debouncedApplyFilters = debounce(() => applyFilters(), 300);
-
-const changeTab = (tab) => { form.tab = tab; applyFilters(); };
-const filterByPaymentStatus = (s) => { form.payment = s; applyFilters(); };
-const clearSearch = () => { form.search = ''; applyFilters(); };
-const clearAllFilters = () => { form.search = ''; form.payment = ''; applyFilters(); };
-
-const tabClass = (tab) => form.tab === tab
-    ? 'text-primary-600 dark:text-primary-400'
-    : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300';
-
-const statusClass = (status) => {
-    const map = {
-        EN_ATTENTE: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-        EN_COURS: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-        TERMINE: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-        VALIDE: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
-        ARCHIVE: 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300',
-    };
-    return map[status] || 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300';
-};
-
-const initials = (p) => {
-    const parts = String(p.patient?.nom_complet || 'NA').trim().split(/\s+/).filter(Boolean);
-    return `${parts[0]?.charAt(0) || 'N'}${parts[1]?.charAt(0) || 'A'}`.toUpperCase();
-};
-
-const truncate = (v, max) => { const t = String(v || ''); return t.length <= max ? t : `${t.slice(0, max)}...`; };
-const number = (v) => Number(v || 0).toLocaleString('fr-FR');
-
-const btnColor = (color) => {
-    const map = { red: 'bg-red-600 hover:bg-red-700', amber: 'bg-amber-600 hover:bg-amber-700', slate: 'bg-slate-600 hover:bg-slate-700', emerald: 'bg-emerald-600 hover:bg-emerald-700' };
-    return map[color] || 'bg-primary-600 hover:bg-primary-700';
-};
-</script>
+}
+</style>
