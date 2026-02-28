@@ -117,6 +117,11 @@ class PermissionMap
             'module' => 'Administration',
             'description' => 'Modifier la configuration générale du système',
         ],
+        'branding.gerer' => [
+            'label' => 'Gérer l\'identité visuelle (PDF)',
+            'module' => 'Administration',
+            'description' => 'Personnaliser les logos et signatures sur les documents PDF',
+        ],
         'corbeille.acceder' => [
             'label' => 'Accéder à la corbeille',
             'module' => 'Administration',

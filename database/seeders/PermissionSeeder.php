@@ -41,6 +41,7 @@ class PermissionSeeder extends Seeder
             'prescripteurs.voir',
             'prescripteurs.gerer',
             'prescripteurs.supprimer',
+            'branding.gerer',
             'archives.acceder',
         ]);
 

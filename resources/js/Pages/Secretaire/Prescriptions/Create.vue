@@ -1,68 +1,75 @@
 <template>
     <AppLayout>
-        <div class="px-3 py-3 space-y-4">
-            <div class="mb-3">
-                <Link
-                    :href="route('secretaire.prescription.index')"
-                    class="inline-flex items-center rounded-lg bg-slate-50 px-3 py-1.5 text-sm text-slate-600 transition-colors hover:bg-slate-100 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
-                >
-                    <em class="ni ni-arrow-left mr-1.5 text-xs"></em>Retour a la liste
-                </Link>
+        <div class="px-4 py-2 space-y-3">
+            <!-- Header Compact -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div class="flex items-center gap-3">
+                    <Link
+                        :href="route('secretaire.prescription.index')"
+                        class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 shadow-sm"
+                        title="Retour"
+                    >
+                        <em class="ni ni-arrow-left text-lg"></em>
+                    </Link>
+                    <div>
+                        <h1 class="text-lg font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+                            Nouvelle Prescription
+                        </h1>
+                        <div class="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            <span class="text-primary-500">Ref: {{ defaultReference }}</span>
+                            <span class="opacity-30">•</span>
+                            <span>{{ nowLabel }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div class="hidden md:block text-right mr-2">
+                        <div class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Opérateur</div>
+                        <div class="text-xs font-bold text-slate-700 dark:text-slate-300">{{ $page.props.auth.user?.name }}</div>
+                    </div>
+                    <button 
+                        @click="resetWorkflow"
+                        type="button"
+                        class="inline-flex items-center gap-1.5 rounded-xl bg-red-50 px-3 py-2 text-xs font-black uppercase tracking-tight text-red-600 transition-all hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 shadow-sm"
+                    >
+                        <em class="ni ni-reload"></em> Reset
+                    </button>
+                </div>
             </div>
 
-            <div class="rounded-xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-slate-700/80 dark:bg-slate-800">
-                <div class="mb-4 flex items-center justify-between">
-                    <div>
-                        <h1 class="flex items-center text-base font-semibold text-slate-800 dark:text-slate-100">
-                            <em class="ni ni-dashlite mr-2 text-sm text-primary-500"></em>Nouvelle Prescription
-                        </h1>
-                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                            Reference: <span class="font-semibold">{{ defaultReference }}</span>
-                        </p>
+            <!-- Stepper Ultra Compact intégré dans une carte discrète -->
+            <div class="rounded-2xl border border-slate-200/60 bg-white/50 p-3 dark:border-slate-700/50 dark:bg-slate-800/50 shadow-sm">
+                <div class="relative px-2">
+                    <!-- Progress Line -->
+                    <div class="absolute left-4 right-4 top-1/2 h-0.5 -translate-y-1/2 bg-slate-100 dark:bg-slate-700">
+                        <div class="h-full bg-primary-500 transition-all duration-500 ease-out shadow-[0_0_8px_rgba(var(--color-primary-500),0.4)]" :style="{ width: `${progress}%` }"></div>
                     </div>
 
-                    <div class="flex items-center space-x-2">
-                        <div class="text-right">
-                            <div class="text-xs text-slate-500 dark:text-slate-400">{{ nowLabel }}</div>
-                            <div class="text-xxs text-slate-400 dark:text-slate-500">Cree par: {{ $page.props.auth.user?.name }}</div>
-                        </div>
-                        <button
-                            type="button"
-                            class="rounded-md bg-red-50 px-2.5 py-1.5 text-xs text-red-600 transition-colors hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
-                            @click="resetWorkflow"
-                        >
-                            <em class="ni ni-refresh mr-1 text-xs"></em>Reset
-                        </button>
-                    </div>
-                </div>
-
-                <div class="relative">
-                    <div class="absolute left-4 right-4 top-4 z-0 h-0.5 bg-slate-200 dark:bg-slate-600">
-                        <div class="h-full bg-gradient-to-r from-primary-400 to-green-400 transition-all duration-300" :style="{ width: `${progress}%` }"></div>
-                    </div>
-
-                    <div class="relative z-10 flex items-center justify-between">
-                        <div v-for="step in steps" :key="step.key" class="flex flex-col items-center">
+                    <!-- Steps -->
+                    <div class="relative z-10 flex justify-between">
+                        <div v-for="step in steps" :key="step.key" class="flex flex-col items-center group">
                             <button
                                 type="button"
-                                class="relative mb-1.5 flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200"
+                                class="relative flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold transition-all duration-300 border-2"
                                 :class="stepClasses(step)"
                                 @click="goToStep(step.key)"
+                                :title="step.label"
                             >
-                                <em :class="`ni ni-${step.icon} text-xs`"></em>
+                                <em :class="`ni ni-${step.icon}`"></em>
                             </button>
-                            <span class="block text-xxs font-medium" :class="stepLabelClasses(step)">{{ step.label }}</span>
+                            <span class="mt-1 hidden text-[8px] font-black uppercase tracking-tighter sm:block opacity-60 group-hover:opacity-100 transition-opacity" :class="stepLabelClasses(step)">
+                                {{ step.label }}
+                            </span>
                         </div>
                     </div>
                 </div>
-
-                <div class="mt-3 text-center">
-                    <div class="inline-flex items-center rounded-lg border border-primary-200 bg-primary-50 px-3 py-1.5 dark:border-primary-800 dark:bg-primary-900/20">
-                        <em :class="`ni ni-${steps[currentStepIndex].icon} mr-1.5 text-xs text-primary-600 dark:text-primary-400`"></em>
-                        <span class="text-xs font-medium text-primary-800 dark:text-primary-200">
-                            Etape {{ currentStepIndex + 1 }}/{{ steps.length }} : {{ steps[currentStepIndex].label }}
-                        </span>
-                    </div>
+                
+                <!-- Current Step Info Mobile -->
+                <div class="mt-2 text-center sm:hidden">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 px-3 py-1 rounded-full">
+                        {{ steps[currentStepIndex].label }}
+                    </span>
                 </div>
             </div>
 

@@ -288,9 +288,9 @@ Route::middleware(['auth', 'verified', 'role:technicien,biologiste,superadmin,ad
 // ============================================
 // ROUTES SPÉCIFIQUES AUX ADMINS
 // ============================================
-Route::middleware(['auth', 'verified', 'role:superadmin,admin'])->prefix('admin')->name('admin.')->group(function () {
-    // Utilisateurs
-    Route::controller(UserController::class)->group(function () {
+Route::middleware(['auth', 'verified', 'role:superadmin,admin,secretaire'])->prefix('admin')->name('admin.')->group(function () {
+    // Utilisateurs - Réservé aux admins
+    Route::middleware(['role:superadmin,admin'])->controller(UserController::class)->group(function () {
         Route::get('utilisateurs', 'index')->name('users');
         Route::post('utilisateurs', 'store')->name('users.store');
         Route::put('utilisateurs/{user}', 'update')->name('users.update');
@@ -298,20 +298,37 @@ Route::middleware(['auth', 'verified', 'role:superadmin,admin'])->prefix('admin'
         Route::post('utilisateurs/{user}/logout', 'logoutSession')->name('users.logout');
     });
 
-    // ==== ROUTES STRICTEMENT RÉSERVÉES AU SUPER ADMIN ====
-    Route::middleware(['role:superadmin'])->group(function () {
-        // Permissions
-        Route::controller(PermissionController::class)->group(function () {
-            Route::get('permissions', 'index')->name('permissions');
-            Route::put('permissions', 'update')->name('permissions.update');
-        });
+    // Branding PDF - Accessible par permission
+    Route::middleware(['permission:branding.gerer'])->group(function () {
+        Route::get('pdf-branding', [PdfBrandingController::class, 'index'])->name('pdf-branding');
+        Route::post('pdf-branding', [PdfBrandingController::class, 'store'])->name('pdf-branding.store');
+    });
+
+    // ==== ROUTES STRICTEMENT RÉSERVÉES AU SUPER ADMIN ET ADMIN ====
+    Route::middleware(['role:superadmin,admin'])->group(function () {
         
-        // Administration des fonctionnalités Premium SaaS
-        Route::prefix('features')->name('features.')->group(function () {
-            Route::get('/', [ClientFeatureController::class, 'index'])->name('index');
-            Route::get('/{client}/edit', [ClientFeatureController::class, 'edit'])->name('edit');
-            Route::put('/{client}', [ClientFeatureController::class, 'update'])->name('update');
+        // Uniquement Super Admin
+        Route::middleware(['role:superadmin'])->group(function () {
+            // Permissions
+            Route::controller(PermissionController::class)->group(function () {
+                Route::get('permissions', 'index')->name('permissions');
+                Route::put('permissions', 'update')->name('permissions.update');
+            });
+            
+            // Administration des fonctionnalités Premium SaaS
+            Route::prefix('features')->name('features.')->group(function () {
+                Route::get('/', [ClientFeatureController::class, 'index'])->name('index');
+                Route::get('/{client}/edit', [ClientFeatureController::class, 'edit'])->name('edit');
+                Route::put('/{client}', [ClientFeatureController::class, 'update'])->name('update');
+            });
+
+            // Logs Système
+            Route::get('logs-viewer', [LogController::class, 'index'])->name('logs.viewer');
+            Route::post('logs-viewer/{file}/clear', [LogController::class, 'clear'])->name('logs.clear');
+            Route::get('logs-viewer/{file}/download', [LogController::class, 'download'])->name('logs.download');
+            Route::delete('logs-viewer/{file}', [LogController::class, 'delete'])->name('logs.delete');
         });
+
         Route::get('parametres', [SettingController::class, 'index'])->name('settings');
         Route::controller(SettingController::class)->prefix('parametres')->name('settings.')->group(function () {
             Route::post('entreprise', 'updateEnterprise')->name('enterprise');
@@ -329,12 +346,7 @@ Route::middleware(['auth', 'verified', 'role:superadmin,admin'])->prefix('admin'
 
         // Configuration API (Email & SMS) - Page séparée
         Route::get('api-settings', [ApiSettingController::class, 'index'])->name('api-settings');
-        Route::get('pdf-branding', [PdfBrandingController::class, 'index'])->name('pdf-branding');
-        Route::post('pdf-branding', [PdfBrandingController::class, 'store'])->name('pdf-branding.store');
-        Route::get('logs-viewer', [LogController::class, 'index'])->name('logs.viewer');
-        Route::post('logs-viewer/{file}/clear', [LogController::class, 'clear'])->name('logs.clear');
-        Route::get('logs-viewer/{file}/download', [LogController::class, 'download'])->name('logs.download');
-        Route::delete('logs-viewer/{file}', [LogController::class, 'delete'])->name('logs.delete');
+        
         Route::controller(ApiSettingController::class)->prefix('api-settings')->name('api-settings.')->group(function () {
             Route::post('email', 'updateEmailConfig')->name('update-email');
             Route::post('sms', 'storeSmsProvider')->name('store-sms');
@@ -347,15 +359,17 @@ Route::middleware(['auth', 'verified', 'role:superadmin,admin'])->prefix('admin'
     });
 
     // Traçabilité des patients
-    Route::get('trace-patients', [TracePatientController::class, 'index'])->name('trace-patients');
-    Route::controller(TracePatientController::class)->prefix('trace-patients')->name('trace-patient.')->group(function () {
-        Route::post('patients/{id}/restore', 'restorePatientById')->name('patients.restore');
-        Route::delete('patients/{id}/force-delete', 'forceDeletePatientById')->name('patients.force-delete');
-        Route::delete('patients/empty', 'emptyPatientsTrash')->name('patients.empty');
+    Route::middleware(['permission:corbeille.acceder'])->group(function () {
+        Route::get('trace-patients', [TracePatientController::class, 'index'])->name('trace-patients');
+        Route::controller(TracePatientController::class)->prefix('trace-patients')->name('trace-patient.')->group(function () {
+            Route::post('patients/{id}/restore', 'restorePatientById')->name('patients.restore');
+            Route::delete('patients/{id}/force-delete', 'forceDeletePatientById')->name('patients.force-delete');
+            Route::delete('patients/empty', 'emptyPatientsTrash')->name('patients.empty');
 
-        Route::post('prescriptions/{id}/restore', 'restorePrescriptionById')->name('prescriptions.restore');
-        Route::delete('prescriptions/{id}/force-delete', 'forceDeletePrescriptionById')->name('prescriptions.force-delete');
-        Route::delete('prescriptions/empty', 'emptyPrescriptionsTrash')->name('prescriptions.empty');
+            Route::post('prescriptions/{id}/restore', 'restorePrescriptionById')->name('prescriptions.restore');
+            Route::delete('prescriptions/{id}/force-delete', 'forceDeletePrescriptionById')->name('prescriptions.force-delete');
+            Route::delete('prescriptions/empty', 'emptyPrescriptionsTrash')->name('prescriptions.empty');
+        });
     });
 
     // Ajout de la route pour voir une prescription en tant qu'admin

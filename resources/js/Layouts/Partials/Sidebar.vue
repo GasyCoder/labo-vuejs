@@ -363,7 +363,7 @@
                     </template>
 
                     <!-- Section Administration -->
-                    <template v-if="$page.props.auth.user && hasAnyPermission(['utilisateurs.gerer', 'parametres.gerer'])">
+                    <template v-if="$page.props.auth.user && hasAnyPermission(['utilisateurs.gerer', 'parametres.gerer', 'branding.gerer'])">
                         <li
                             class="relative first:pt-1 pt-6 pb-1 px-4 before:absolute before:h-px before:w-full before:start-0 before:top-1/2 before:bg-gray-200 dark:before:bg-gray-900 first:before:hidden before:opacity-0 group-[&.is-compact:not(.has-hover)]/sidebar:before:opacity-100">
                             <h6
@@ -439,7 +439,7 @@
                                     class="group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0 flex-grow-1 inline-block whitespace-nowrap transition-all duration-300 text-sm text-slate-600 dark:text-slate-500 group-[.active]/item:text-primary-500 group-hover:text-primary-500">API & Notifications</span>
                             </Link>
                         </li>
-                        <li v-if="$page.props.auth.user.type === 'superadmin'" :class="['nk-menu-item py-0 group/item', { 'active': route().current('admin.pdf-branding') }]">
+                        <li v-if="hasPermission('branding.gerer')" :class="['nk-menu-item py-0 group/item', { 'active': route().current('admin.pdf-branding') }]">
                             <Link :href="route('admin.pdf-branding')"
                                 class="nk-menu-link flex relative items-center align-middle py-2 ps-5 pe-8 font-heading font-bold tracking-snug group">
                                 <span
