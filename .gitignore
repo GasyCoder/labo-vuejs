@@ -52,3 +52,4 @@ bootstrap/cache/
 .env
 .env.*
 /public/build/
+public/build/
