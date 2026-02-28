@@ -583,12 +583,19 @@
             <div>
                 @if ($nifEntreprise)
                     NIF:{{ $nifEntreprise }}
-                    @endif @if ($statutEntreprise)
-                        - STAT:{{ $statutEntreprise }}
-                    @endif
+                @endif
+                @if ($statutEntreprise)
+                    - STAT:{{ $statutEntreprise }}
+                @endif
             </div>
-            <div>Siège: Lot 25A Antanetibe Antehiroka Antananarivo 101 - Tél: 020 78 450 61 - 032 11 450 61 - Email: info@c-care.mg</div>
-            <div>Comptes: MCB TANA: 00006 00003 00000845663 49 - BMOI TANA: 00004 00001 02157920101 23</div>
+            <div>
+                Siège: {{ $adresseEntreprise }} 
+                @if($telEntreprise) - Tél: {{ $telEntreprise }} @endif 
+                @if($emailEntreprise) - Email: {{ $emailEntreprise }} @endif
+            </div>
+            @if($settings->numero_banque)
+                <div>Comptes: {{ $settings->numero_banque }}</div>
+            @endif
         </div>
     </div>
 </body>

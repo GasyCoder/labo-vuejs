@@ -25,6 +25,7 @@ class Setting extends Model
         'adresse',
         'telephone',
         'email',
+        'numero_banque',
         'logo',
         'favicon',
     ];
@@ -167,5 +168,12 @@ class Setting extends Model
         $settings = self::getSettings();
 
         return $settings ? $settings->email : null;
+    }
+
+    public static function getNumeroBanque()
+    {
+        $settings = self::getSettings();
+
+        return $settings ? $settings->numero_banque : null;
     }
 }

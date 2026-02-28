@@ -56,6 +56,7 @@ class SettingController extends Controller
             'adresse' => 'nullable|string|max:500',
             'telephone' => 'nullable|string|max:100',
             'email' => 'nullable|email|max:255',
+            'numero_banque' => 'nullable|string|max:500',
             'logo' => 'nullable|image|max:2048',
             'favicon' => 'nullable|image|max:1024',
         ]);
@@ -69,6 +70,7 @@ class SettingController extends Controller
         $setting->adresse = $validated['adresse'];
         $setting->telephone = $validated['telephone'];
         $setting->email = $validated['email'];
+        $setting->numero_banque = $validated['numero_banque'];
 
         if ($request->hasFile('logo')) {
             if ($setting->logo) {

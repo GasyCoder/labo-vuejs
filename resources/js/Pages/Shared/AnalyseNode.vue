@@ -104,8 +104,8 @@ const props = defineProps({
                         }">
                         {{ saveStatus[node.id] === 'saving' ? 'Enregistrement…' : saveStatus[node.id] === 'saved' ? 'Sauvegardé' + (savedAt[node.id] ? ' à ' + savedAt[node.id] : '') : 'Erreur sauvegarde' }}
                     </span>
-                    <span v-if="node.type" class="inline-flex items-center px-3 py-1 text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg">
-                        {{ node.type }}
+                    <span v-if="node.type_label" class="inline-flex items-center px-3 py-1 text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg">
+                        {{ node.type_label }}
                     </span>
                 </div>
             </div>

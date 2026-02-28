@@ -20,6 +20,29 @@ class Type extends Model
         'status' => 'boolean',
     ];
 
+    protected $appends = ['meta'];
+
+    /**
+     * Get metadata from config/analyse_types.php
+     */
+    public function getMetaAttribute(): array
+    {
+        $allMeta = config('analyse_types', []);
+
+        return $allMeta[$this->name] ?? [
+            'label_metier' => $this->libelle ?: $this->name,
+            'description' => '',
+            'exemple' => '',
+            'flags' => [
+                'uses_ref' => true,
+                'uses_suffix' => true,
+                'is_title' => false,
+                'is_choice' => false,
+                'is_multi_choice' => false,
+            ],
+        ];
+    }
+
     // Optionnel : scope pour les types actifs
     public function scopeActifs($query)
     {

@@ -98,9 +98,9 @@ class PrescriptionController extends Controller
                         default => $prescription->status,
                     },
                     'analyses_count' => $prescription->analyses_count,
-                    'analyses' => $prescription->analyses->map(fn($a) => [
+                    'analyses' => $prescription->analyses->map(fn ($a) => [
                         'code' => $a->code,
-                        'designation' => $a->designation
+                        'designation' => $a->designation,
                     ]),
                     'created_at' => $prescription->created_at?->format('d/m/Y H:i'),
                     'created_at_relative' => $prescription->created_at?->diffForHumans(),
@@ -537,7 +537,8 @@ class PrescriptionController extends Controller
 
         return redirect()
             ->route('secretaire.prescription.edit', ['prescriptionId' => $prescription->id, 'step' => 'tubes'])
-            ->with('success', 'Prescription enregistrée avec succès.');
+            ->with('success', 'Prescription enregistrée avec succès.')
+            ->with('prescription_action', 'created');
     }
 
     public function edit(int $prescriptionId): Response
@@ -553,7 +554,8 @@ class PrescriptionController extends Controller
 
         return Inertia::render('Secretaire/Prescriptions/Edit', [
             'prescription' => $prescription,
-            'prescripteurs' => Prescripteur::query()->where('is_active', true)->get(['id', 'nom', 'prenom']),
+            'wasRecentlyCreated' => $prescription->wasRecentlyCreated,
+            'prescripteurs' => Prescripteur::query()->where('is_active', true)->get(['id', 'nom', 'prenom', 'grade']),
             'paymentMethods' => PaymentMethod::query()->where('is_active', true)->get(['id', 'code', 'label']),
             'urgenceFees' => [
                 'jour' => Setting::getTarifUrgenceJour(),

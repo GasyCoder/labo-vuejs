@@ -351,10 +351,39 @@ const submitRedoAnalysis = () => {
                                     </div>
                                 </td>
 
-                                <!-- Analyses count -->
+                                <!-- Analyses codes -->
                                 <td class="px-6 py-4">
-                                    <div class="text-sm font-medium text-gray-900 dark:text-white">
-                                        {{ prescription.analyses?.length || 0 }} analyses
+                                    <div class="flex flex-wrap items-center gap-1.5 max-w-[250px]">
+                                        <!-- Total Count Badge -->
+                                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-[11px] font-black border border-blue-200 dark:border-blue-800 shadow-sm mr-1" title="Total des analyses">
+                                            {{ prescription.analyses_count }}
+                                        </span>
+
+                                        <template v-if="prescription.analyses?.length">
+                                            <span v-for="(analyse, aIdx) in prescription.analyses.slice(0, 3)" :key="aIdx" 
+                                                class="inline-flex items-center rounded-md bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-700 dark:bg-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 whitespace-nowrap"
+                                                :title="analyse.designation">
+                                                {{ analyse.code }}
+                                            </span>
+                                            
+                                            <div v-if="prescription.analyses.length > 3" class="relative group/tooltip">
+                                                <span class="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-100 dark:border-blue-800 cursor-help">
+                                                    +{{ prescription.analyses.length - 3 }}
+                                                </span>
+                                                <!-- Custom Tooltip -->
+                                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 hidden group-hover/tooltip:block z-[100] w-max max-w-[300px] p-2 bg-slate-900 text-white text-[10px] rounded-lg shadow-2xl border border-slate-700 animate-in fade-in zoom-in duration-200 mb-2">
+                                                    <div class="flex flex-col gap-1.5">
+                                                        <div v-for="(allAnalyse, aIdxAll) in prescription.analyses" :key="aIdxAll" class="flex items-start gap-2 border-b border-slate-800 pb-1 last:border-0 last:pb-0">
+                                                            <span class="font-bold text-blue-400 min-w-[40px]">{{ allAnalyse.code }}</span>
+                                                            <span class="text-slate-300">{{ allAnalyse.designation }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <!-- Arrow -->
+                                                    <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900"></div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <span v-else class="text-xs italic text-slate-400">Aucune</span>
                                     </div>
                                 </td>
 

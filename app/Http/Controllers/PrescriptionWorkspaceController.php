@@ -37,7 +37,7 @@ class PrescriptionWorkspaceController extends Controller
         $prescription->load([
             'patient',
             'prescripteur:id,nom,prenom',
-            'analyses' => fn ($q) => $q->with(['type:id,name', 'examen:id,name', 'enfantsRecursive.type:id,name'])
+            'analyses' => fn ($q) => $q->with(['type:id,name,libelle', 'examen:id,name', 'enfantsRecursive.type:id,name,libelle'])
                 ->orderBy('ordre')->orderBy('id'),
             'resultats:id,prescription_id,analyse_id,valeur,resultats,interpretation,status',
         ]);
@@ -210,7 +210,17 @@ class PrescriptionWorkspaceController extends Controller
         if (empty($enfants)) {
             // Analyse without children → check direct result
             $isFilled = $this->isAnalyseFilled($analyse, $resultatsMap->get($analyse->id), $prescription->id);
-            $status = ($resultStatus === 'TERMINE' || $isFilled) ? 'TERMINE' : ($hasResult ? 'EN_COURS' : 'VIDE');
+
+            // FIX: Only show TERMINE if the database status is actually TERMINE.
+            // If it's filled but not TERMINE in DB, show as EN_COURS.
+            if ($resultStatus === 'TERMINE') {
+                $status = 'TERMINE';
+            } elseif ($isFilled || $hasResult) {
+                $status = 'EN_COURS';
+            } else {
+                $status = 'VIDE';
+            }
+
             $canComplete = $isFilled && $resultStatus !== 'TERMINE';
         } else {
             $allHaveResults = $enfantsCompleted > 0 && $enfantsCompleted === count($enfants);
@@ -261,6 +271,7 @@ class PrescriptionWorkspaceController extends Controller
     private function buildChildNode(Analyse $analyse, $resultatsMap, $patient): array
     {
         $typeName = strtoupper($analyse->type?->name ?? 'INPUT');
+        $typeLabel = $analyse->type?->libelle ?: $typeName;
         $resultat = $resultatsMap->get($analyse->id);
 
         $node = [
@@ -269,6 +280,7 @@ class PrescriptionWorkspaceController extends Controller
             'code' => $analyse->code,
             'designation' => $analyse->designation,
             'type' => $typeName,
+            'type_label' => $typeLabel,
             'unite' => $analyse->unite,
             'suffixe' => $analyse->suffixe,
             'is_bold' => $analyse->is_bold,
@@ -299,7 +311,7 @@ class PrescriptionWorkspaceController extends Controller
     {
         $prescription->load([
             'patient',
-            'analyses' => fn ($q) => $q->with(['type:id,name', 'examen:id,name', 'enfantsRecursive.type:id,name'])
+            'analyses' => fn ($q) => $q->with(['type:id,name,libelle', 'examen:id,name', 'enfantsRecursive.type:id,name,libelle'])
                 ->orderBy('ordre')->orderBy('id'),
             'resultats:id,prescription_id,analyse_id,valeur,resultats,interpretation,status',
         ]);

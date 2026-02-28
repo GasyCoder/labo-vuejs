@@ -21,7 +21,7 @@ class AnalyseController extends Controller
         $selectedLevel = $request->input('selectedLevel', 'tous');
         $perPage = $request->input('perPage', 10);
 
-        $query = Analyse::with(['examen', 'type', 'parent', 'enfants']);
+        $query = Analyse::with(['examen', 'type', 'parent', 'enfants.enfants']);
 
         match ($selectedLevel) {
             'parents' => $query->where('level', 'PARENT'),
@@ -98,7 +98,6 @@ class AnalyseController extends Controller
             'is_bold' => 'boolean',
             'examen_id' => 'required|exists:examens,id',
             'type_id' => 'required|exists:types,id',
-            'valeur_ref' => 'nullable|string|max:255',
             'valeur_ref_homme' => 'nullable|string|max:255',
             'valeur_ref_femme' => 'nullable|string|max:255',
             'valeur_ref_enfant_garcon' => 'nullable|string|max:255',
@@ -125,7 +124,6 @@ class AnalyseController extends Controller
                 'is_bold' => $validated['is_bold'] ?? false,
                 'examen_id' => $validated['examen_id'],
                 'type_id' => $validated['type_id'],
-                'valeur_ref' => $validated['valeur_ref'] ?? '',
                 'valeur_ref_homme' => $validated['valeur_ref_homme'] ?? '',
                 'valeur_ref_femme' => $validated['valeur_ref_femme'] ?? '',
                 'valeur_ref_enfant_garcon' => $validated['valeur_ref_enfant_garcon'] ?? '',
@@ -151,7 +149,6 @@ class AnalyseController extends Controller
                         'is_bold' => $sa['is_bold'] ?? false,
                         'examen_id' => $sa['examen_id'] ?? $validated['examen_id'],
                         'type_id' => $sa['type_id'] ?? $validated['type_id'],
-                        'valeur_ref' => $sa['valeur_ref'] ?? '',
                         'valeur_ref_homme' => $sa['valeur_ref_homme'] ?? '',
                         'valeur_ref_femme' => $sa['valeur_ref_femme'] ?? '',
                         'valeur_ref_enfant_garcon' => $sa['valeur_ref_enfant_garcon'] ?? '',
@@ -177,7 +174,6 @@ class AnalyseController extends Controller
                                 'is_bold' => $child['is_bold'] ?? false,
                                 'examen_id' => $child['examen_id'] ?? $sa['examen_id'] ?? $validated['examen_id'],
                                 'type_id' => $child['type_id'] ?? $sa['type_id'] ?? $validated['type_id'],
-                                'valeur_ref' => $child['valeur_ref'] ?? '',
                                 'valeur_ref_homme' => $child['valeur_ref_homme'] ?? '',
                                 'valeur_ref_femme' => $child['valeur_ref_femme'] ?? '',
                                 'valeur_ref_enfant_garcon' => $child['valeur_ref_enfant_garcon'] ?? '',
@@ -208,7 +204,6 @@ class AnalyseController extends Controller
             'is_bold' => 'boolean',
             'examen_id' => 'required|exists:examens,id',
             'type_id' => 'required|exists:types,id',
-            'valeur_ref' => 'nullable|string|max:255',
             'valeur_ref_homme' => 'nullable|string|max:255',
             'valeur_ref_femme' => 'nullable|string|max:255',
             'valeur_ref_enfant_garcon' => 'nullable|string|max:255',
@@ -231,7 +226,6 @@ class AnalyseController extends Controller
                 'is_bold' => $validated['is_bold'] ?? false,
                 'examen_id' => $validated['examen_id'],
                 'type_id' => $validated['type_id'],
-                'valeur_ref' => $validated['valeur_ref'] ?? '',
                 'valeur_ref_homme' => $validated['valeur_ref_homme'] ?? '',
                 'valeur_ref_femme' => $validated['valeur_ref_femme'] ?? '',
                 'valeur_ref_enfant_garcon' => $validated['valeur_ref_enfant_garcon'] ?? '',
@@ -265,7 +259,6 @@ class AnalyseController extends Controller
                         'is_bold' => $sa['is_bold'] ?? false,
                         'examen_id' => $sa['examen_id'] ?? $validated['examen_id'],
                         'type_id' => $sa['type_id'] ?? $validated['type_id'],
-                        'valeur_ref' => $sa['valeur_ref'] ?? '',
                         'valeur_ref_homme' => $sa['valeur_ref_homme'] ?? '',
                         'valeur_ref_femme' => $sa['valeur_ref_femme'] ?? '',
                         'valeur_ref_enfant_garcon' => $sa['valeur_ref_enfant_garcon'] ?? '',
@@ -306,7 +299,6 @@ class AnalyseController extends Controller
                                 'is_bold' => $child['is_bold'] ?? false,
                                 'examen_id' => $child['examen_id'] ?? $sa['examen_id'] ?? $validated['examen_id'],
                                 'type_id' => $child['type_id'] ?? $sa['type_id'] ?? $validated['type_id'],
-                                'valeur_ref' => $child['valeur_ref'] ?? '',
                                 'valeur_ref_homme' => $child['valeur_ref_homme'] ?? '',
                                 'valeur_ref_femme' => $child['valeur_ref_femme'] ?? '',
                                 'valeur_ref_enfant_garcon' => $child['valeur_ref_enfant_garcon'] ?? '',

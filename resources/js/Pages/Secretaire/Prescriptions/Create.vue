@@ -367,16 +367,16 @@
                                 Prescripteur <span class="text-red-500">*</span>
                             </label>
                             <div class="relative">
-                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-3.5">
                                     <em class="ni ni-user-md text-base text-slate-400 dark:text-slate-500"></em>
                                 </div>
-                                <select v-model="clinicalForm.prescripteur_id" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-900 transition hover:border-slate-300 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:hover:border-slate-500">
-                                    <option value="">Selectionner un prescripteur...</option>
-                                    <option v-for="prescripteur in prescripteurs" :key="prescripteur.id" :value="prescripteur.id">{{ prescripteur.nom_complet }}</option>
-                                </select>
-                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5">
-                                    <em class="ni ni-chevron-down text-xs text-slate-400 dark:text-slate-500"></em>
-                                </div>
+                                <Combobox
+                                    v-model="clinicalForm.prescripteur_id"
+                                    :options="prescripteurs"
+                                    label-key="nom_complet"
+                                    secondary-key="grade"
+                                    placeholder="Rechercher un prescripteur..."
+                                />
                             </div>
                         </div>
 
@@ -599,34 +599,38 @@
                                 </button>
                             </div>
 
-                            <div v-if="analyseResults.length > 0" class="mt-3 max-h-80 space-y-2 overflow-auto">
-                                <div v-for="analyse in analyseResults" :key="analyse.id" class="flex items-center justify-between rounded-xl border border-slate-200 p-3 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700/40">
-                                    <div>
-                                        <div class="flex items-center gap-2">
-                                            <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ analyse.designation }}</p>
-                                            <span v-if="analyse.is_parent" class="rounded-full bg-indigo-100 px-2 py-0.5 text-xxs font-semibold text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
-                                                Panel ({{ analyse.enfants_inclus?.length || 0 }})
+                            <div v-if="analyseResults.length > 0" class="mt-3 max-h-80 space-y-1.5 overflow-auto pr-1 scrollbar-thin">
+                                <div v-for="analyse in analyseResults" :key="analyse.id" class="group flex items-center justify-between rounded-xl border border-slate-100 p-2.5 transition-all hover:border-emerald-200 hover:bg-emerald-50/30 dark:border-slate-700 dark:hover:bg-slate-700/40">
+                                    <div class="flex-1 min-w-0 mr-3">
+                                        <div class="flex items-center gap-2 mb-0.5">
+                                            <p class="truncate text-sm font-bold text-slate-800 dark:text-slate-100">{{ analyse.designation }}</p>
+                                            <span v-if="analyse.is_parent" class="shrink-0 rounded bg-indigo-50 px-1.5 py-0.5 text-[8px] font-black uppercase text-indigo-600 dark:bg-indigo-900/30">
+                                                Panel
                                             </span>
                                         </div>
-                                        <p class="text-xs text-slate-500 dark:text-slate-400">
-                                            {{ analyse.code }} | {{ formatCurrency(analyse.prix) }}
-                                            <span v-if="analyse.parent_nom && !analyse.is_parent" class="ml-1 text-blue-600 dark:text-blue-400">· {{ analyse.parent_nom }}</span>
-                                        </p>
-                                        <p v-if="analyse.is_parent && analyse.enfants_inclus?.length > 0" class="mt-1 text-xxs text-indigo-600 dark:text-indigo-400">
-                                            Inclut : {{ analyse.enfants_inclus.join(', ') }}
-                                        </p>
+                                        <div class="flex items-center text-[10px] font-bold text-slate-400">
+                                            <span class="font-mono text-primary-500 uppercase">{{ analyse.code }}</span>
+                                            <span v-if="analyse.parent_nom && !analyse.is_parent" class="ml-1 truncate opacity-70">• {{ analyse.parent_nom }}</span>
+                                        </div>
                                     </div>
-                                    <button
-                                        type="button"
-                                        class="shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
-                                        :class="isAnalyseInCart(analyse.id)
-                                            ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 cursor-not-allowed'
-                                            : 'bg-green-500 hover:bg-green-600 text-white'"
-                                        :disabled="isAnalyseInCart(analyse.id)"
-                                        @click="addAnalyse(analyse)"
-                                    >
-                                        <em class="ni text-xs" :class="isAnalyseInCart(analyse.id) ? 'ni-check' : 'ni-plus'"></em>
-                                    </button>
+                                    <div class="flex items-center gap-3 shrink-0">
+                                        <div class="text-right">
+                                            <span class="text-xs font-black text-slate-700 dark:text-slate-300">
+                                                {{ formatCurrency(analyse.prix) }}
+                                            </span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            class="flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200"
+                                            :class="isAnalyseInCart(analyse.id)
+                                                ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30'
+                                                : 'bg-primary-600 hover:bg-primary-700 text-white shadow-sm'"
+                                            :disabled="isAnalyseInCart(analyse.id)"
+                                            @click="addAnalyse(analyse)"
+                                        >
+                                            <em class="ni text-sm" :class="isAnalyseInCart(analyse.id) ? 'ni-check-circle-fill' : 'ni-plus-c'"></em>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -642,47 +646,62 @@
                     </div>
 
                     <div class="space-y-4">
-                        <div class="rounded-xl bg-slate-50 p-4 dark:bg-slate-700/50">
-                            <h3 class="mb-3 text-sm font-medium text-slate-800 dark:text-slate-100">
-                                <em class="ni ni-bag mr-1.5 text-xs"></em>Analyses selectionnees
+                        <div class="rounded-xl border border-slate-200/70 bg-slate-50 p-4 dark:border-slate-700/70 dark:bg-slate-700/50 shadow-sm">
+                            <h3 class="mb-4 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                <span class="flex items-center"><em class="ni ni-bag mr-2 text-indigo-500"></em>Sélection</span>
+                                <span class="rounded-full bg-slate-200 dark:bg-slate-600 px-2 py-0.5 text-xxs font-black">{{ selectedAnalyses.length }}</span>
                             </h3>
 
-                            <div v-if="selectedAnalyses.length === 0" class="py-4 text-center text-xs text-slate-500 dark:text-slate-400">
-                                Aucune analyse selectionnee
+                            <div v-if="selectedAnalyses.length === 0" class="py-8 text-center">
+                                <em class="ni ni-cart mb-2 block text-3xl text-slate-300 dark:text-slate-600 opacity-20"></em>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Panier vide</p>
                             </div>
 
-                            <div v-else class="mb-3 space-y-2">
-                                <div v-for="analyse in selectedAnalyses" :key="analyse.id" class="flex items-start justify-between">
-                                    <div class="flex-1">
-                                        <div class="mb-0.5 flex items-center space-x-1.5">
-                                            <span class="rounded bg-blue-100 px-1.5 py-0.5 font-mono text-xxs font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-200">
-                                                {{ analyse.code }}
-                                            </span>
-                                            <div class="text-xs font-medium text-slate-800 dark:text-slate-100">{{ analyse.designation }}</div>
+                            <div v-else class="mb-4 space-y-1.5 max-h-[300px] overflow-y-auto pr-1 scrollbar-thin">
+                                <TransitionGroup 
+                                    enter-active-class="transition duration-300 ease-out" 
+                                    enter-from-class="transform -translate-x-4 opacity-0" 
+                                    enter-to-class="transform translate-x-0 opacity-100"
+                                    leave-active-class="transition duration-200 ease-in"
+                                    leave-from-class="transform translate-x-0 opacity-100"
+                                    leave-to-class="transform translate-x-4 opacity-0"
+                                >
+                                    <div v-for="analyse in selectedAnalyses" :key="analyse.id" class="flex items-center justify-between group bg-white dark:bg-slate-800 p-2.5 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
+                                        <div class="flex-1 min-w-0 mr-2">
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="shrink-0 font-mono text-[8px] font-bold text-slate-300 dark:text-slate-500 uppercase tracking-tighter group-hover:text-primary-500 transition-colors">
+                                                    {{ analyse.code }}
+                                                </span>
+                                                <div class="truncate text-[11px] font-bold text-slate-700 dark:text-slate-200">{{ analyse.designation }}</div>
+                                            </div>
                                         </div>
-                                        <div class="text-xxs text-slate-500 dark:text-slate-400">
-                                            {{ analyse.parent_nom || (analyse.parent ? 'Analyse individuelle' : 'Analyse individuelle') }}
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <div class="text-[10px] font-black text-slate-500 dark:text-slate-400 tabular-nums">
+                                                {{ (analyse.prix_effectif || analyse.prix) > 0 ? formatCurrency(analyse.prix_effectif || analyse.prix) : '-' }}
+                                            </div>
+                                            <button 
+                                                type="button" 
+                                                class="flex h-6 w-6 items-center justify-center rounded-lg text-slate-300 transition-all hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20" 
+                                                title="Supprimer"
+                                                @click="removeAnalyse(analyse.id)"
+                                            >
+                                                <em class="ni ni-trash text-sm"></em>
+                                            </button>
                                         </div>
-                                        <span v-if="analyse.is_parent" class="mt-0.5 inline-block rounded-full bg-purple-100 px-1.5 py-0.5 text-xxs text-purple-700 dark:bg-purple-900/30 dark:text-purple-200">
-                                            Panel complet
+                                    </div>
+                                </TransitionGroup>
+                            </div>
+
+                            <div class="mt-4 border-t border-slate-200 dark:border-slate-600 pt-4">
+                                <div class="relative overflow-hidden rounded-xl bg-slate-900 p-4 text-white shadow-md">
+                                    <div class="relative z-10 flex items-center justify-between">
+                                        <span class="text-[9px] font-bold uppercase tracking-widest opacity-60">Total analyses</span>
+                                        <span class="text-lg font-black tabular-nums text-primary-400">
+                                            {{ formatCurrency(analysesSubtotal) }}
                                         </span>
                                     </div>
-                                    <div class="ml-2 text-right">
-                                        <div class="text-xs font-medium text-slate-700 dark:text-slate-300">
-                                            {{ (analyse.prix_effectif || analyse.prix) > 0 ? formatCurrency(analyse.prix_effectif || analyse.prix) : 'Inclus' }}
-                                        </div>
-                                        <button type="button" class="text-xxs text-red-500 transition-colors hover:text-red-600" @click="removeAnalyse(analyse.id)">
-                                            <em class="ni ni-cross text-xs"></em>
-                                        </button>
-                                    </div>
+                                    <div class="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-white/5"></div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <div class="rounded-lg bg-green-50/70 p-3 text-sm dark:bg-green-900/15">
-                            <div class="flex items-center justify-between">
-                                <span class="font-medium text-green-800 dark:text-green-200">Sous-total analyses</span>
-                                <span class="font-semibold text-green-700 dark:text-green-300">{{ formatCurrency(analysesSubtotal) }}</span>
                             </div>
                         </div>
                     </div>
@@ -798,8 +817,8 @@
                                         <p class="text-xs font-medium text-slate-800 dark:text-slate-100">{{ prelevement.denomination }}</p>
                                         <p class="mt-1 text-xxs text-slate-500 dark:text-slate-400">{{ formatCurrency(prelevement.prix) }}</p>
                                     </div>
-                                    <button type="button" class="text-xs text-red-600 hover:text-red-700" @click="removePrelevement(prelevement.id)">
-                                        <em class="ni ni-cross"></em>
+                                    <button type="button" class="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400" title="Supprimer le prelevement" @click="removePrelevement(prelevement.id)">
+                                        <em class="ni ni-trash text-sm"></em>
                                     </button>
                                 </div>
                                 <div class="flex items-center justify-between">
@@ -932,9 +951,10 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
-import { Link, router } from '@inertiajs/vue3';
+import { computed, reactive, ref, onMounted, watch } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import Combobox from '@/Components/Combobox.vue';
 
 const props = defineProps({
     prescripteurs: { type: Array, default: () => [] },
@@ -943,6 +963,7 @@ const props = defineProps({
     urgenceFees: { type: Object, default: () => ({ jour: 0, nuit: 0 }) },
     civilites: { type: Array, default: () => [] },
 });
+
 
 const steps = [
     { key: 'patient', icon: 'user', label: 'Patient' },

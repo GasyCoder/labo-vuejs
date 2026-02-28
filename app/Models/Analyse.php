@@ -104,11 +104,13 @@ class Analyse extends Model
     // Accessors
     public function getValeurCompleteAttribute()
     {
-        if ($this->valeur_ref && $this->unite) {
-            return $this->valeur_ref.' '.$this->unite;
+        $valeur = $this->getValeurReferenceByPatient();
+
+        if ($valeur && $this->unite) {
+            return $valeur.' '.$this->unite;
         }
 
-        return $this->valeur_ref;
+        return $valeur;
     }
 
     public function getValeurHommeCompleteAttribute()
@@ -232,43 +234,44 @@ class Analyse extends Model
      */
     public function getValeurReferenceByPatient($patient = null)
     {
-        if (! $patient || ! $patient->civilite) {
-            return $this->valeur_ref;
+        $field = null;
+        if ($patient && $patient->civilite) {
+            $civilite = strtolower(trim($patient->civilite));
+
+            // Mapping des civilités vers les champs appropriés
+            $mapping = [
+                'monsieur' => 'valeur_ref_homme',
+                'mr' => 'valeur_ref_homme',
+                'm.' => 'valeur_ref_homme',
+                'homme' => 'valeur_ref_homme',
+
+                'madame' => 'valeur_ref_femme',
+                'mme' => 'valeur_ref_femme',
+                'mme.' => 'valeur_ref_femme',
+                'femme' => 'valeur_ref_femme',
+
+                'enfant (garçon)' => 'valeur_ref_enfant_garcon',
+                'enfant garçon' => 'valeur_ref_enfant_garcon',
+                'garçon' => 'valeur_ref_enfant_garcon',
+                'garcon' => 'valeur_ref_enfant_garcon',
+
+                'enfant (fille)' => 'valeur_ref_enfant_fille',
+                'enfant fille' => 'valeur_ref_enfant_fille',
+                'fille' => 'valeur_ref_enfant_fille',
+            ];
+
+            $field = $mapping[$civilite] ?? null;
         }
-
-        $civilite = strtolower(trim($patient->civilite));
-
-        // Mapping des civilités vers les champs appropriés
-        $mapping = [
-            'monsieur' => 'valeur_ref_homme',
-            'mr' => 'valeur_ref_homme',
-            'm.' => 'valeur_ref_homme',
-            'homme' => 'valeur_ref_homme',
-
-            'madame' => 'valeur_ref_femme',
-            'mme' => 'valeur_ref_femme',
-            'mme.' => 'valeur_ref_femme',
-            'femme' => 'valeur_ref_femme',
-
-            'enfant (garçon)' => 'valeur_ref_enfant_garcon',
-            'enfant garçon' => 'valeur_ref_enfant_garcon',
-            'garçon' => 'valeur_ref_enfant_garcon',
-            'garcon' => 'valeur_ref_enfant_garcon',
-
-            'enfant (fille)' => 'valeur_ref_enfant_fille',
-            'enfant fille' => 'valeur_ref_enfant_fille',
-            'fille' => 'valeur_ref_enfant_fille',
-        ];
-
-        // Trouver le champ correspondant
-        $field = $mapping[$civilite] ?? null;
 
         if ($field && ! empty($this->$field)) {
             return $this->$field;
         }
 
-        // Fallback vers la valeur générale
-        return $this->valeur_ref;
+        // Fallback intelligent : si pas de patient ou champ vide, on cherche la première ref non vide
+        return $this->valeur_ref_homme
+            ?? $this->valeur_ref_femme
+            ?? $this->valeur_ref_enfant_garcon
+            ?? $this->valeur_ref_enfant_fille;
     }
 
     /**

@@ -26,6 +26,8 @@ class Prescripteur extends Model
         'is_commissionned' => 'boolean',
     ];
 
+    protected $appends = ['nom_complet'];
+
     // Scopes
     public function scopeActifs($query)
     {

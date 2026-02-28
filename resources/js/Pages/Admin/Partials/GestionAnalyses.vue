@@ -193,9 +193,8 @@
                                     <div><label class="block text-xs font-medium mb-1">Réf. Garçon</label><input v-model="fd.valeur_ref_enfant_garcon" placeholder="Ex: 3.5 - 5.5" class="w-full px-2 py-1.5 text-xs bg-white dark:bg-gray-700 border rounded"></div>
                                     <div><label class="block text-xs font-medium mb-1">Réf. Fille</label><input v-model="fd.valeur_ref_enfant_fille" placeholder="Ex: 3.5 - 5.5" class="w-full px-2 py-1.5 text-xs bg-white dark:bg-gray-700 border rounded"></div>
                                 </div>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                                    <div><label class="block text-xs font-medium mb-1">Valeur réf. générale</label><input v-model="fd.valeur_ref" placeholder="Ex: 3.89 - 6.05" class="w-full px-2 py-1.5 text-xs bg-white dark:bg-gray-700 border rounded"></div>
-                                    <div><label class="block text-xs font-medium mb-1">Suffixe</label><input v-model="fd.suffixe" placeholder="Suffixe optionnel" class="w-full px-2 py-1.5 text-xs bg-white dark:bg-gray-700 border rounded"></div>
+                                <div class="grid grid-cols-1 gap-3 mt-3">
+                                    <div v-if="fd.suffixe"><label class="block text-xs font-medium mb-1">Suffixe</label><input v-model="fd.suffixe" placeholder="Suffixe optionnel" class="w-full px-2 py-1.5 text-xs bg-white dark:bg-gray-700 border rounded"></div>
                                 </div>
                             </div>
 
@@ -290,10 +289,10 @@
                                         <div><label class="block text-xs mb-1">Garçon</label><input v-model="sa.valeur_ref_enfant_garcon" placeholder="Ex: 3.5-5.5" class="w-full px-2 py-1 text-xs bg-white dark:bg-gray-700 border rounded"></div>
                                         <div><label class="block text-xs mb-1">Fille</label><input v-model="sa.valeur_ref_enfant_fille" placeholder="Ex: 3.5-5.5" class="w-full px-2 py-1 text-xs bg-white dark:bg-gray-700 border rounded"></div>
                                     </div>
-                                    <div class="grid grid-cols-2 gap-2 mt-2">
-                                        <div><label class="block text-xs mb-1">Réf. générale</label><input v-model="sa.valeur_ref" placeholder="Ex: 3.89 - 6.05" class="w-full px-2 py-1 text-xs bg-white dark:bg-gray-700 border rounded"></div>
+                                    <div class="grid grid-cols-1 gap-2 mt-2">
                                         <div><label class="block text-xs mb-1">Suffixe</label><input v-model="sa.suffixe" placeholder="Suffixe" class="w-full px-2 py-1 text-xs bg-white dark:bg-gray-700 border rounded"></div>
                                     </div>
+
                                 </div>
 
                                 <div class="flex items-center gap-4 mt-3">
@@ -429,7 +428,7 @@ const form = ref({
 const fd = useForm({
     id: null, code: '', level: 'NORMAL', parent_id: '', designation: '', description: '',
     prix: 0, is_bold: false, examen_id: '', type_id: '',
-    valeur_ref: '', valeur_ref_homme: '', valeur_ref_femme: '',
+    valeur_ref_homme: '', valeur_ref_femme: '',
     valeur_ref_enfant_garcon: '', valeur_ref_enfant_fille: '',
     unite: '', suffixe: '', ordre: 99, status: true, sousAnalyses: [],
 });
@@ -492,8 +491,9 @@ const onSousLevelChange = (i) => {
 const makeSousAnalyse = () => ({
     id: null, code: '', designation: '', prix: 0, level: 'CHILD',
     examen_id: fd.examen_id || '', type_id: fd.type_id || '',
-    unite: '', suffixe: '', valeur_ref: '',
-    valeur_ref_homme: '', valeur_ref_femme: '',
+    unite: '', suffixe: '', 
+    valeur_ref_homme: '',
+    valeur_ref_femme: '',
     valeur_ref_enfant_garcon: '', valeur_ref_enfant_fille: '',
     ordre: fd.sousAnalyses.length + 1, is_bold: false, status: true, children: [],
 });
@@ -502,8 +502,9 @@ const makeChild = (parentSa) => ({
     id: null, code: '', designation: '', prix: 0, level: 'CHILD',
     examen_id: parentSa.examen_id || fd.examen_id || '',
     type_id: parentSa.type_id || fd.type_id || '',
-    unite: '', suffixe: '', valeur_ref: '',
-    valeur_ref_homme: '', valeur_ref_femme: '',
+    unite: '', suffixe: '', 
+    valeur_ref_homme: '',
+    valeur_ref_femme: '',
     valeur_ref_enfant_garcon: '', valeur_ref_enfant_fille: '',
     ordre: (parentSa.children?.length || 0) + 1, is_bold: false, status: true,
 });
@@ -582,7 +583,7 @@ const editAnalyse = (a) => {
         id: a.id, code: a.code, level: a.level, parent_id: a.parent_id || '',
         designation: a.designation, description: a.description || '', prix: a.prix,
         is_bold: a.is_bold, examen_id: a.examen_id, type_id: a.type_id,
-        valeur_ref: a.valeur_ref || '', valeur_ref_homme: a.valeur_ref_homme || '',
+        valeur_ref_homme: a.valeur_ref_homme || '',
         valeur_ref_femme: a.valeur_ref_femme || '',
         valeur_ref_enfant_garcon: a.valeur_ref_enfant_garcon || '',
         valeur_ref_enfant_fille: a.valeur_ref_enfant_fille || '',
@@ -591,7 +592,7 @@ const editAnalyse = (a) => {
             id: e.id, code: e.code, designation: e.designation, prix: e.prix,
             level: e.level, examen_id: e.examen_id, type_id: e.type_id,
             unite: e.unite || '', suffixe: e.suffixe || '', ordre: e.ordre,
-            valeur_ref: e.valeur_ref || '', valeur_ref_homme: e.valeur_ref_homme || '',
+            valeur_ref_homme: e.valeur_ref_homme || '',
             valeur_ref_femme: e.valeur_ref_femme || '',
             valeur_ref_enfant_garcon: e.valeur_ref_enfant_garcon || '',
             valeur_ref_enfant_fille: e.valeur_ref_enfant_fille || '',
@@ -600,7 +601,7 @@ const editAnalyse = (a) => {
                 id: c.id, code: c.code, designation: c.designation, prix: c.prix,
                 level: c.level, examen_id: c.examen_id, type_id: c.type_id,
                 unite: c.unite || '', suffixe: c.suffixe || '', ordre: c.ordre,
-                valeur_ref: c.valeur_ref || '', valeur_ref_homme: c.valeur_ref_homme || '',
+                valeur_ref_homme: c.valeur_ref_homme || '',
                 valeur_ref_femme: c.valeur_ref_femme || '',
                 valeur_ref_enfant_garcon: c.valeur_ref_enfant_garcon || '',
                 valeur_ref_enfant_fille: c.valeur_ref_enfant_fille || '',

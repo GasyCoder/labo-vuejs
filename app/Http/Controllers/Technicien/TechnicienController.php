@@ -18,7 +18,8 @@ class TechnicienController extends Controller
         $tab = $request->input('tab', 'en_attente');
         $search = $request->input('search', '');
 
-        $baseQuery = Prescription::with(['patient:id,nom,prenom', 'prescripteur:id,nom,prenom', 'analyses:id,designation'])
+        $baseQuery = Prescription::with(['patient:id,nom,prenom', 'prescripteur:id,nom,prenom', 'analyses:id,code,designation'])
+            ->withCount('analyses')
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($query) use ($search) {
                     $query->where('reference', 'like', '%'.$search.'%')
@@ -29,6 +30,10 @@ class TechnicienController extends Controller
                         ->orWhereHas('prescripteur', function ($sq) use ($search) {
                             $sq->where('nom', 'like', '%'.$search.'%')
                                 ->orWhere('prenom', 'like', '%'.$search.'%');
+                        })
+                        ->orWhereHas('analyses', function ($sq) use ($search) {
+                            $sq->where('code', 'like', '%'.$search.'%')
+                                ->orWhere('designation', 'like', '%'.$search.'%');
                         });
                 });
             })

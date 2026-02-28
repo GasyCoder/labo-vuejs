@@ -102,8 +102,8 @@ class AnalysesSqlSeeder extends Seeder
             return true;
         }
 
-        // ignorer INSERT qui ne concernent pas `analyses`
-        if (preg_match('/^INSERT\s+INTO\s+`?analyses`?/i', $s)) {
+        // ignorer INSERT/UPDATE qui ne concernent pas `analyses`
+        if (preg_match('/^(INSERT\s+INTO|UPDATE)\s+`?analyses`?/i', $s)) {
             return false;
         }
 

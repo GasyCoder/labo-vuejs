@@ -69,6 +69,7 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),
+                'prescription_action' => $request->session()->get('prescription_action'),
                 '_ts' => now()->timestamp,
             ],
             'skeleton' => $request->session()->get('skeleton'),

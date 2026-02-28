@@ -534,3 +534,36 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+--
+-- Amélioration des valeurs de référence par genre/âge
+--
+
+UPDATE `analyses` SET `valeur_ref` = NULL, `valeur_ref_homme` = '130 - 180', `valeur_ref_femme` = '120 - 160', `valeur_ref_enfant_garcon` = '110 - 145', `valeur_ref_enfant_fille` = '110 - 145' WHERE `code` = 'HG';
+UPDATE `analyses` SET `valeur_ref` = NULL, `valeur_ref_homme` = '40 - 54', `valeur_ref_femme` = '37 - 47', `valeur_ref_enfant_garcon` = '36 - 44', `valeur_ref_enfant_fille` = '36 - 44' WHERE `code` = 'HEMATOCRITE';
+UPDATE `analyses` SET `valeur_ref` = NULL, `valeur_ref_homme` = '4.50 - 5.90', `valeur_ref_femme` = '4.00 - 5.20', `valeur_ref_enfant_garcon` = '3.80 - 5.00', `valeur_ref_enfant_fille` = '3.80 - 5.00' WHERE `code` = 'NFS_GR';
+UPDATE `analyses` SET `valeur_ref` = NULL, `valeur_ref_homme` = '53 - 115', `valeur_ref_femme` = '44 - 97' WHERE `code` = 'CREAT';
+UPDATE `analyses` SET `valeur_ref` = NULL, `valeur_ref_homme` = '11.60 - 31.30', `valeur_ref_femme` = '9.00 - 28.00' WHERE `code` = 'Fe';
+UPDATE `analyses` SET `valeur_ref` = NULL, `valeur_ref_homme` = '0.81 - 1.45', `valeur_ref_femme` = '0.48 - 2.19' WHERE `code` = 'P';
+UPDATE `analyses` SET `valeur_ref` = NULL, `valeur_ref_homme` = '200 - 420', `valeur_ref_femme` = '140 - 340' WHERE `code` = 'URIC';
+UPDATE `analyses` SET `valeur_ref` = NULL, `valeur_ref_homme` = '<= 41', `valeur_ref_femme` = '<= 33' WHERE `code` = 'ALAT';
+UPDATE `analyses` SET `valeur_ref` = NULL, `valeur_ref_homme` = '<= 40', `valeur_ref_femme` = '<= 32' WHERE `code` = 'ASAT(OT)';
+UPDATE `analyses` SET `valeur_ref` = NULL, `valeur_ref_homme` = '1 - 50', `valeur_ref_femme` = '1 - 25' WHERE `code` = 'GGT';
+UPDATE `analyses` SET `valeur_ref` = NULL, `valeur_ref_homme` = '40 - 130', `valeur_ref_femme` = '35 - 105' WHERE `code` = 'PAL';
+UPDATE `analyses` SET `valeur_ref` = NULL, `valeur_ref_homme` = '3.89 - 6.05', `valeur_ref_femme` = '3.89 - 6.05' WHERE `code` = 'GLY';
+
+COMMIT;
+UPDATE `analyses` SET `valeur_ref` = NULL, `valeur_ref_homme` = '1.23 - 2.29', `valeur_ref_femme` = '0.90 - 1.76' WHERE `code` = 'UCR';
+UPDATE `analyses` SET `valeur_ref` = NULL, `valeur_ref_homme` = '0 - 5', `valeur_ref_femme` = '0 - 5', `valeur_ref_enfant_garcon` = '0 - 5', `valeur_ref_enfant_fille` = '0 - 5' WHERE `code` = 'CRP---Resultat';
+
+-- Migration finale : Transférer les refs générales restantes vers les colonnes spécifiques
+UPDATE `analyses` 
+SET 
+    `valeur_ref_homme` = COALESCE(`valeur_ref_homme`, `valeur_ref`), 
+    `valeur_ref_femme` = COALESCE(`valeur_ref_femme`, `valeur_ref`), 
+    `valeur_ref_enfant_garcon` = COALESCE(`valeur_ref_enfant_garcon`, `valeur_ref`), 
+    `valeur_ref_enfant_fille` = COALESCE(`valeur_ref_enfant_fille`, `valeur_ref`), 
+    `valeur_ref` = NULL 
+WHERE `valeur_ref` IS NOT NULL;
+
+COMMIT;

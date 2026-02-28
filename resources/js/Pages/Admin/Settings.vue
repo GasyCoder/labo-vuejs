@@ -17,6 +17,7 @@ const enterpriseForm = useForm({
     adresse: props.settings.adresse || '',
     telephone: props.settings.telephone || '',
     email: props.settings.email || '',
+    numero_banque: props.settings.numero_banque || '',
     logo: null,
     favicon: null,
 });
@@ -191,6 +192,11 @@ const confirmDeletePayment = (id) => {
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email de contact</label>
                                         <input v-model="enterpriseForm.email" type="email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                                         <div v-if="enterpriseForm.errors.email" class="text-red-500 text-xs mt-1">{{ enterpriseForm.errors.email }}</div>
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Numéro banque (Comptes)</label>
+                                        <input v-model="enterpriseForm.numero_banque" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Ex: MCB TANA: 00006 00003 00000845663 49">
+                                        <div v-if="enterpriseForm.errors.numero_banque" class="text-red-500 text-xs mt-1">{{ enterpriseForm.errors.numero_banque }}</div>
                                     </div>
                                 </div>
 

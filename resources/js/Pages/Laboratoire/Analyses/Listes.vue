@@ -66,6 +66,9 @@
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <div class="flex justify-center space-x-2">
+                                        <button @click="showAnalyseDetail(a)" class="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded-lg transition-colors" title="Voir détails">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        </button>
                                         <button @click="editAnalyse(a)" class="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors" title="Modifier">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                         </button>
@@ -162,13 +165,24 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type <span class="text-red-500">*</span></label>
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Type <span class="text-red-500">*</span></label>
+                                        <button type="button" @click="showTypeHelp = true" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 p-0.5" title="Aide sur les types">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        </button>
+                                    </div>
                                     <select v-model="fd.type_id" required class="w-full px-3 py-2 bg-white dark:bg-gray-700 border rounded-lg text-sm text-gray-900 dark:text-white">
                                         <option value="">Sélectionner</option>
-                                        <option v-for="t in types" :key="t.id" :value="t.id">{{ t.name }}</option>
+                                        <option v-for="t in types" :key="t.id" :value="t.id">{{ t.libelle }}</option>
                                     </select>
+                                    <!-- Aide contextuelle sous le champ -->
+                                    <div v-if="selectedType?.meta" class="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded text-[11px] text-blue-800 dark:text-blue-300">
+                                        <p class="font-bold mb-0.5">{{ selectedType.meta.label_metier }}</p>
+                                        <p class="mb-1 italic opacity-80">{{ selectedType.meta.description }}</p>
+                                        <p><span class="font-semibold">Ex:</span> {{ selectedType.meta.exemple }}</p>
+                                    </div>
                                 </div>
-                                <div>
+                                <div v-if="!selectedTypeFlags?.is_title">
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Unité</label>
                                     <input v-model="fd.unite" placeholder="Ex: g/l" class="w-full px-3 py-2 bg-white dark:bg-gray-700 border rounded-lg text-sm text-gray-900 dark:text-white">
                                 </div>
@@ -182,11 +196,22 @@
                                 <textarea v-model="fd.description" rows="2" class="w-full px-3 py-2 bg-white dark:bg-gray-700 border rounded-lg text-sm text-gray-900 dark:text-white resize-none"></textarea>
                             </div>
 
+                            <!-- Options de sélection (si type à choix) -->
+                            <div v-if="selectedTypeFlags?.is_choice" class="mt-4 border border-indigo-200 dark:border-indigo-600 rounded-lg p-4 bg-indigo-50 dark:bg-indigo-900/20">
+                                <h5 class="text-sm font-medium text-indigo-900 dark:text-indigo-200 mb-2 flex items-center">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
+                                    Options de sélection
+                                </h5>
+                                <p class="text-[11px] text-indigo-700 dark:text-indigo-300 mb-2">Saisissez les options possibles (une par ligne).</p>
+                                <textarea v-model="fd.valeurs_predefinies" rows="4" placeholder="Option 1&#10;Option 2&#10;Autre"
+                                    class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-indigo-300 dark:border-indigo-600 rounded-lg text-sm text-gray-900 dark:text-white"></textarea>
+                            </div>
+
                             <!-- Valeurs de référence -->
-                            <div class="mt-4 border border-blue-200 dark:border-blue-600 rounded-lg p-4 bg-blue-50 dark:bg-blue-900/20">
+                            <div v-if="!selectedTypeFlags?.is_title" class="mt-4 border border-blue-200 dark:border-blue-600 rounded-lg p-4 bg-blue-50 dark:bg-blue-900/20" :class="{'ring-2 ring-blue-400': selectedTypeFlags?.uses_ref}">
                                 <h5 class="text-sm font-medium text-blue-900 dark:text-blue-200 mb-3 flex items-center">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                                    Valeurs de Référence
+                                    Valeurs de Référence <span v-if="selectedTypeFlags?.uses_ref" class="ml-2 text-[10px] bg-blue-200 dark:bg-blue-800 px-1.5 py-0.5 rounded uppercase">Recommandé</span>
                                 </h5>
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                                     <div><label class="block text-xs font-medium mb-1">Réf. Homme</label><input v-model="fd.valeur_ref_homme" placeholder="Ex: 3.89 - 6.05" class="w-full px-2 py-1.5 text-xs bg-white dark:bg-gray-700 border rounded"></div>
@@ -194,10 +219,14 @@
                                     <div><label class="block text-xs font-medium mb-1">Réf. Garçon</label><input v-model="fd.valeur_ref_enfant_garcon" placeholder="Ex: 3.5 - 5.5" class="w-full px-2 py-1.5 text-xs bg-white dark:bg-gray-700 border rounded"></div>
                                     <div><label class="block text-xs font-medium mb-1">Réf. Fille</label><input v-model="fd.valeur_ref_enfant_fille" placeholder="Ex: 3.5 - 5.5" class="w-full px-2 py-1.5 text-xs bg-white dark:bg-gray-700 border rounded"></div>
                                 </div>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                                    <div><label class="block text-xs font-medium mb-1">Valeur réf. générale</label><input v-model="fd.valeur_ref" placeholder="Ex: 3.89 - 6.05" class="w-full px-2 py-1.5 text-xs bg-white dark:bg-gray-700 border rounded"></div>
-                                    <div><label class="block text-xs font-medium mb-1">Suffixe</label><input v-model="fd.suffixe" placeholder="Suffixe optionnel" class="w-full px-2 py-1.5 text-xs bg-white dark:bg-gray-700 border rounded"></div>
+                                <div class="grid grid-cols-1 gap-3 mt-3">
+                                    <div v-if="selectedTypeFlags?.uses_suffix || fd.suffixe"><label class="block text-xs font-medium mb-1">Suffixe</label><input v-model="fd.suffixe" placeholder="Suffixe optionnel" class="w-full px-2 py-1.5 text-xs bg-white dark:bg-gray-700 border rounded"></div>
                                 </div>
+                            </div>
+
+                            <div v-if="selectedTypeFlags?.is_title" class="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-sm text-amber-800 dark:text-amber-300 flex items-start">
+                                <svg class="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <p>Ce type sert de <strong>titre ou séparateur</strong>. Il sera affiché en gras sur le compte-rendu mais ne permettra pas la saisie de résultats. Les unités et valeurs de référence sont masquées car non pertinentes.</p>
                             </div>
 
                             <div class="flex items-center gap-6 mt-4">
@@ -291,10 +320,10 @@
                                         <div><label class="block text-xs mb-1">Garçon</label><input v-model="sa.valeur_ref_enfant_garcon" placeholder="Ex: 3.5-5.5" class="w-full px-2 py-1 text-xs bg-white dark:bg-gray-700 border rounded"></div>
                                         <div><label class="block text-xs mb-1">Fille</label><input v-model="sa.valeur_ref_enfant_fille" placeholder="Ex: 3.5-5.5" class="w-full px-2 py-1 text-xs bg-white dark:bg-gray-700 border rounded"></div>
                                     </div>
-                                    <div class="grid grid-cols-2 gap-2 mt-2">
-                                        <div><label class="block text-xs mb-1">Réf. générale</label><input v-model="sa.valeur_ref" placeholder="Ex: 3.89 - 6.05" class="w-full px-2 py-1 text-xs bg-white dark:bg-gray-700 border rounded"></div>
+                                    <div class="grid grid-cols-1 gap-2 mt-2">
                                         <div><label class="block text-xs mb-1">Suffixe</label><input v-model="sa.suffixe" placeholder="Suffixe" class="w-full px-2 py-1 text-xs bg-white dark:bg-gray-700 border rounded"></div>
                                     </div>
+
                                 </div>
 
                                 <div class="flex items-center gap-4 mt-3">
@@ -395,6 +424,146 @@
                 </div>
             </div>
         </div>
+        <!-- ====== MODAL DETAIL ====== -->
+        <div v-if="showDetail" class="fixed inset-0 z-[1040] overflow-y-auto">
+            <div class="flex items-start justify-center min-h-screen px-4 pt-8 pb-20">
+                <div class="fixed inset-0 bg-black/60 transition-opacity" @click="showDetail = false"></div>
+                <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-4xl w-full z-10 overflow-hidden">
+                    <!-- Header -->
+                    <div class="bg-indigo-600 px-6 py-4 flex items-center justify-between">
+                        <h3 class="text-lg font-bold text-white flex items-center">
+                            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            Détails de l'analyse : {{ viewItem?.designation }}
+                        </h3>
+                        <button @click="showDetail = false" class="text-white/80 hover:text-white transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <div class="p-6 bg-gray-50 dark:bg-gray-900/50">
+                        <!-- Info Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                                <span class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Code & Niveau</span>
+                                <div class="mt-1 flex items-center gap-2">
+                                    <span class="font-mono font-bold text-indigo-600 dark:text-indigo-400">{{ viewItem?.code }}</span>
+                                    <span :class="levelBadge(viewItem?.level)" class="px-2 py-0.5 rounded text-[10px]">{{ viewItem?.level }}</span>
+                                </div>
+                            </div>
+                            <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                                <span class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Prix & Examen</span>
+                                <div class="mt-1">
+                                    <span class="font-bold text-gray-900 dark:text-white">{{ formatN(viewItem?.prix) }} Ar</span>
+                                    <span class="mx-2 text-gray-300">|</span>
+                                    <span class="text-sm text-gray-600 dark:text-gray-400">{{ viewItem?.examen?.name }}</span>
+                                </div>
+                            </div>
+                            <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                                <span class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Type de saisie</span>
+                                <div class="mt-1">
+                                    <span class="text-sm font-medium text-blue-600 dark:text-blue-400">{{ viewItem?.type?.libelle || viewItem?.type?.name }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Arborescence -->
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                            <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex items-center justify-between">
+                                <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                                    Structure & Hiérarchie
+                                </h4>
+                                <span v-if="viewItem?.enfants?.length" class="text-[10px] bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-2 py-0.5 rounded-full font-bold">
+                                    {{ viewItem.enfants.length }} SOUS-ANALYSES
+                                </span>
+                            </div>
+                            <div class="p-4 overflow-y-auto max-h-[400px]">
+                                <div v-if="!viewItem?.enfants?.length" class="text-center py-8 text-gray-400 italic text-sm">
+                                    Cette analyse n'a pas de sous-analyses.
+                                </div>
+                                <div v-else class="space-y-4">
+                                    <div v-for="sa in viewItem.enfants" :key="sa.id" class="border-l-2 border-indigo-200 dark:border-indigo-800 pl-4 py-1">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <span class="text-xs font-mono font-bold text-gray-500">{{ sa.code }}</span>
+                                                <h5 class="text-sm font-bold text-gray-800 dark:text-gray-200">{{ sa.designation }}</h5>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="text-xs font-bold">{{ formatN(sa.prix) }} Ar</div>
+                                                <div class="text-[10px] text-gray-500">{{ sa.unite || 'Pas d\'unité' }}</div>
+                                            </div>
+                                        </div>
+                                        <!-- Sub-sub children -->
+                                        <div v-if="sa.enfants?.length" class="mt-3 ml-4 space-y-2">
+                                            <div v-for="child in sa.enfants" :key="child.id" class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700">
+                                                <div class="flex items-center">
+                                                    <svg class="w-3 h-3 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                                    <div>
+                                                        <div class="text-[10px] font-mono text-gray-400 leading-none">{{ child.code }}</div>
+                                                        <div class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ child.designation }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="text-[10px] font-bold text-gray-600 dark:text-gray-400">{{ formatN(child.prix) }} Ar</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+                        <button @click="editAnalyse(viewItem); showDetail = false" class="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center shadow-sm">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            Modifier cette analyse
+                        </button>
+                        <button @click="showDetail = false" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors">
+                            Fermer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Modal for Types -->
+        <div v-if="showTypeHelp" class="fixed inset-0 z-[1050] overflow-y-auto">
+            <div class="flex items-center justify-center min-h-screen px-4 py-12">
+                <div class="fixed inset-0 bg-black/60 transition-opacity" @click="showTypeHelp = false"></div>
+                <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-4xl w-full p-0 z-10 overflow-hidden">
+                    <div class="bg-blue-600 px-6 py-4 flex items-center justify-between">
+                        <h3 class="text-lg font-bold text-white flex items-center">
+                            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Guide des Types d'Analyses
+                        </h3>
+                        <button @click="showTypeHelp = false" class="text-white/80 hover:text-white transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <div class="p-6 max-h-[70vh] overflow-y-auto bg-gray-50 dark:bg-gray-900/50">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div v-for="t in types" :key="t.id" class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:border-blue-400 dark:hover:border-blue-500 transition-all cursor-pointer group" @click="fd.type_id = t.id; showTypeHelp = false">
+                                <div class="flex items-start justify-between mb-2">
+                                    <h4 class="font-bold text-blue-700 dark:text-blue-400 group-hover:text-blue-600">{{ t.meta?.label_metier || t.libelle }}</h4>
+                                    <span v-if="t.meta?.flags?.is_title" class="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded font-bold uppercase">Titre</span>
+                                </div>
+                                <p class="text-xs text-gray-600 dark:text-gray-400 mb-3 leading-relaxed">{{ t.meta?.description }}</p>
+                                <div class="bg-gray-50 dark:bg-gray-700/50 p-2 rounded text-[11px] mb-3">
+                                    <span class="font-bold text-gray-500">Exemple:</span> <span class="text-gray-700 dark:text-gray-300">{{ t.meta?.exemple }}</span>
+                                </div>
+                                <div class="flex flex-wrap gap-1">
+                                    <span v-if="t.meta?.flags?.uses_ref" class="text-[9px] bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-1.5 py-0.5 rounded">Réf. conseillée</span>
+                                    <span v-if="t.meta?.flags?.uses_suffix" class="text-[9px] bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded">Suffixe possible</span>
+                                    <span v-if="t.meta?.flags?.is_choice" class="text-[9px] bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-1.5 py-0.5 rounded">Liste de choix</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 text-center">
+                        <p class="text-xs text-gray-500">Cliquez sur un type pour le sélectionner dans le formulaire.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </AppLayout>
 </template>
@@ -412,7 +581,15 @@ const props = defineProps({
 
 const showForm = ref(false);
 const showDel = ref(false);
+const showTypeHelp = ref(false);
+const showDetail = ref(false);
 const delItem = ref(null);
+const viewItem = ref(null);
+
+const showAnalyseDetail = (a) => {
+    viewItem.value = a;
+    showDetail.value = true;
+};
 
 const levelTabs = [
     { key: 'tous', label: 'Tous' },
@@ -432,10 +609,14 @@ const form = ref({
 const fd = useForm({
     id: null, code: '', level: 'NORMAL', parent_id: '', designation: '', description: '',
     prix: 0, is_bold: false, examen_id: '', type_id: '',
-    valeur_ref: '', valeur_ref_homme: '', valeur_ref_femme: '',
+    valeur_ref_homme: '', valeur_ref_femme: '',
     valeur_ref_enfant_garcon: '', valeur_ref_enfant_fille: '',
     unite: '', suffixe: '', ordre: 99, status: true, sousAnalyses: [],
+    valeurs_predefinies: '',
 });
+
+const selectedType = computed(() => props.types.find(t => t.id === fd.type_id));
+const selectedTypeFlags = computed(() => selectedType.value?.meta?.flags || {});
 
 const formatN = (n) => Number(n || 0).toLocaleString('fr-FR');
 const levelBadge = (l) => ({
@@ -495,7 +676,7 @@ const onSousLevelChange = (i) => {
 const makeSousAnalyse = () => ({
     id: null, code: '', designation: '', prix: 0, level: 'CHILD',
     examen_id: fd.examen_id || '', type_id: fd.type_id || '',
-    unite: '', suffixe: '', valeur_ref: '',
+    unite: '', suffixe: '', 
     valeur_ref_homme: '', valeur_ref_femme: '',
     valeur_ref_enfant_garcon: '', valeur_ref_enfant_fille: '',
     ordre: fd.sousAnalyses.length + 1, is_bold: false, status: true, children: [],
@@ -505,8 +686,9 @@ const makeChild = (parentSa) => ({
     id: null, code: '', designation: '', prix: 0, level: 'CHILD',
     examen_id: parentSa.examen_id || fd.examen_id || '',
     type_id: parentSa.type_id || fd.type_id || '',
-    unite: '', suffixe: '', valeur_ref: '',
-    valeur_ref_homme: '', valeur_ref_femme: '',
+    unite: '', suffixe: '', 
+    valeur_ref_homme: '',
+    valeur_ref_femme: '',
     valeur_ref_enfant_garcon: '', valeur_ref_enfant_fille: '',
     ordre: (parentSa.children?.length || 0) + 1, is_bold: false, status: true,
 });
@@ -576,25 +758,36 @@ const recalculerTousLesPrix = () => {
 // ---- Open/Edit ----
 const openCreate = () => {
     fd.reset();
-    fd.id = null; fd.status = true; fd.ordre = 99; fd.sousAnalyses = [];
+    fd.id = null; fd.status = true; fd.ordre = 99; fd.sousAnalyses = []; fd.valeurs_predefinies = '';
     showForm.value = true;
 };
 
 const editAnalyse = (a) => {
+    // Format predefined values for textarea (1 per line)
+    let vPredef = '';
+    if (a.valeurs_predefinies) {
+        try {
+            const parsed = typeof a.valeurs_predefinies === 'string' ? JSON.parse(a.valeurs_predefinies) : a.valeurs_predefinies;
+            if (Array.isArray(parsed)) vPredef = parsed.join('\n');
+            else vPredef = a.valeurs_predefinies;
+        } catch (e) { vPredef = a.valeurs_predefinies; }
+    }
+
     Object.assign(fd, {
         id: a.id, code: a.code, level: a.level, parent_id: a.parent_id || '',
         designation: a.designation, description: a.description || '', prix: a.prix,
         is_bold: a.is_bold, examen_id: a.examen_id, type_id: a.type_id,
-        valeur_ref: a.valeur_ref || '', valeur_ref_homme: a.valeur_ref_homme || '',
+        valeur_ref_homme: a.valeur_ref_homme || '',
         valeur_ref_femme: a.valeur_ref_femme || '',
         valeur_ref_enfant_garcon: a.valeur_ref_enfant_garcon || '',
         valeur_ref_enfant_fille: a.valeur_ref_enfant_fille || '',
         unite: a.unite || '', suffixe: a.suffixe || '', ordre: a.ordre, status: a.status,
+        valeurs_predefinies: vPredef,
         sousAnalyses: (a.enfants || []).map(e => ({
             id: e.id, code: e.code, designation: e.designation, prix: e.prix,
             level: e.level, examen_id: e.examen_id, type_id: e.type_id,
             unite: e.unite || '', suffixe: e.suffixe || '', ordre: e.ordre,
-            valeur_ref: e.valeur_ref || '', valeur_ref_homme: e.valeur_ref_homme || '',
+            valeur_ref_homme: e.valeur_ref_homme || '',
             valeur_ref_femme: e.valeur_ref_femme || '',
             valeur_ref_enfant_garcon: e.valeur_ref_enfant_garcon || '',
             valeur_ref_enfant_fille: e.valeur_ref_enfant_fille || '',
@@ -603,7 +796,7 @@ const editAnalyse = (a) => {
                 id: c.id, code: c.code, designation: c.designation, prix: c.prix,
                 level: c.level, examen_id: c.examen_id, type_id: c.type_id,
                 unite: c.unite || '', suffixe: c.suffixe || '', ordre: c.ordre,
-                valeur_ref: c.valeur_ref || '', valeur_ref_homme: c.valeur_ref_homme || '',
+                valeur_ref_homme: c.valeur_ref_homme || '',
                 valeur_ref_femme: c.valeur_ref_femme || '',
                 valeur_ref_enfant_garcon: c.valeur_ref_enfant_garcon || '',
                 valeur_ref_enfant_fille: c.valeur_ref_enfant_fille || '',
@@ -616,8 +809,19 @@ const editAnalyse = (a) => {
 
 // ---- Submit ----
 const submitForm = () => {
+    // Process predefined values back to array
+    const data = { ...fd.data() };
+    if (fd.valeurs_predefinies) {
+        data.valeurs_predefinies = fd.valeurs_predefinies
+            .split('\n')
+            .map(v => v.trim())
+            .filter(v => v !== '');
+    } else {
+        data.valeurs_predefinies = null;
+    }
+
     const opts = { preserveScroll: true, onSuccess: () => { showForm.value = false; } };
-    fd.id ? fd.put(route('laboratoire.analyses.listes.update', fd.id), opts) : fd.post(route('laboratoire.analyses.listes.store'), opts);
+    fd.id ? router.put(route('laboratoire.analyses.listes.update', fd.id), data, opts) : router.post(route('laboratoire.analyses.listes.store'), data, opts);
 };
 
 const toggleSt = (a) => router.post(route('laboratoire.analyses.listes.toggle', a.id), {}, { preserveScroll: true });
