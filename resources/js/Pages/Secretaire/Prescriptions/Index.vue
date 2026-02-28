@@ -580,10 +580,10 @@ const btnColor = (color) => {
                                             <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-400 cursor-help">
                                                 +{{ prescription.analyses.length - 3 }}
                                             </span>
-                                            <!-- Custom Tooltip: Dynamically position top or bottom based on index to avoid header masking -->
+                                            <!-- Custom Tooltip: Always position bottom to avoid header masking when outside v-for -->
                                             <div :class="[
                                                 'absolute left-1/2 -translate-x-1/2 hidden group-hover/tooltip:block z-[100] w-max max-w-[300px] p-2 bg-slate-900 text-white text-[10px] rounded-lg shadow-2xl border border-slate-700 animate-in fade-in zoom-in duration-200',
-                                                idx < 2 ? 'top-full mt-2' : 'bottom-full mb-2'
+                                                'bottom-full mb-2'
                                             ]">
                                                 <div class="flex flex-col gap-1.5">
                                                     <div v-for="(allAnalyse, aIdx) in prescription.analyses" :key="aIdx" class="flex items-start gap-2 border-b border-slate-800 pb-1 last:border-0 last:pb-0">

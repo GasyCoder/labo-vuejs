@@ -10,22 +10,26 @@
                 <!-- pt-24 (96px) : l'équilibre parfait pour une navbar de 64px -->
                 <div id="pagecontent" class="nk-content pt-24 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-900">
                     <div :class="['container', container ? '' : 'max-w-none']">
-                        <transition
-                            enter-active-class="transition duration-200 ease-out"
-                            enter-from-class="opacity-0"
-                            enter-to-class="opacity-100"
-                            leave-active-class="transition duration-100 ease-in"
-                            leave-from-class="opacity-100"
-                            leave-to-class="opacity-0"
-                            mode="out-in"
-                        >
-                            <div v-if="isLoading" key="skeleton">
-                                <SkeletonPage :type="skeletonType" />
-                            </div>
-                            <div v-else key="content">
+                        <div class="relative w-full">
+                            <!-- Skeleton Overlay -->
+                            <transition
+                                enter-active-class="transition duration-300 ease-out"
+                                enter-from-class="opacity-0"
+                                enter-to-class="opacity-100"
+                                leave-active-class="transition duration-200 ease-in"
+                                leave-from-class="opacity-100"
+                                leave-to-class="opacity-0"
+                            >
+                                <div v-if="isLoading" key="skeleton" class="absolute inset-0 z-[40] bg-white dark:bg-slate-900 min-h-[500px]">
+                                    <SkeletonPage :type="skeletonType" />
+                                </div>
+                            </transition>
+
+                            <!-- Content Layer (Always mounted to allow onMounted hooks and charts to work) -->
+                            <div :class="{'opacity-0 pointer-events-none': isLoading, 'opacity-100': !isLoading}" class="transition-opacity duration-300 w-full">
                                 <slot />
                             </div>
-                        </transition>
+                        </div>
                     </div>
                 </div><!-- content -->
 
@@ -66,10 +70,18 @@ const skeletonType = computed(() => {
 
     // 2. Fallback to route name mapping
     const routeName = route().current();
-    if (!routeName) return 'default';
+    
+    // Fallback if route name is not available or doesn't match
+    if (!routeName) {
+        const path = window.location.pathname;
+        if (path.includes('/create') || path.includes('/edit')) return 'form';
+        if (path.includes('/listes') || path.includes('/index')) return 'table';
+        return 'default';
+    }
 
-    if (routeName.endsWith('.index') || routeName.endsWith('.listes')) return 'table';
-    if (routeName.endsWith('.create') || routeName.endsWith('.edit')) return 'form';
+    if (routeName.includes('.index') || routeName.includes('.listes')) return 'table';
+    if (routeName.includes('.create') || routeName.includes('.edit')) return 'form';
+    if (routeName === 'dashboard') return 'default';
 
     return 'default';
 });

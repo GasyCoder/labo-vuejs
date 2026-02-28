@@ -123,7 +123,7 @@ const isActiveSession = (lastActivity) => {
         </template>
 
         <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+            <div class="max-w-[95%] mx-auto sm:px-6 lg:px-4 space-y-6">
                 
                 <!-- Statistiques -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
