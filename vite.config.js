@@ -27,4 +27,22 @@ export default defineConfig({
             '@': '/resources/js',
         },
     },
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks(id) {
+                    if (id.includes('node_modules')) {
+                        if (id.includes('vue') || id.includes('@inertiajs')) {
+                            return 'vendor-core';
+                        }
+                        if (id.includes('chart.js')) {
+                            return 'vendor-charts';
+                        }
+                        return 'vendor';
+                    }
+                }
+            }
+        },
+        chunkSizeWarningLimit: 1000,
+    }
 });

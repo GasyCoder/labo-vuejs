@@ -4,11 +4,18 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title inertia>{{ \App\Models\Setting::getNomEntreprise() ?: config('app.name', 'Laravel') }}</title>
+        
         <link rel="icon" type="image/x-icon" href="{{ \App\Models\Setting::getFavicon() }}">
+        
+        {{-- Preload primary LCP image (Logo) --}}
+        @php $logo = \App\Models\Setting::getLogo(); @endphp
+        @if($logo)
+            <link rel="preload" as="image" href="{{ $logo }}" fetchpriority="high">
+        @endif
 
         <!-- Scripts -->
         @routes
-        @vite(['resources/js/app.js', 'resources/js/scripts.js'])
+        @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/scripts.js'])
         @inertiaHead
     </head>
     <body class="font-sans antialiased text-default bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-100 min-h-screen">

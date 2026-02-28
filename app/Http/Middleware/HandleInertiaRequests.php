@@ -73,16 +73,19 @@ class HandleInertiaRequests extends Middleware
                 '_ts' => now()->timestamp,
             ],
             'skeleton' => $request->session()->get('skeleton'),
-            'settings' => [
-                'logo' => \App\Models\Setting::getLogo(),
-                'nom_entreprise' => \App\Models\Setting::getNomEntreprise(),
-                'favicon' => \App\Models\Setting::first()?->favicon ? asset('storage/'.\App\Models\Setting::first()->favicon) : asset('favicon.ico'),
-            ],
-            'stats' => [
+            'settings' => fn () => \Illuminate\Support\Facades\Cache::remember('app_settings_shared', 3600, function () {
+                $setting = \App\Models\Setting::first();
+                return [
+                    'logo' => \App\Models\Setting::getLogo(),
+                    'nom_entreprise' => \App\Models\Setting::getNomEntreprise(),
+                    'favicon' => $setting?->favicon ? asset('storage/'.$setting->favicon) : asset('favicon.ico'),
+                ];
+            }),
+            'stats' => fn () => $request->user() ? [
                 'countArchive' => \App\Models\Prescription::where('status', \App\Models\Prescription::STATUS_ARCHIVE)->count(),
                 'countAnalyses' => \App\Models\Prescription::where('status', '!=', \App\Models\Prescription::STATUS_ARCHIVE)->count(),
                 'countTrace' => \App\Models\Patient::onlyTrashed()->count() + \App\Models\Prescription::onlyTrashed()->count(),
-            ],
+            ] : null,
         ];
     }
 }
