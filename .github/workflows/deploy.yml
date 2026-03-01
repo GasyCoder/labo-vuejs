@@ -1,0 +1,19 @@
+name: Deploy to o2switch
+
+on:
+  push:
+    branches: ["master"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.O2_HOST }}
+          username: ${{ secrets.O2_USER }}
+          port: ${{ secrets.O2_PORT }}
+          key: ${{ secrets.O2_SSH_KEY }}
+          script: |
+            bash ~/deploy/deploy_labo.sh
