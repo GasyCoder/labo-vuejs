@@ -4,6 +4,9 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use App\Models\Setting;
+use App\Models\Prescription;
+use App\Models\Patient;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -73,18 +76,15 @@ class HandleInertiaRequests extends Middleware
                 '_ts' => now()->timestamp,
             ],
             'skeleton' => $request->session()->get('skeleton'),
-            'settings' => fn () => \Illuminate\Support\Facades\Cache::remember('app_settings_shared', 3600, function () {
-                $setting = \App\Models\Setting::first();
-                return [
-                    'logo' => \App\Models\Setting::getLogo(),
-                    'nom_entreprise' => \App\Models\Setting::getNomEntreprise(),
-                    'favicon' => $setting?->favicon ? asset('storage/'.$setting->favicon) : asset('favicon.ico'),
-                ];
-            }),
-            'stats' => fn () => $request->user() ? [
-                'countArchive' => \App\Models\Prescription::where('status', \App\Models\Prescription::STATUS_ARCHIVE)->count(),
-                'countAnalyses' => \App\Models\Prescription::where('status', '!=', \App\Models\Prescription::STATUS_ARCHIVE)->count(),
-                'countTrace' => \App\Models\Patient::onlyTrashed()->count() + \App\Models\Prescription::onlyTrashed()->count(),
+            'settings' => [
+                'logo' => Setting::getLogo(),
+                'nom_entreprise' => Setting::getNomEntreprise(),
+                'favicon' => Setting::first()?->favicon ? asset('storage/'.Setting::first()->favicon) : asset('favicon.ico'),
+            ],
+            'stats' => $request->user() ? [
+                'countArchive' => Prescription::where('status', Prescription::STATUS_ARCHIVE)->count(),
+                'countAnalyses' => Prescription::where('status', '!=', Prescription::STATUS_ARCHIVE)->count(),
+                'countTrace' => Patient::onlyTrashed()->count() + Prescription::onlyTrashed()->count(),
             ] : null,
         ];
     }
