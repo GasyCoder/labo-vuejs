@@ -14,6 +14,6 @@ jobs:
           host: ${{ secrets.O2_HOST }}
           username: ${{ secrets.O2_USER }}
           port: ${{ secrets.O2_PORT }}
-          key: ${{ secrets.O2_SSH_KEY }}
+          key: ${{ secrets.SSH_PRIVATE_KEY_LABO }}
           script: |
             bash ~/deploy/deploy_labo.sh
