@@ -48,6 +48,13 @@ class SettingController extends Controller
      */
     public function updateEnterprise(Request $request)
     {
+        // Debug pour voir ce qui arrive
+        \Illuminate\Support\Facades\Log::info('Update Enterprise Request:', [
+            'has_logo' => $request->hasFile('logo'),
+            'has_favicon' => $request->hasFile('favicon'),
+            'all_data' => $request->except(['logo', 'favicon']),
+        ]);
+
         $validated = $request->validate([
             'nom_entreprise' => 'required|string|max:255',
             'site_name' => 'nullable|string|max:255',
@@ -58,8 +65,8 @@ class SettingController extends Controller
             'telephone' => 'nullable|string|max:100',
             'email' => 'nullable|email|max:255',
             'numero_banque' => 'nullable|string|max:500',
-            'logo' => 'nullable|image|max:2048',
-            'favicon' => 'nullable|image|max:1024',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            'favicon' => 'nullable|image|mimes:png,ico,x-icon,jpg,jpeg|max:1024',
         ]);
 
         $setting = Setting::first() ?? new Setting;
@@ -78,14 +85,18 @@ class SettingController extends Controller
             if ($setting->logo) {
                 Storage::disk('public')->delete($setting->logo);
             }
-            $setting->logo = $request->file('logo')->store('logos', 'public');
+            $path = $request->file('logo')->store('logos', 'public');
+            $setting->logo = $path;
+            \Illuminate\Support\Facades\Log::info('Logo stored at: '.$path);
         }
 
         if ($request->hasFile('favicon')) {
             if ($setting->favicon) {
                 Storage::disk('public')->delete($setting->favicon);
             }
-            $setting->favicon = $request->file('favicon')->store('favicons', 'public');
+            $path = $request->file('favicon')->store('favicons', 'public');
+            $setting->favicon = $path;
+            \Illuminate\Support\Facades\Log::info('Favicon stored at: '.$path);
         }
 
         $setting->save();

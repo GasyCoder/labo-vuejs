@@ -23,6 +23,26 @@ const enterpriseForm = useForm({
     favicon: null,
 });
 
+// Previews
+const logoPreview = ref(null);
+const faviconPreview = ref(null);
+
+const handleLogoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        enterpriseForm.logo = file;
+        logoPreview.value = URL.createObjectURL(file);
+    }
+};
+
+const handleFaviconChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        enterpriseForm.favicon = file;
+        faviconPreview.value = URL.createObjectURL(file);
+    }
+};
+
 const discountForm = useForm({
     activer_remise: !!props.settings.activer_remise,
     remise_pourcentage: parseFloat(props.settings.remise_pourcentage) || 0,
@@ -59,7 +79,10 @@ const showCommissionAlert = computed(() => {
 const updateEnterprise = () => {
     enterpriseForm.post(route('admin.settings.enterprise'), {
         preserveScroll: true,
+        forceFormData: true,
         onSuccess: () => {
+            logoPreview.value = null;
+            faviconPreview.value = null;
             enterpriseForm.logo = null;
             enterpriseForm.favicon = null;
         }
@@ -210,26 +233,50 @@ const confirmDeletePayment = (id) => {
                                     <!-- Logo Upload -->
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Logo</label>
-                                        <div v-if="settings.logo" class="mb-3 relative w-32 h-32 border rounded-lg p-2 bg-gray-50 flex items-center justify-center dark:bg-gray-700 dark:border-gray-600">
+                                        
+                                        <!-- Current Logo -->
+                                        <div v-if="settings.logo && !logoPreview" class="mb-3 relative w-32 h-32 border rounded-lg p-2 bg-gray-50 flex items-center justify-center dark:bg-gray-700 dark:border-gray-600">
                                             <img :src="'/storage/' + settings.logo" alt="Logo" class="max-w-full max-h-full object-contain">
                                             <button @click.prevent="removeImage('logo')" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow hover:bg-red-600" title="Supprimer">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                             </button>
                                         </div>
-                                        <input type="file" @input="enterpriseForm.logo = $event.target.files[0]" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-gray-700 dark:file:text-indigo-300">
+
+                                        <!-- New Logo Preview -->
+                                        <div v-if="logoPreview" class="mb-3 relative w-32 h-32 border-2 border-dashed border-indigo-300 rounded-lg p-2 bg-indigo-50 flex items-center justify-center dark:bg-indigo-900/20 dark:border-indigo-700">
+                                            <img :src="logoPreview" alt="Preview Logo" class="max-w-full max-h-full object-contain">
+                                            <button @click.prevent="logoPreview = null; enterpriseForm.logo = null" class="absolute -top-2 -right-2 bg-gray-500 text-white rounded-full p-1 shadow hover:bg-gray-600" title="Annuler">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                            </button>
+                                            <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[10px] px-2 py-0.5 rounded-full uppercase font-bold">Nouveau</div>
+                                        </div>
+
+                                        <input type="file" @change="handleLogoChange" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-gray-700 dark:file:text-indigo-300">
                                         <div v-if="enterpriseForm.errors.logo" class="text-red-500 text-xs mt-1">{{ enterpriseForm.errors.logo }}</div>
                                     </div>
 
                                     <!-- Favicon Upload -->
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Favicon</label>
-                                        <div v-if="settings.favicon" class="mb-3 relative w-16 h-16 border rounded-lg p-2 bg-gray-50 flex items-center justify-center dark:bg-gray-700 dark:border-gray-600">
+                                        
+                                        <!-- Current Favicon -->
+                                        <div v-if="settings.favicon && !faviconPreview" class="mb-3 relative w-16 h-16 border rounded-lg p-2 bg-gray-50 flex items-center justify-center dark:bg-gray-700 dark:border-gray-600">
                                             <img :src="'/storage/' + settings.favicon" alt="Favicon" class="max-w-full max-h-full object-contain">
                                             <button @click.prevent="removeImage('favicon')" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow hover:bg-red-600" title="Supprimer">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                             </button>
                                         </div>
-                                        <input type="file" @input="enterpriseForm.favicon = $event.target.files[0]" accept="image/png, image/x-icon, image/ico" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-gray-700 dark:file:text-indigo-300">
+
+                                        <!-- New Favicon Preview -->
+                                        <div v-if="faviconPreview" class="mb-3 relative w-16 h-16 border-2 border-dashed border-indigo-300 rounded-lg p-2 bg-indigo-50 flex items-center justify-center dark:bg-indigo-900/20 dark:border-indigo-700">
+                                            <img :src="faviconPreview" alt="Preview Favicon" class="max-w-full max-h-full object-contain">
+                                            <button @click.prevent="faviconPreview = null; enterpriseForm.favicon = null" class="absolute -top-2 -right-2 bg-gray-500 text-white rounded-full p-1 shadow hover:bg-gray-600" title="Annuler">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                            </button>
+                                            <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[10px] px-2 py-0.5 rounded-full uppercase font-bold">Nouveau</div>
+                                        </div>
+
+                                        <input type="file" @change="handleFaviconChange" accept="image/png, image/x-icon, image/ico" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-gray-700 dark:file:text-indigo-300">
                                         <div v-if="enterpriseForm.errors.favicon" class="text-red-500 text-xs mt-1">{{ enterpriseForm.errors.favicon }}</div>
                                     </div>
                                 </div>
