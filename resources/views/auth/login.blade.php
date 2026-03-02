@@ -6,9 +6,9 @@
                 <div class="relative flex justify-center flex-shrink-0 pb-6">
                     <a href="{{ url('/') }}" class="relative inline-block h-16 w-auto transition-opacity duration-300">
                         <img class="h-16 w-auto object-contain opacity-0 dark:opacity-100"
-                            src="{{ \App\Models\Setting::getLogo() }}" alt="{{ \App\Models\Setting::getNomEntreprise() }}">
+                            src="{{ \App\Models\Setting::getLogo() }}" alt="{{ \App\Models\Setting::getSiteName() }}">
                         <img class="absolute top-0 left-0 h-16 w-auto object-contain opacity-100 dark:opacity-0"
-                            src="{{ \App\Models\Setting::getLogo() }}" alt="{{ \App\Models\Setting::getNomEntreprise() }}">
+                            src="{{ \App\Models\Setting::getLogo() }}" alt="{{ \App\Models\Setting::getSiteName() }}">
                     </a>
                 </div>
                 <div class="p-5 border border-gray-300 rounded dark:border-gray-900 sm:p-6 md:p-10">
@@ -17,7 +17,7 @@
                             class="mb-2 text-xl font-bold font-heading -tracking-snug text-slate-700 dark:text-white leading-tighter">
                             Connexion</h5>
                         <p class="text-sm leading-6 text-slate-400">
-                            Accédez au panneau La Reference en utilisant votre identifiant et votre mot de passe.
+                            Accédez au panneau {{ \App\Models\Setting::getSiteName() }} en utilisant votre identifiant et votre mot de passe.
                         </p>
                     </div>
 

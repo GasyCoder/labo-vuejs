@@ -11,6 +11,7 @@ const props = defineProps({
 // --- Forms ---
 const enterpriseForm = useForm({
     nom_entreprise: props.settings.nom_entreprise || '',
+    site_name: props.settings.site_name || '',
     nif: props.settings.nif || '',
     statut: props.settings.statut || '',
     format_unite_argent: props.settings.format_unite_argent || 'Ar',
@@ -162,6 +163,11 @@ const confirmDeletePayment = (id) => {
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nom de l'entreprise *</label>
                                         <input v-model="enterpriseForm.nom_entreprise" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                                         <div v-if="enterpriseForm.errors.nom_entreprise" class="text-red-500 text-xs mt-1">{{ enterpriseForm.errors.nom_entreprise }}</div>
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nom du site (Titre du navigateur)</label>
+                                        <input v-model="enterpriseForm.site_name" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Si vide, utilise le nom de l'entreprise">
+                                        <div v-if="enterpriseForm.errors.site_name" class="text-red-500 text-xs mt-1">{{ enterpriseForm.errors.site_name }}</div>
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">NIF</label>

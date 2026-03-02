@@ -23,5 +23,14 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void {}
+    public function boot(): void
+    {
+        // On surcharge le nom de l'application dynamiquement depuis la base de données
+        try {
+            $siteName = \App\Models\Setting::getSiteName();
+            config(['app.name' => $siteName]);
+        } catch (\Exception $e) {
+            // Éviter les plantages si la table n'existe pas encore (ex: migrations)
+        }
+    }
 }

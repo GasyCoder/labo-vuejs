@@ -11,6 +11,7 @@ class Setting extends Model
 
     protected $fillable = [
         'nom_entreprise',
+        'site_name',
         'nif',
         'statut',
         'remise_pourcentage',
@@ -118,6 +119,13 @@ class Setting extends Model
         $settings = self::getSettings();
 
         return $settings ? $settings->nom_entreprise : 'CTB NOSY BE';
+    }
+
+    public static function getSiteName()
+    {
+        $settings = self::getSettings();
+
+        return $settings && $settings->site_name ? $settings->site_name : self::getNomEntreprise();
     }
 
     public static function getFavicon()

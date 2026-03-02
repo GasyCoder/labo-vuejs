@@ -2,11 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Patient;
+use App\Models\Prescription;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
-use App\Models\Setting;
-use App\Models\Prescription;
-use App\Models\Patient;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -79,6 +79,7 @@ class HandleInertiaRequests extends Middleware
             'settings' => [
                 'logo' => Setting::getLogo(),
                 'nom_entreprise' => Setting::getNomEntreprise(),
+                'site_name' => Setting::getSiteName(),
                 'favicon' => Setting::first()?->favicon ? asset('storage/'.Setting::first()->favicon) : asset('favicon.ico'),
             ],
             'stats' => $request->user() ? [

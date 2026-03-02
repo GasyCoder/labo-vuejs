@@ -3,7 +3,7 @@
     $favicon = $settings && $settings->favicon
         ? asset('storage/' . $settings->favicon)
         : asset('favicon.ico');
-    $nomEntreprise = $settings ? $settings->nom_entreprise : 'CTB NOSY BE';
+    $nomEntreprise = \App\Models\Setting::getSiteName();
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" id="pageroot" class="{{ dark_mode() ? 'dark' : '' }}">
@@ -18,7 +18,7 @@
     <link rel="shortcut icon" href="{{ asset('images/favicon/favicon.ico') }}" />
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/favicon/apple-touch-icon.png') }}" />
     <link rel="manifest" href="{{ asset('images/favicon/site.webmanifest') }}" />
-    <title>La Reference - Connexion</title>
+    <title>{{ $nomEntreprise }} - {{ $title ?? 'Connexion' }}</title>
     <link rel="icon" type="image/x-icon" href="{{ $favicon }}">
 
     @vite(['resources/css/app.css'])

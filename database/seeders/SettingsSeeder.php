@@ -16,6 +16,7 @@ class SettingsSeeder extends Seeder
             ['id' => 1], // Critère de recherche
             [
                 'nom_entreprise' => 'LABO',
+                'site_name' => 'La Reference',
                 'nif' => '1234567890',
                 'statut' => 'SARL',
                 'format_unite_argent' => 'MGA',

@@ -50,6 +50,7 @@ class SettingController extends Controller
     {
         $validated = $request->validate([
             'nom_entreprise' => 'required|string|max:255',
+            'site_name' => 'nullable|string|max:255',
             'nif' => 'nullable|string|max:100',
             'statut' => 'nullable|string|max:100',
             'format_unite_argent' => 'required|string|max:10',
@@ -64,6 +65,7 @@ class SettingController extends Controller
         $setting = Setting::first() ?? new Setting;
 
         $setting->nom_entreprise = $validated['nom_entreprise'];
+        $setting->site_name = $validated['site_name'];
         $setting->nif = $validated['nif'];
         $setting->statut = $validated['statut'];
         $setting->format_unite_argent = $validated['format_unite_argent'];

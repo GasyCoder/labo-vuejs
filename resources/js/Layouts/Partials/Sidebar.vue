@@ -20,12 +20,12 @@
         <div class="relative flex flex-shrink-0">
             <Link :href="baseUrl"
                 class="relative inline-flex items-center transition-opacity duration-300 h-9 group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0">
-                <img v-if="$page.props.settings?.logo" :src="$page.props.settings.logo" :alt="$page.props.settings?.nom_entreprise || 'Logo'" class="h-8 w-auto object-contain group-[&.is-compact:not(.has-hover)]/sidebar:hidden" />
+                <img v-if="$page.props.settings?.logo" :src="$page.props.settings.logo" :alt="$page.props.settings?.site_name || $page.props.settings?.nom_entreprise || 'Logo'" class="h-8 w-auto object-contain group-[&.is-compact:not(.has-hover)]/sidebar:hidden" />
                 <span v-else
-                    class="text-xl font-bold text-primary-500 whitespace-nowrap group-[&.is-compact:not(.has-hover)]/sidebar:hidden">{{ $page.props.settings?.nom_entreprise || 'La Reference' }}
+                    class="text-xl font-bold text-primary-500 whitespace-nowrap group-[&.is-compact:not(.has-hover)]/sidebar:hidden">{{ $page.props.settings?.site_name || $page.props.settings?.nom_entreprise || 'La Reference' }}
                 </span>
                 <span
-                    class="text-xl font-bold text-primary-500 hidden group-[&.is-compact:not(.has-hover)]/sidebar:block">{{ ($page.props.settings?.nom_entreprise || 'L').charAt(0) }}</span>
+                    class="text-xl font-bold text-primary-500 hidden group-[&.is-compact:not(.has-hover)]/sidebar:block">{{ ($page.props.settings?.site_name || $page.props.settings?.nom_entreprise || 'L').charAt(0) }}</span>
             </Link>
         </div>
     </div>
