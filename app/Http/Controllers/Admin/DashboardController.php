@@ -46,11 +46,42 @@ class DashboardController extends Controller
             return redirect()->route('login');
         }
 
+        // Gestion de la période
+        $period = $request->input('period', 'this_month');
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+
+        // Résolution automatique des dates si période prédéfinie
+        if ($period !== 'custom') {
+            switch ($period) {
+                case 'today':
+                    $dateFrom = Carbon::today()->format('Y-m-d');
+                    $dateTo = Carbon::today()->format('Y-m-d');
+                    break;
+                case '7_days':
+                    $dateFrom = Carbon::today()->subDays(6)->format('Y-m-d');
+                    $dateTo = Carbon::today()->format('Y-m-d');
+                    break;
+                case '30_days':
+                    $dateFrom = Carbon::today()->subDays(29)->format('Y-m-d');
+                    $dateTo = Carbon::today()->format('Y-m-d');
+                    break;
+                case 'this_month':
+                    $dateFrom = Carbon::now()->startOfMonth()->format('Y-m-d');
+                    $dateTo = Carbon::now()->format('Y-m-d');
+                    break;
+                case 'last_month':
+                    $dateFrom = Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d');
+                    $dateTo = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d');
+                    break;
+            }
+        }
+
         // 1. Données de base communes
         $stats = [
             'patients' => $this->getPatientStats($user),
             'analyses' => $this->getAnalyseStats($user),
-            'finances' => $this->getFinanceStats($user),
+            'finances' => $this->getFinanceStats($user), // Keep day/month for KPI cards in sidebar if any
             'activites' => $this->getRecentActivities($user, $request),
         ];
 
@@ -70,7 +101,7 @@ class DashboardController extends Controller
                     ];
                 }),
                 'payment_methods_chart' => $this->dashboardService->getPaymentMethodsStats(),
-                'revenue_trend' => $this->dashboardService->getRevenueLast30Days(), // Re-use existing service method
+                'revenue_trend' => $this->dashboardService->getRevenueTrend(Carbon::today()->subDays(6), Carbon::today()),
             ];
         } elseif ($user->hasRole('technicien')) {
             $roleData = [
@@ -101,11 +132,12 @@ class DashboardController extends Controller
         $strategicData = [];
         if ($user->type === 'superadmin' || $user->type === 'admin') {
             $strategicData = [
-                'kpis' => $this->dashboardService->getKpis(),
-                'revenueLast30Days' => $this->dashboardService->getRevenueLast30Days(),
-                'prescriptionsLast30Days' => $this->dashboardService->getPrescriptionsLast30Days(),
-                'topAnalyses' => $this->dashboardService->getTopAnalyses(),
-                'paymentRatio' => $this->dashboardService->getPaymentRatio(),
+                'kpis' => $this->dashboardService->getKpis($dateFrom, $dateTo),
+                'revenueTrend' => $this->dashboardService->getRevenueTrend($dateFrom, $dateTo),
+                'prescriptionsTrend' => $this->dashboardService->getPrescriptionsTrend($dateFrom, $dateTo),
+                'dailyBreakdown' => $this->dashboardService->getDailyRevenueBreakdown($dateFrom, $dateTo),
+                'topAnalyses' => $this->dashboardService->getTopAnalyses(), // Overall or this month
+                'paymentRatio' => $this->dashboardService->getPaymentRatio($dateFrom, $dateTo),
                 'monthlyComparison' => $this->dashboardService->getMonthlyComparison(),
             ];
         }
@@ -113,14 +145,14 @@ class DashboardController extends Controller
         \Illuminate\Support\Facades\Log::info('DASHBOARD_PAYLOAD_DEBUG', [
             'finances_stats' => $stats['finances'],
             'kpis' => $strategicData['kpis'] ?? 'N/A',
-            'user_type' => $user->type
+            'user_type' => $user->type,
         ]);
 
         return Inertia::render('Dashboard', [
             'stats' => $stats,
             'roleData' => $roleData,
             'strategicData' => $strategicData,
-            'filters' => $request->only(['search', 'date_from', 'date_to']),
+            'filters' => $request->only(['search', 'date_from', 'date_to', 'period']),
         ]);
     }
 
