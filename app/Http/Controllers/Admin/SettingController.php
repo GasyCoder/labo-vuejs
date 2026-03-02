@@ -72,14 +72,14 @@ class SettingController extends Controller
         $setting = Setting::first() ?? new Setting;
 
         $setting->nom_entreprise = $validated['nom_entreprise'];
-        $setting->site_name = $validated['site_name'];
-        $setting->nif = $validated['nif'];
-        $setting->statut = $validated['statut'];
+        $setting->site_name = $validated['site_name'] ?? null;
+        $setting->nif = $validated['nif'] ?? null;
+        $setting->statut = $validated['statut'] ?? null;
         $setting->format_unite_argent = $validated['format_unite_argent'];
-        $setting->adresse = $validated['adresse'];
-        $setting->telephone = $validated['telephone'];
-        $setting->email = $validated['email'];
-        $setting->numero_banque = $validated['numero_banque'];
+        $setting->adresse = $validated['adresse'] ?? null;
+        $setting->telephone = $validated['telephone'] ?? null;
+        $setting->email = $validated['email'] ?? null;
+        $setting->numero_banque = $validated['numero_banque'] ?? null;
 
         if ($request->hasFile('logo')) {
             if ($setting->logo) {
