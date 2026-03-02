@@ -42,7 +42,8 @@
         <!--  VUE STRATÉGIQUE (SUPERADMIN / ADMIN)                      -->
         <!-- ========================================================= -->
         <template v-if="isAdmin">
-            <div class="grid grid-cols-12 gap-6 mb-6">
+            <div :key="periodForm.period + periodForm.date_from + periodForm.date_to" class="animate-in fade-in duration-500">
+                <div class="grid grid-cols-12 gap-6 mb-6">
                 <!-- Chiffre d'Affaire Période -->
                 <div class="flex flex-col col-span-full sm:col-span-6 xl:col-span-4 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700">
                     <div class="px-5 pt-5 pb-4">
@@ -131,7 +132,8 @@
                     </table>
                 </div>
             </div>
-        </template>
+        </div>
+    </template>
 
         <!-- ========================================================= -->
         <!--  VUE MÉTIER : SECRÉTAIRE                                   -->
@@ -384,7 +386,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { usePage, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Chart from 'chart.js/auto';
@@ -480,6 +482,10 @@ const createChart = (id, type, data, options = {}) => {
 };
 
 const renderCharts = () => {
+    // Clear existing instances
+    chartInstances.forEach(c => c.destroy());
+    chartInstances.length = 0;
+
     const darkMode = document.documentElement.classList.contains('dark');
     const colors = {
         indigo: '#6366f1', sky: '#0ea5e9', emerald: '#10b981', rose: '#f43f5e', amber: '#f59e0b',
@@ -523,6 +529,25 @@ const renderCharts = () => {
         });
     }
 };
+
+watch(() => props.filters, (newFilters) => {
+    filterForm.value.search = newFilters?.search || '';
+    filterForm.value.date_from = newFilters?.date_from || '';
+    filterForm.value.date_to = newFilters?.date_to || '';
+    
+    periodForm.value.period = newFilters?.period || 'this_month';
+    periodForm.value.date_from = newFilters?.date_from || '';
+    periodForm.value.date_to = newFilters?.date_to || '';
+}, { deep: true });
+
+// Re-render charts when data changes
+watch(() => props.strategicData, () => {
+    setTimeout(renderCharts, 100);
+}, { deep: true });
+
+watch(() => props.roleData, () => {
+    setTimeout(renderCharts, 100);
+}, { deep: true });
 
 onMounted(() => { setTimeout(renderCharts, 100); });
 onUnmounted(() => { chartInstances.forEach(c => c.destroy()); });

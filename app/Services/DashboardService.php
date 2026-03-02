@@ -212,18 +212,19 @@ class DashboardService
     }
 
     /**
-     * Pie chart: Top 5 analyses performed this month
+     * Pie chart: Top 5 analyses performed this month or period
      */
-    public function getTopAnalyses()
+    public function getTopAnalyses($startDate = null, $endDate = null)
     {
-        $startOfMonth = Carbon::now()->startOfMonth();
+        $startDate = $startDate ? Carbon::parse($startDate)->startOfDay() : Carbon::now()->startOfMonth();
+        $endDate = $endDate ? Carbon::parse($endDate)->endOfDay() : Carbon::now()->endOfDay();
 
         $top = DB::table('prescription_analyse as pa')
             ->join('analyses as a', 'pa.analyse_id', '=', 'a.id')
             ->join('prescriptions as p', 'pa.prescription_id', '=', 'p.id')
-            ->where('p.created_at', '>=', $startOfMonth)
+            ->whereBetween('p.created_at', [$startDate, $endDate])
             ->select('a.designation', DB::raw('COUNT(pa.analyse_id) as count'))
-            ->groupBy('a.designation')
+            ->groupBy('a.designation', 'a.id') // Added a.id for strict SQL
             ->orderByDesc('count')
             ->limit(5)
             ->get();

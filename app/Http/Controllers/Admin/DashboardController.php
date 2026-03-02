@@ -136,7 +136,7 @@ class DashboardController extends Controller
                 'revenueTrend' => $this->dashboardService->getRevenueTrend($dateFrom, $dateTo),
                 'prescriptionsTrend' => $this->dashboardService->getPrescriptionsTrend($dateFrom, $dateTo),
                 'dailyBreakdown' => $this->dashboardService->getDailyRevenueBreakdown($dateFrom, $dateTo),
-                'topAnalyses' => $this->dashboardService->getTopAnalyses(), // Overall or this month
+                'topAnalyses' => $this->dashboardService->getTopAnalyses($dateFrom, $dateTo), // Filtered by period
                 'paymentRatio' => $this->dashboardService->getPaymentRatio($dateFrom, $dateTo),
                 'monthlyComparison' => $this->dashboardService->getMonthlyComparison(),
             ];
