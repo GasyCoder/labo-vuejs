@@ -183,11 +183,21 @@ class DashboardController extends Controller
         $startOfMonth = Carbon::now()->startOfMonth();
 
         try {
+            $recettesJour = Paiement::where('status', true)->whereDate('date_paiement', $today)->sum('montant') ?? 0;
+            $recettesMois = Paiement::where('status', true)->whereDate('date_paiement', '>=', $startOfMonth)->sum('montant') ?? 0;
+
+            \Illuminate\Support\Facades\Log::debug('Dashboard Finance Stats:', [
+                'recetteJour' => $recettesJour,
+                'caMois' => $recettesMois,
+                'today' => $today->toDateString(),
+                'startOfMonth' => $startOfMonth->toDateString(),
+            ]);
+
             return [
-                'recettes_jour' => Paiement::whereDate('created_at', $today)->sum('montant') ?? 0,
-                'recettes_mois' => Paiement::whereDate('created_at', '>=', $startOfMonth)->sum('montant') ?? 0,
-                'nb_paiements' => Paiement::whereDate('created_at', $today)->count() ?? 0,
-                'moyenne_paiement' => Paiement::whereDate('created_at', $today)->avg('montant') ?? 0,
+                'recettes_jour' => $recettesJour,
+                'recettes_mois' => $recettesMois,
+                'nb_paiements' => Paiement::where('status', true)->whereDate('date_paiement', $today)->count() ?? 0,
+                'moyenne_paiement' => Paiement::where('status', true)->whereDate('date_paiement', $today)->avg('montant') ?? 0,
             ];
         } catch (\Exception $e) {
             return [
