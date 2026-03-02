@@ -2,18 +2,85 @@ name: Deploy to o2switch
 
 on:
   push:
-    branches: ["master"]
+    branches: [ "master", "main" ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare connectivity tools
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y netcat-openbsd openssh-client
+
+      - name: Test TCP connectivity to SSH
+        env:
+          HOST: ${{ secrets.O2_HOST }}
+          PORT: ${{ secrets.O2_PORT }}
+        run: |
+          echo "Testing TCP connectivity to $HOST:$PORT"
+          if ! nc -zv -w 10 "$HOST" "$PORT"; then
+            echo "❌ CRITICAL: Cannot reach port $PORT on $HOST. Please check SSH Access in cPanel or if the server is down."
+            exit 1
+          fi
+          echo "✅ TCP Connectivity OK"
+
+      - name: Test SSH handshake (no deploy)
+        env:
+          HOST: ${{ secrets.O2_HOST }}
+          PORT: ${{ secrets.O2_PORT }}
+          USER: ${{ secrets.O2_USER }}
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY_LABO }}" > key.pem
+          chmod 600 key.pem
+          echo "Testing SSH Handshake for $USER@$HOST..."
+          if ! ssh -i key.pem -p "$PORT" -o StrictHostKeyChecking=no -o ConnectTimeout=10 "$USER@$HOST" "echo 'SSH Handshake OK' && whoami && pwd"; then
+            echo "❌ CRITICAL: TCP is open but SSH Authentication failed. Check O2_USER and SSH_PRIVATE_KEY_LABO/authorized_keys."
+            rm -f key.pem
+            exit 1
+          fi
+          rm -f key.pem
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.O2_HOST }}
-          username: ${{ secrets.O2_USER }}
           port: ${{ secrets.O2_PORT }}
+          username: ${{ secrets.O2_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY_LABO }}
+          script_stop: true
+          command_timeout: 20m
           script: |
-            bash ~/deploy/deploy_labo.sh
+            echo "🚀 Starting deployment..."
+            whoami
+            pwd
+            
+            # Navigate to project directory (Adjust path if needed)
+            # Normalement o2switch c'est /home/UTILISATEUR/path/to/project
+            cd ~/public_html/labo-vuejs || cd ~/projects/labo-saas || { echo "❌ Directory not found"; exit 1; }
+            
+            echo "📂 Current directory: $(pwd)"
+            
+            # Fetch latest changes
+            echo "📥 Pulling latest changes..."
+            git pull origin master || git pull origin main
+            
+            # Install dependencies
+            echo "📦 Installing dependencies..."
+            composer install --no-dev --optimize-autoloader --no-interaction
+            
+            # Database migration
+            echo "🗄️ Running migrations..."
+            php artisan migrate --force
+            
+            # Optimization
+            echo "✨ Clearing and optimizing cache..."
+            php artisan optimize:clear
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            
+            echo "✅ Deployment finished successfully!"
