@@ -98,6 +98,10 @@ Route::middleware(['auth', 'role:secretaire,superadmin,admin'])->prefix('secreta
         Route::get('prescription/edit/{prescriptionId}', 'edit')->name('prescription.edit');
         Route::delete('prescription/{id}', 'destroy')->name('prescription.destroy');
         Route::post('prescriptions/bulk-delete', 'bulkDestroy')->name('prescription.bulkDestroy');
+        Route::post('prescriptions/bulk-archive', 'bulkArchive')->name('prescription.bulkArchive');
+        Route::post('prescriptions/bulk-restore', 'bulkRestore')->name('prescription.bulkRestore');
+        Route::post('prescriptions/bulk-force-delete', 'bulkForceDelete')->name('prescription.bulkForceDelete');
+        Route::post('prescriptions/bulk-toggle-payment', 'bulkTogglePayment')->name('prescription.bulkTogglePayment');
         Route::post('prescription/{id}/restore', 'restore')->name('prescription.restore');
         Route::delete('prescription/{id}/force-delete', 'forceDelete')->name('prescription.forceDelete');
         Route::post('prescription/{id}/archive', 'archive')->name('prescription.archive');

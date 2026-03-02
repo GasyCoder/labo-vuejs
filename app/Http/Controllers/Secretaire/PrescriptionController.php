@@ -608,6 +608,110 @@ class PrescriptionController extends Controller
         }
     }
 
+    public function bulkArchive(Request $request): RedirectResponse
+    {
+        $user = Auth::user();
+        if (! $user->hasPermission('archives.acceder')) {
+            return back()->with('error', 'Vous n\'avez pas la permission d\'archiver des prescriptions.');
+        }
+
+        $ids = $request->input('ids', []);
+        if (empty($ids)) {
+            return back()->with('error', 'Aucune prescription sélectionnée.');
+        }
+
+        try {
+            $count = Prescription::whereIn('id', $ids)
+                ->where('status', 'VALIDE')
+                ->update(['status' => 'ARCHIVE']);
+
+            return back()->with('success', $count.' prescriptions archivées.');
+        } catch (\Exception $e) {
+            Log::error('Erreur archivage groupé prescriptions', ['error' => $e->getMessage()]);
+
+            return back()->with('error', 'Erreur lors de l\'archivage groupé.');
+        }
+    }
+
+    public function bulkRestore(Request $request): RedirectResponse
+    {
+        $user = Auth::user();
+        if (! $user->hasPermission('corbeille.restaurer')) {
+            return back()->with('error', 'Vous n\'avez pas la permission de restaurer des éléments.');
+        }
+
+        $ids = $request->input('ids', []);
+        if (empty($ids)) {
+            return back()->with('error', 'Aucune prescription sélectionnée.');
+        }
+
+        try {
+            Prescription::onlyTrashed()->whereIn('id', $ids)->restore();
+
+            return back()->with('success', count($ids).' prescriptions restaurées.');
+        } catch (\Exception $e) {
+            Log::error('Erreur restauration groupée prescriptions', ['error' => $e->getMessage()]);
+
+            return back()->with('error', 'Erreur lors de la restauration groupée.');
+        }
+    }
+
+    public function bulkForceDelete(Request $request): RedirectResponse
+    {
+        $user = Auth::user();
+        if (! $user->hasPermission('corbeille.vider')) {
+            return back()->with('error', 'Vous n\'avez pas la permission de supprimer définitivement.');
+        }
+
+        $ids = $request->input('ids', []);
+        if (empty($ids)) {
+            return back()->with('error', 'Aucune prescription sélectionnée.');
+        }
+
+        try {
+            $prescriptions = Prescription::onlyTrashed()->whereIn('id', $ids)->get();
+            foreach ($prescriptions as $prescription) {
+                $prescription->forceDelete();
+            }
+
+            return back()->with('success', count($ids).' prescriptions supprimées définitivement.');
+        } catch (\Exception $e) {
+            Log::error('Erreur suppression définitive groupée prescriptions', ['error' => $e->getMessage()]);
+
+            return back()->with('error', 'Erreur lors de la suppression définitive groupée.');
+        }
+    }
+
+    public function bulkTogglePayment(Request $request): RedirectResponse
+    {
+        $user = Auth::user();
+        if (! $user->hasPermission('prescriptions.modifier')) {
+            return back()->with('error', 'Vous n\'avez pas la permission de modifier le paiement.');
+        }
+
+        $ids = $request->input('ids', []);
+        $status = (bool) $request->input('status', true);
+
+        if (empty($ids)) {
+            return back()->with('error', 'Aucune prescription sélectionnée.');
+        }
+
+        try {
+            Paiement::whereIn('prescription_id', $ids)->update([
+                'status' => $status,
+                'date_paiement' => $status ? now() : null,
+            ]);
+
+            $message = $status ? 'Paiements marqués comme payés.' : 'Paiements marqués comme non payés.';
+
+            return back()->with('success', $message);
+        } catch (\Exception $e) {
+            Log::error('Erreur modification groupée paiement', ['error' => $e->getMessage()]);
+
+            return back()->with('error', 'Erreur lors de la modification groupée du paiement.');
+        }
+    }
+
     public function restore(int $id): RedirectResponse
     {
         $user = Auth::user();
