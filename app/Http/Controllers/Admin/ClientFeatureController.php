@@ -65,6 +65,64 @@ class ClientFeatureController extends Controller
     }
 
     /**
+     * Assign the Pack Premium to a client.
+     */
+    public function assignPackPremium(Client $client)
+    {
+        $plan = config('plans.premium');
+
+        $client->update([
+            'plan_name' => $plan['name'],
+            'subscription_price' => $plan['price'],
+            'sms_quota' => $plan['sms_quota'],
+            'email_quota' => $plan['email_quota'],
+            'next_renewal_at' => now()->addMonth(),
+        ]);
+
+        // Enable all premium features
+        foreach ($plan['features'] as $featureKey) {
+            $this->featureService->setEnabled($client->id, $featureKey, true);
+        }
+
+        return back()->with('success', 'Pack Premium assigné avec succès.');
+    }
+
+    /**
+     * Display the current client's subscription information (Tenant view).
+     */
+    public function subscription()
+    {
+        $user = auth()->user();
+        $client = $user->client ?? Client::first();
+
+        if (!$client) {
+            abort(404, 'Client non trouvé.');
+        }
+
+        $features = config('features.list', []);
+
+        // We use getAllForClient instead of getAllForCurrentUser to see REAL status, 
+        // because superadmins bypass the check in the service but we want to see the real DB status here.
+        $enabledFeatures = $this->featureService->getAllForClient($client->id);
+
+        $featureList = [];
+        foreach ($features as $key => $config) {
+            $featureList[] = [
+                'key' => $key,
+                'name' => $config['name'],
+                'description' => $config['description'],
+                'is_enabled' => $enabledFeatures[$key] ?? false,
+            ];
+        }
+
+        return Inertia::render('Admin/Subscription', [
+            'client' => $client,
+            'features' => $featureList,
+            'plan' => config('plans.premium'),
+        ]);
+    }
+
+    /**
      * Update the features for a specific client.
      */
     public function update(Request $request, Client $client)

@@ -1,103 +1,145 @@
 <template>
 <AppLayout>
-    <div class="px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Header -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div class="px-4 sm:px-6 lg:px-8 pt-2 pb-12 max-w-[1600px] mx-auto">
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
             <div>
-                <h2 class="font-heading font-extrabold text-3xl text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200 dark:shadow-none">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z"/>
-                        </svg>
-                    </div>
-                    Fonctionnalités Premium
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest shadow-sm">
+                        SaaS Master
+                    </span>
+                    <span class="text-slate-300 dark:text-slate-700">•</span>
+                    <span class="text-slate-500 dark:text-slate-400 text-xs font-medium">Administration des Clients</span>
+                </div>
+                <h2 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                    Gestion des Accès Premium
                 </h2>
-                <p class="text-slate-500 dark:text-slate-400 mt-2 max-w-2xl">
-                    Gestion centralisée des accès aux modules avancés pour chaque laboratoire client. 
-                    Les modifications sont appliquées en temps réel.
-                </p>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="flex items-center gap-4">
+                <div class="px-5 py-2.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total Clients</div>
+                    <div class="text-xl font-black text-slate-900 dark:text-white leading-none">{{ clients.length }}</div>
+                </div>
             </div>
         </div>
 
-        <!-- Grid of Clients -->
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <div v-for="client in clients" :key="client.id" 
-                 class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-md transition-shadow">
-                
-                <div class="p-6">
-                    <div class="flex items-start justify-between mb-6">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-xl font-bold text-slate-600 dark:text-slate-300">
-                                {{ client.name.charAt(0) }}
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-bold text-slate-900 dark:text-white">{{ client.name }}</h3>
-                                <div class="flex items-center gap-3 mt-1">
-                                    <span :class="[
-                                        'inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider',
-                                        client.is_active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
-                                    ]">
-                                        {{ client.is_active ? 'Compte Actif' : 'Compte Suspendu' }}
+        <!-- Clients Table Card -->
+        <div class="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-100 dark:border-slate-700/50">
+                            <th class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Laboratoire / Client</th>
+                            <th class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Plan & Statut</th>
+                            <th class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Modules Actifs</th>
+                            <th class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Consommation (SMS/Email)</th>
+                            <th class="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right whitespace-nowrap">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50 dark:divide-slate-700/50">
+                        <tr v-for="client in clients" :key="client.id" class="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors group">
+                            <!-- Client Info -->
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center font-black text-slate-500 dark:text-slate-400 shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                        {{ client.name.charAt(0) }}
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-slate-900 dark:text-white">{{ client.name }}</div>
+                                        <div class="text-[10px] font-medium text-slate-400">ID: #{{ client.id }} • {{ client.users_count }} utilisateur(s)</div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Plan & Status -->
+                            <td class="px-6 py-4 text-center">
+                                <div v-if="client.plan_name" class="inline-flex flex-col items-center">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 text-[9px] font-black uppercase tracking-wider border border-indigo-100 dark:border-indigo-800">
+                                        <em class="ni ni-star-fill"></em>
+                                        {{ client.plan_name }}
                                     </span>
-                                    <span class="text-xs text-slate-400 font-medium">
-                                        {{ client.users_count }} utilisateur(s)
+                                    <span class="text-[9px] font-bold text-slate-400 mt-1">{{ formatNumber(client.subscription_price) }} Ar / mois</span>
+                                </div>
+                                <div v-else>
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400 text-[9px] font-black uppercase tracking-wider">
+                                        Gratuit / Standard
                                     </span>
                                 </div>
-                            </div>
-                        </div>
-                        
-                        <Link 
-                            :href="route('admin.features.edit', client.id)" 
-                            class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all"
-                            title="Configurer"
-                        >
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                            </svg>
-                        </Link>
-                    </div>
+                            </td>
 
-                    <div class="space-y-3">
-                        <div class="text-xs font-bold text-slate-400 uppercase tracking-widest">Fonctionnalités activées</div>
-                        <div class="flex flex-wrap gap-2">
-                            <template v-if="client.enabled_features?.length">
-                                <div v-for="key in client.enabled_features" :key="key" 
-                                     class="inline-flex items-center px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 text-xs font-semibold border border-indigo-100 dark:border-indigo-800/50">
-                                    <svg class="w-3.5 h-3.5 mr-1.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                    </svg>
-                                    {{ availableFeatures[key]?.name || key }}
+                            <!-- Active Modules (Visual Dot Indicators) -->
+                            <td class="px-6 py-4">
+                                <div class="flex items-center justify-center gap-2">
+                                    <div v-for="(config, key) in availableFeatures" :key="key" 
+                                         class="group/feat relative"
+                                         :title="config.name">
+                                        <div :class="[
+                                            'w-8 h-8 rounded-lg flex items-center justify-center transition-all border',
+                                            client.enabled_features?.includes(key) 
+                                                ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-100 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400' 
+                                                : 'bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800 text-slate-300 dark:text-slate-700'
+                                        ]">
+                                            <em :class="[
+                                                'text-lg ni',
+                                                key === 'prescriptions_tracking' ? 'ni-list-thumb' : 
+                                                key === 'notifications_sms_email_validated' ? 'ni-emails' : 
+                                                key === 'journal_decaissement' ? 'ni-report-profit' : 'ni-mail'
+                                            ]"></em>
+                                        </div>
+                                        <!-- Tooltip (Simulated) -->
+                                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900 text-white text-[9px] font-bold rounded opacity-0 invisible group-hover/feat:visible group-hover/feat:opacity-100 transition-all whitespace-nowrap z-20">
+                                            {{ config.name }}
+                                        </div>
+                                    </div>
                                 </div>
-                            </template>
-                            <div v-else class="text-sm text-slate-400 italic py-2">
-                                Aucune fonctionnalité premium activée.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex justify-end">
-                    <Link 
-                        :href="route('admin.features.edit', client.id)" 
-                        class="text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1"
-                    >
-                        Modifier les accès
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                        </svg>
-                    </Link>
-                </div>
-            </div>
+                            </td>
 
-            <!-- Empty State -->
-            <div v-if="!clients?.length" class="col-span-full py-20 text-center bg-white dark:bg-slate-800 rounded-3xl border border-dashed border-slate-300 dark:border-slate-700">
-                <div class="w-20 h-20 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                    </svg>
-                </div>
-                <h3 class="text-lg font-bold text-slate-900 dark:text-white">Aucun client enregistré</h3>
-                <p class="text-slate-500 mt-1">Commencez par ajouter des clients pour gérer leurs accès.</p>
+                            <!-- Consumption -->
+                            <td class="px-6 py-4">
+                                <div class="flex flex-col gap-2 max-w-[120px] mx-auto">
+                                    <div class="flex items-center justify-between text-[9px] font-bold uppercase tracking-tight text-slate-400 leading-none">
+                                        <span>SMS: {{ client.sms_used_this_month }}</span>
+                                        <span class="opacity-50">/{{ client.sms_quota }}</span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 dark:bg-slate-700 h-1 rounded-full overflow-hidden">
+                                        <div class="bg-sky-500 h-full rounded-full" :style="{ width: Math.min(100, (client.sms_used_this_month / client.sms_quota) * 100) + '%' }"></div>
+                                    </div>
+                                    <div class="flex items-center justify-between text-[9px] font-bold uppercase tracking-tight text-slate-400 leading-none mt-1">
+                                        <span>Email: {{ client.email_used_this_month }}</span>
+                                        <span class="opacity-50">/{{ client.email_quota }}</span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 dark:bg-slate-700 h-1 rounded-full overflow-hidden">
+                                        <div class="bg-indigo-500 h-full rounded-full" :style="{ width: Math.min(100, (client.email_used_this_month / client.email_quota) * 100) + '%' }"></div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Actions -->
+                            <td class="px-6 py-4 text-right">
+                                <Link 
+                                    :href="route('admin.features.edit', client.id)" 
+                                    class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-indigo-100 dark:shadow-none active:scale-95"
+                                >
+                                    <em class="ni ni-setting text-sm"></em>
+                                    Configurer
+                                </Link>
+                            </td>
+                        </tr>
+
+                        <!-- Empty State -->
+                        <tr v-if="!clients?.length">
+                            <td colspan="5" class="px-6 py-20 text-center">
+                                <div class="w-16 h-16 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-dashed border-slate-200 dark:border-slate-700">
+                                    <em class="ni ni-users text-3xl text-slate-300"></em>
+                                </div>
+                                <div class="text-sm font-bold text-slate-900 dark:text-white">Aucun client trouvé</div>
+                                <div class="text-xs text-slate-400 mt-1">Vous n'avez pas encore de clients enregistrés dans le système.</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -112,4 +154,8 @@ defineProps({
     clients: Array,
     availableFeatures: Object,
 });
+
+const formatNumber = (num) => {
+    return new Intl.NumberFormat('fr-FR').format(num);
+};
 </script>

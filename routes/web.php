@@ -320,6 +320,7 @@ Route::middleware(['auth', 'role:superadmin,admin,secretaire'])->prefix('admin')
                 Route::get('/', [ClientFeatureController::class, 'index'])->name('index');
                 Route::get('/{client}/edit', [ClientFeatureController::class, 'edit'])->name('edit');
                 Route::put('/{client}', [ClientFeatureController::class, 'update'])->name('update');
+                Route::post('/{client}/assign-premium', [ClientFeatureController::class, 'assignPackPremium'])->name('assign-premium');
             });
 
             // Logs Système
@@ -357,6 +358,9 @@ Route::middleware(['auth', 'role:superadmin,admin,secretaire'])->prefix('admin')
             Route::post('test-email', 'testEmail')->name('test-email');
         });
     });
+
+    // Abonnement et Quotas (Accessible par Admin et Secrétaire)
+    Route::get('subscription', [ClientFeatureController::class, 'subscription'])->name('subscription');
 
     // Traçabilité des patients
     Route::middleware(['permission:corbeille.voir'])->group(function () {

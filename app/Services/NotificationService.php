@@ -35,6 +35,13 @@ class NotificationService
      */
     public function sendSms(Prescription $prescription, string $message): bool
     {
+        $user = Auth::user();
+        $client = $user?->client ?? \App\Models\Client::first();
+
+        if ($client && $client->sms_quota > 0 && $client->sms_used_this_month >= $client->sms_quota) {
+            throw new \Exception("Quota SMS atteint pour ce mois ({$client->sms_quota} SMS).");
+        }
+
         $phone = $prescription->patient->telephone;
 
         if (! $phone) {
@@ -45,6 +52,10 @@ class NotificationService
 
         try {
             $this->smsService->sendSms($phone, $message);
+
+            if ($client) {
+                $client->increment('sms_used_this_month');
+            }
 
             $this->logNotification($prescription, 'sms', $phone, $message, 'envoye');
             $prescription->update(['notified_at' => now()]);
@@ -62,6 +73,13 @@ class NotificationService
      */
     public function sendEmail(Prescription $prescription, string $message, string $lienPdf = ''): bool
     {
+        $user = Auth::user();
+        $client = $user?->client ?? \App\Models\Client::first();
+
+        if ($client && $client->email_quota > 0 && $client->email_used_this_month >= $client->email_quota) {
+            throw new \Exception("Quota Email atteint pour ce mois ({$client->email_quota} Emails).");
+        }
+
         $email = $prescription->patient->email;
 
         if (! $email) {
@@ -72,6 +90,10 @@ class NotificationService
 
         try {
             Mail::to($email)->send(new ResultatDisponible($prescription, $message, $lienPdf));
+
+            if ($client) {
+                $client->increment('email_used_this_month');
+            }
 
             Log::info("Email envoyé à {$email} pour la prescription {$prescription->reference}");
             $this->logNotification($prescription, 'email', $email, $message, 'envoye');

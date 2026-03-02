@@ -18,3 +18,6 @@ Schedule::command('queue:prune-failed --hours=48')->daily();
 
 // Nettoyage des jetons d'authentification expirés
 Schedule::command('auth:clear-resets')->everyFifteenMinutes();
+
+// Renouvellement des abonnements et réinitialisation des quotas mensuels
+Schedule::command('app:renew-subscriptions')->daily();

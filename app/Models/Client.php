@@ -13,6 +13,13 @@ class Client extends Model
     protected $fillable = [
         'name',
         'is_active',
+        'plan_name',
+        'subscription_price',
+        'sms_quota',
+        'email_quota',
+        'sms_used_this_month',
+        'email_used_this_month',
+        'next_renewal_at',
     ];
 
     /**

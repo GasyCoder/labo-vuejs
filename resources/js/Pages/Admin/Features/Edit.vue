@@ -24,20 +24,38 @@
                 <h2 class="font-heading font-extrabold text-3xl text-gray-900 dark:text-white tracking-tight">
                     {{ client.name }}
                 </h2>
-                <p class="text-slate-500 dark:text-slate-400 mt-2 max-w-2xl text-lg">
-                    Les modifications sont <span class="text-indigo-600 dark:text-indigo-400 font-bold underline decoration-2 underline-offset-4 italic">enregistrées automatiquement</span> à chaque clic.
-                </p>
+                <div class="flex items-center gap-4 mt-2">
+                    <p class="text-slate-500 dark:text-slate-400 max-w-2xl text-lg">
+                        Les modifications sont <span class="text-indigo-600 dark:text-indigo-400 font-bold underline decoration-2 underline-offset-4 italic">enregistrées automatiquement</span> à chaque clic.
+                    </p>
+                    <div v-if="client.plan_name" class="flex items-center gap-2 px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg text-xs font-bold">
+                        <em class="ni ni-check-circle"></em>
+                        {{ client.plan_name }}
+                    </div>
+                </div>
             </div>
 
-            <!-- Auto-save indicator -->
-            <div class="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
-                <div class="relative flex items-center justify-center w-3 h-3">
-                    <span v-if="form.processing" class="absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75 animate-ping"></span>
-                    <span :class="['relative inline-flex rounded-full h-2 w-2', form.processing ? 'bg-indigo-500' : 'bg-emerald-500']"></span>
+            <!-- Actions -->
+            <div class="flex items-center gap-4">
+                <button 
+                    @click="assignPremium"
+                    :disabled="form.processing || client.plan_name === 'Pack Premium'"
+                    class="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-2xl font-bold transition-all shadow-lg shadow-indigo-200 dark:shadow-none"
+                >
+                    <em class="ni ni-star-fill"></em>
+                    {{ client.plan_name === 'Pack Premium' ? 'Pack Premium Activé' : 'Activer Pack Premium' }}
+                </button>
+
+                <!-- Auto-save indicator -->
+                <div class="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <div class="relative flex items-center justify-center w-3 h-3">
+                        <span v-if="form.processing" class="absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75 animate-ping"></span>
+                        <span :class="['relative inline-flex rounded-full h-2 w-2', form.processing ? 'bg-indigo-500' : 'bg-emerald-500']"></span>
+                    </div>
+                    <span class="text-xs font-bold uppercase tracking-wider" :class="form.processing ? 'text-indigo-600 animate-pulse' : 'text-slate-500'">
+                        {{ form.processing ? 'Enregistrement...' : 'Sauvegardé' }}
+                    </span>
                 </div>
-                <span class="text-xs font-bold uppercase tracking-wider" :class="form.processing ? 'text-indigo-600 animate-pulse' : 'text-slate-500'">
-                    {{ form.processing ? 'Enregistrement...' : 'Tous les changements sont sauvegardés' }}
-                </span>
             </div>
         </div>
 
@@ -106,8 +124,9 @@
 </template>
 
 <script setup>
-import { useForm, Link } from '@inertiajs/vue3';
+import { useForm, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import Swal from 'sweetalert2';
 
 const props = defineProps({
     client: Object,
@@ -117,6 +136,28 @@ const props = defineProps({
 const form = useForm({
     features: JSON.parse(JSON.stringify(props.features)),
 });
+
+const assignPremium = () => {
+    Swal.fire({
+        title: 'Activer le Pack Premium ?',
+        text: "Cela activera tous les modules premium, 500 SMS et 5 000 Emails pour ce client à 250 000 Ar / mois.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#4f46e5',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Oui, activer',
+        cancelButtonText: 'Annuler'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.post(route('admin.features.assign-premium', props.client.id), {}, {
+                onSuccess: () => {
+                    // Update the local features list to reflect the change
+                    form.features.forEach(f => f.is_enabled = true);
+                }
+            });
+        }
+    });
+};
 
 const autoSave = () => {
     form.put(route('admin.features.update', props.client.id), {
