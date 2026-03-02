@@ -12,8 +12,27 @@
                     Bienvenue, {{ $page.props.auth.user.name }} ({{ $page.props.auth.user.type_name }})
                 </p>
             </div>
-            <div class="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
-                <div class="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-sm shadow-sm text-sm font-medium text-slate-600 dark:text-slate-300">
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Filtre de Période (Admin) -->
+                <div v-if="isAdmin" class="flex items-center gap-2 bg-white dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <select v-model="periodForm.period" @change="handlePeriodChange" class="text-xs border-none bg-white dark:bg-slate-800 focus:ring-0 text-slate-600 dark:text-slate-300 font-medium">
+                        <option value="today" class="bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">Aujourd'hui</option>
+                        <option value="7_days" class="bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">7 derniers jours</option>
+                        <option value="30_days" class="bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">30 derniers jours</option>
+                        <option value="this_month" class="bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">Ce mois</option>
+                        <option value="last_month" class="bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">Mois précédent</option>
+                        <option value="custom" class="bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">Personnalisé</option>
+                    </select>
+                    
+                    <template v-if="periodForm.period === 'custom'">
+                        <div class="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
+                        <input type="date" v-model="periodForm.date_from" @change="applyPeriodFilter" class="text-[10px] border-none bg-white dark:bg-slate-800 p-0 focus:ring-0 text-slate-600 dark:text-slate-300">
+                        <span class="text-[10px] text-slate-400">au</span>
+                        <input type="date" v-model="periodForm.date_to" @change="applyPeriodFilter" class="text-[10px] border-none bg-white dark:bg-slate-800 p-0 focus:ring-0 text-slate-600 dark:text-slate-300">
+                    </template>
+                </div>
+
+                <div class="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm text-sm font-medium text-slate-600 dark:text-slate-300">
                     {{ currentDate }}
                 </div>
             </div>
@@ -24,16 +43,17 @@
         <!-- ========================================================= -->
         <template v-if="isAdmin">
             <div class="grid grid-cols-12 gap-6 mb-6">
-                <!-- Chiffre d'Affaire Mois -->
+                <!-- Chiffre d'Affaire Période -->
                 <div class="flex flex-col col-span-full sm:col-span-6 xl:col-span-4 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700">
                     <div class="px-5 pt-5 pb-4">
                         <header class="flex justify-between items-start mb-2">
-                            <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-2">CA du mois</h2>
+                            <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-2">CA / Période</h2>
                             <div v-if="strategicData?.monthlyComparison" class="flex items-center" :class="strategicData.monthlyComparison.isPositive ? 'text-emerald-500' : 'text-rose-500'">
                                 <span class="text-sm font-medium">{{ Math.abs(strategicData.monthlyComparison.growthPercentage) }}%</span>
                             </div>
                         </header>
                         <div class="text-3xl font-bold text-slate-800 dark:text-slate-100 mr-2">{{ formatN(strategicData?.kpis?.revenueThisMonth) }} <span class="text-sm font-medium text-slate-500">Ar</span></div>
+                        <div class="text-xs text-slate-400 mt-1">{{ strategicData?.kpis?.prescriptionsPeriod }} prescriptions</div>
                     </div>
                 </div>
 
@@ -44,16 +64,18 @@
                             <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-2">Recettes du jour</h2>
                         </header>
                         <div class="text-3xl font-bold text-slate-800 dark:text-slate-100 mr-2">{{ formatN(strategicData?.kpis?.revenueToday) }} <span class="text-sm font-medium text-slate-500">Ar</span></div>
+                        <div class="text-xs text-slate-400 mt-1">{{ strategicData?.kpis?.prescriptionsToday }} prescriptions</div>
                     </div>
                 </div>
 
-                <!-- Impayés globaux -->
+                <!-- Impayés sur la période -->
                 <div class="flex flex-col col-span-full sm:col-span-6 xl:col-span-4 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700">
                     <div class="px-5 pt-5 pb-4">
                         <header class="flex justify-between items-start mb-2">
-                            <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-2">Impayés globaux</h2>
+                            <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-2">Reste à recouvrer (Période)</h2>
                         </header>
                         <div class="text-3xl font-bold text-rose-500 mr-2">{{ formatN(strategicData?.kpis?.unpaidAmount) }} <span class="text-sm font-medium text-slate-500">Ar</span></div>
+                        <div class="text-xs text-slate-400 mt-1">Taux de recouvrement: {{ strategicData?.kpis?.paymentRate }}%</div>
                     </div>
                 </div>
             </div>
@@ -62,7 +84,7 @@
             <div class="grid grid-cols-12 gap-6 mb-6">
                 <div class="col-span-full xl:col-span-8 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700">
                     <header class="px-5 py-4 border-b border-slate-100 dark:border-slate-700">
-                        <h2 class="font-semibold text-slate-800 dark:text-slate-100">Evolution du Revenu (30 jours)</h2>
+                        <h2 class="font-semibold text-slate-800 dark:text-slate-100">Evolution du Revenu</h2>
                     </header>
                     <div class="p-5 h-72">
                         <canvas id="revenueChart"></canvas>
@@ -70,11 +92,43 @@
                 </div>
                 <div class="col-span-full xl:col-span-4 bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700">
                     <header class="px-5 py-4 border-b border-slate-100 dark:border-slate-700">
-                        <h2 class="font-semibold text-slate-800 dark:text-slate-100">Encaissements du mois</h2>
+                        <h2 class="font-semibold text-slate-800 dark:text-slate-100">Répartition Recouvrement</h2>
                     </header>
                     <div class="p-5 h-64 flex justify-center">
                         <canvas id="paymentRatioChart"></canvas>
                     </div>
+                </div>
+            </div>
+
+            <!-- Tableau Recettes par jour -->
+            <div class="bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700 mb-6">
+                <header class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                    <h2 class="font-semibold text-slate-800 dark:text-slate-100">Détail des recettes par jour</h2>
+                </header>
+                <div class="overflow-x-auto">
+                    <table class="table-auto w-full dark:text-slate-300">
+                        <thead class="text-xs uppercase text-slate-400 bg-slate-50 dark:bg-slate-700/20">
+                            <tr>
+                                <th class="px-4 py-3 text-left">Date</th>
+                                <th class="px-4 py-3 text-center">Transactions</th>
+                                <th class="px-4 py-3 text-right">Total Encaissé</th>
+                                <th class="px-4 py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm divide-y divide-slate-100 dark:divide-slate-700">
+                            <tr v-for="row in strategicData.dailyBreakdown" :key="row.date" class="hover:bg-slate-50 dark:hover:bg-slate-700/10 transition-colors">
+                                <td class="px-4 py-3 font-medium text-slate-800 dark:text-slate-100">{{ formatDate(row.date) }}</td>
+                                <td class="px-4 py-3 text-center">{{ row.count }}</td>
+                                <td class="px-4 py-3 text-right font-bold text-emerald-600">{{ formatN(row.total) }} Ar</td>
+                                <td class="px-4 py-3 text-right">
+                                    <Link :href="route('secretaire.journal-caisse', { dateDebut: row.date, dateFin: row.date })" class="text-indigo-500 hover:text-indigo-600 font-medium">Voir détails</Link>
+                                </td>
+                            </tr>
+                            <tr v-if="!strategicData.dailyBreakdown || strategicData.dailyBreakdown.length === 0">
+                                <td colspan="4" class="px-4 py-8 text-center text-slate-400 italic">Aucune recette sur cette période</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </template>
@@ -352,8 +406,37 @@ const filterForm = ref({
     date_to: props.filters?.date_to || '',
 });
 
+const periodForm = ref({
+    period: props.filters?.period || 'this_month',
+    date_from: props.filters?.date_from || '',
+    date_to: props.filters?.date_to || '',
+});
+
+const handlePeriodChange = () => {
+    if (periodForm.value.period !== 'custom') {
+        applyPeriodFilter();
+    }
+};
+
+const applyPeriodFilter = () => {
+    router.get(route('dashboard'), {
+        ...filterForm.value,
+        period: periodForm.value.period,
+        date_from: periodForm.value.date_from,
+        date_to: periodForm.value.date_to,
+    }, {
+        preserveState: true,
+        preserveScroll: true,
+    });
+};
+
 const applyFilters = () => {
-    router.get(route('dashboard'), filterForm.value, {
+    router.get(route('dashboard'), {
+        ...filterForm.value,
+        period: periodForm.value.period,
+        date_from: periodForm.value.date_from,
+        date_to: periodForm.value.date_to,
+    }, {
         preserveState: true,
         preserveScroll: true,
         only: ['stats'],
@@ -362,6 +445,7 @@ const applyFilters = () => {
 
 const resetFilters = () => {
     filterForm.value = { search: '', date_from: '', date_to: '' };
+    periodForm.value = { period: 'this_month', date_from: '', date_to: '' };
     applyFilters();
 };
 
@@ -377,6 +461,11 @@ const currentDate = computed(() => {
     const now = new Date();
     return now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 });
+
+const formatDate = (dateString) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
 
 const formatN = (n) => Number(n || 0).toLocaleString('fr-FR');
 
@@ -399,8 +488,8 @@ const renderCharts = () => {
 
     if (isAdmin.value && props.strategicData) {
         createChart('revenueChart', 'line', {
-            labels: props.strategicData.revenueLast30Days.labels,
-            datasets: [{ label: 'Revenu', data: props.strategicData.revenueLast30Days.series, borderColor: colors.indigo, backgroundColor: 'rgba(99, 102, 241, 0.1)', fill: true, tension: 0.3 }]
+            labels: props.strategicData.revenueTrend.labels,
+            datasets: [{ label: 'Revenu', data: props.strategicData.revenueTrend.series, borderColor: colors.indigo, backgroundColor: 'rgba(99, 102, 241, 0.1)', fill: true, tension: 0.3 }]
         }, { plugins: { legend: { display: false } } });
 
         createChart('paymentRatioChart', 'doughnut', {
