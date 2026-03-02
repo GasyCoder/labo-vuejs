@@ -165,7 +165,9 @@ class PrescriptionController extends Controller
                 'canCreate' => $user->hasPermission('prescriptions.creer'),
                 'canEdit' => $user->hasPermission('prescriptions.modifier'),
                 'canDelete' => $user->hasPermission('prescriptions.supprimer'),
-                'canAccessTrash' => $user->hasPermission('corbeille.acceder'),
+                'canAccessTrash' => $user->hasPermission('corbeille.voir'),
+                'canRestore' => $user->hasPermission('corbeille.restaurer'),
+                'canForceDelete' => $user->hasPermission('corbeille.vider'),
                 'canAccessArchive' => $user->hasPermission('archives.acceder'),
                 'canViewPrescription' => $user->hasPermission('prescriptions.voir'),
             ],
@@ -609,8 +611,8 @@ class PrescriptionController extends Controller
     public function restore(int $id): RedirectResponse
     {
         $user = Auth::user();
-        if (! $user->hasPermission('corbeille.acceder')) {
-            return back()->with('error', 'Vous n\'avez pas la permission d\'accéder à la corbeille.');
+        if (! $user->hasPermission('corbeille.restaurer')) {
+            return back()->with('error', 'Vous n\'avez pas la permission de restaurer des éléments.');
         }
 
         try {
@@ -627,7 +629,7 @@ class PrescriptionController extends Controller
     public function forceDelete(int $id): RedirectResponse
     {
         $user = Auth::user();
-        if (! $user->hasPermission('corbeille.acceder')) {
+        if (! $user->hasPermission('corbeille.vider')) {
             return back()->with('error', 'Vous n\'avez pas la permission de supprimer définitivement.');
         }
 

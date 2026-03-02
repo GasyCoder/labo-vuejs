@@ -122,10 +122,22 @@ class PermissionMap
             'module' => 'Administration',
             'description' => 'Personnaliser les logos et signatures sur les documents PDF',
         ],
-        'corbeille.acceder' => [
-            'label' => 'Accéder à la corbeille',
-            'module' => 'Administration',
-            'description' => 'Restaurer ou supprimer définitivement des éléments',
+
+        // ── Corbeille ──────────────────────────────────────────
+        'corbeille.voir' => [
+            'label' => 'Voir la corbeille',
+            'module' => 'Corbeille',
+            'description' => 'Consulter la liste des éléments supprimés (patients, prescriptions, etc.)',
+        ],
+        'corbeille.restaurer' => [
+            'label' => 'Restaurer des éléments',
+            'module' => 'Corbeille',
+            'description' => 'Récupérer des éléments mis en corbeille',
+        ],
+        'corbeille.vider' => [
+            'label' => 'Supprimer définitivement',
+            'module' => 'Corbeille',
+            'description' => 'Vider la corbeille ou supprimer définitivement des éléments',
         ],
 
         // ── Archives ───────────────────────────────────────────
@@ -157,7 +169,7 @@ class PermissionMap
         'laboratory.manage' => 'laboratoire.gerer',
         'users.manage' => 'utilisateurs.gerer',
         'settings.manage' => 'parametres.gerer',
-        'trash.access' => 'corbeille.acceder',
+        'trash.access' => 'corbeille.voir',
         'archives.access' => 'archives.acceder',
     ];
 

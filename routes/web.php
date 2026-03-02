@@ -1,11 +1,19 @@
 <?php
 
+use App\Http\Controllers\Admin\ApiSettingController;
 use App\Http\Controllers\Admin\ClientFeatureController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\LogController;
+use App\Http\Controllers\Admin\PdfBrandingController;
+use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\PrescriptionExportController;
 use App\Http\Controllers\Admin\PrescriptionTrackingController;
-use App\Http\Controllers\Admin\ApiSettingController;
+use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\TracePatientController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\ArchivesController;
 use App\Http\Controllers\Biologiste\BiologisteController;
+use App\Http\Controllers\Biologiste\PrescriptionPdfController;
 use App\Http\Controllers\JournalCaisseController;
 use App\Http\Controllers\JournalDecaissementController;
 use App\Http\Controllers\Laboratoire\AnalyseController;
@@ -15,25 +23,17 @@ use App\Http\Controllers\Laboratoire\BacterieFamilleController;
 use App\Http\Controllers\Laboratoire\ExamenController;
 use App\Http\Controllers\Laboratoire\PrelevementController;
 use App\Http\Controllers\Laboratoire\TypeController;
-use App\Http\Controllers\Secretaire\PatientController;
-use App\Http\Controllers\Admin\PermissionController;
-use App\Http\Controllers\Secretaire\PrescriptionController;
-use App\Http\Controllers\Admin\PrescriptionExportController;
-use App\Http\Controllers\Biologiste\PrescriptionPdfController;
 use App\Http\Controllers\PrescriptionWorkspaceController;
 use App\Http\Controllers\ResultatController;
-use App\Http\Controllers\Technicien\ResultatController as TechnicienResultatController;
 use App\Http\Controllers\RoleWorklistController;
 use App\Http\Controllers\Secretaire\NotificationController;
 use App\Http\Controllers\Secretaire\PaiementController;
+use App\Http\Controllers\Secretaire\PatientController;
 use App\Http\Controllers\Secretaire\PrescripteurController;
+use App\Http\Controllers\Secretaire\PrescriptionController;
 use App\Http\Controllers\Secretaire\Tubes\GestionEtiquettesController;
-use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Technicien\ResultatController as TechnicienResultatController;
 use App\Http\Controllers\Technicien\TechnicienController;
-use App\Http\Controllers\Admin\TracePatientController;
-use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\PdfBrandingController;
-use App\Http\Controllers\Admin\LogController;
 use App\Models\Prescription;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Illuminate\Support\Facades\Auth;
@@ -42,38 +42,34 @@ use Illuminate\Support\Facades\Route;
 // ============================================
 // ROUTES PUBLIQUES ET REDIRECTIONS
 // ============================================
-Route::redirect('/', '/login')->name('home');
 Route::redirect('/register', '/login')->name('register.redirect');
 
+// Redirection intelligente selon le rôle si on arrive sur la racine
 Route::get('/', function () {
-    if (Auth::check()) {
-        $user = Auth::user();
+    $user = Auth::user();
 
-        // Si l'utilisateur a la permission dashboard, on l'envoie là-bas
-        if ($user->hasPermission('dashboard.voir')) {
-            return redirect()->route('dashboard');
-        }
-
-        if ($user->hasRole('biologiste')) {
-            return redirect()->route('biologiste.analyse.index');
-        }
-        if ($user->hasRole('technicien')) {
-            return redirect()->route('technicien.index');
-        }
-        if ($user->hasRole('secretaire')) {
-            return redirect()->route('secretaire.prescription.index');
-        }
-
+    // Si l'utilisateur a la permission dashboard, on l'envoie là-bas
+    if ($user->hasPermission('dashboard.voir')) {
         return redirect()->route('dashboard');
     }
 
-    return redirect('/login');
-})->name('root');
+    if ($user->hasRole('biologiste')) {
+        return redirect()->route('biologiste.analyse.index');
+    }
+    if ($user->hasRole('technicien')) {
+        return redirect()->route('technicien.index');
+    }
+    if ($user->hasRole('secretaire')) {
+        return redirect()->route('secretaire.prescription.index');
+    }
+
+    return redirect()->route('dashboard');
+})->middleware(['auth'])->name('root');
 
 // ============================================
 // ROUTES COMMUNES (TOUS LES UTILISATEURS CONNECTÉS)
 // ============================================
-Route::middleware(['auth', 'verified', 'role.redirect'])->group(function () {
+Route::middleware(['auth', 'role.redirect'])->group(function () {
     // Dashboard principal
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -91,7 +87,7 @@ Route::middleware(['auth', 'verified', 'role.redirect'])->group(function () {
 // ============================================
 // ROUTES SPÉCIFIQUES AUX SECRÉTAIRES
 // ============================================
-Route::middleware(['auth', 'verified', 'role:secretaire,superadmin,admin'])->prefix('secretaire')->name('secretaire.')->group(function () {
+Route::middleware(['auth', 'role:secretaire,superadmin,admin'])->prefix('secretaire')->name('secretaire.')->group(function () {
     Route::controller(PrescriptionController::class)->group(function () {
         Route::get('prescription/listes', 'index')->name('prescription.index');
         Route::get('nouvel-prescription', 'create')->name('prescription.create');
@@ -173,7 +169,7 @@ Route::middleware(['auth', 'verified', 'role:secretaire,superadmin,admin'])->pre
 // ============================================ Résultats PDF prescriptions
 // ROUTES SPÉCIFIQUES AUX SECRETAIRES, BIOLOGISTES
 // ============================================
-Route::middleware(['auth', 'verified', 'role:secretaire,biologiste,superadmin,admin'])->prefix('laboratoire')->name('laboratoire.')->group(function () {
+Route::middleware(['auth', 'role:secretaire,biologiste,superadmin,admin'])->prefix('laboratoire')->name('laboratoire.')->group(function () {
     Route::get('/prescription/{prescription}/pdf', [PrescriptionPdfController::class, 'show'])
         ->name('prescription.pdf');
 });
@@ -181,7 +177,7 @@ Route::middleware(['auth', 'verified', 'role:secretaire,biologiste,superadmin,ad
 // ============================================
 // ROUTES SPÉCIFIQUES AUX TECHNICIENS
 // ============================================
-Route::middleware(['auth', 'verified', 'role:technicien,superadmin,admin'])->prefix('technicien')->name('technicien.')->group(function () {
+Route::middleware(['auth', 'role:technicien,superadmin,admin'])->prefix('technicien')->name('technicien.')->group(function () {
     Route::get('traitement', [TechnicienController::class, 'index'])->name('index');
     Route::post('prescription/{id}/start', [TechnicienController::class, 'startAnalysis'])->name('prescription.start');
     Route::post('prescription/{id}/continue', [TechnicienController::class, 'continueAnalysis'])->name('prescription.continue');
@@ -213,7 +209,7 @@ Route::middleware(['auth', 'verified', 'role:technicien,superadmin,admin'])->pre
 // ============================================
 // ROUTES SPÉCIFIQUES AUX BIOLOGISTES
 // ============================================
-Route::middleware(['auth', 'verified', 'role:biologiste,superadmin,admin'])->prefix('biologiste')->name('biologiste.')->group(function () {
+Route::middleware(['auth', 'role:biologiste,superadmin,admin'])->prefix('biologiste')->name('biologiste.')->group(function () {
     // Routes principales
     Route::get('/analyse-valide', [RoleWorklistController::class, 'biologiste'])->name('analyse.index');
     Route::get('/prescription/{prescription}', [PrescriptionWorkspaceController::class, 'showBiologiste'])->name('prescription.show');
@@ -227,7 +223,7 @@ Route::middleware(['auth', 'verified', 'role:biologiste,superadmin,admin'])->pre
 // ============================================
 // ROUTES SPÉCIFIQUES AUX ADMINS, BIOLOGISTES, TECHNICIENS
 // ============================================
-Route::middleware(['auth', 'verified', 'role:technicien,biologiste,superadmin,admin'])->prefix('laboratoire')->name('laboratoire.')->group(function () {
+Route::middleware(['auth', 'role:technicien,biologiste,superadmin,admin'])->prefix('laboratoire')->name('laboratoire.')->group(function () {
     // Section Analyses
     Route::prefix('analyses')->name('analyses.')->group(function () {
         Route::controller(ExamenController::class)->group(function () {
@@ -288,7 +284,7 @@ Route::middleware(['auth', 'verified', 'role:technicien,biologiste,superadmin,ad
 // ============================================
 // ROUTES SPÉCIFIQUES AUX ADMINS
 // ============================================
-Route::middleware(['auth', 'verified', 'role:superadmin,admin,secretaire'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:superadmin,admin,secretaire'])->prefix('admin')->name('admin.')->group(function () {
     // Utilisateurs - Réservé aux admins
     Route::middleware(['role:superadmin,admin'])->controller(UserController::class)->group(function () {
         Route::get('utilisateurs', 'index')->name('users');
@@ -306,7 +302,7 @@ Route::middleware(['auth', 'verified', 'role:superadmin,admin,secretaire'])->pre
 
     // ==== ROUTES STRICTEMENT RÉSERVÉES AU SUPER ADMIN ET ADMIN ====
     Route::middleware(['role:superadmin,admin'])->group(function () {
-        
+
         // Uniquement Super Admin
         Route::middleware(['role:superadmin'])->group(function () {
             // Permissions
@@ -314,7 +310,7 @@ Route::middleware(['auth', 'verified', 'role:superadmin,admin,secretaire'])->pre
                 Route::get('permissions', 'index')->name('permissions');
                 Route::put('permissions', 'update')->name('permissions.update');
             });
-            
+
             // Administration des fonctionnalités Premium SaaS
             Route::prefix('features')->name('features.')->group(function () {
                 Route::get('/', [ClientFeatureController::class, 'index'])->name('index');
@@ -346,7 +342,7 @@ Route::middleware(['auth', 'verified', 'role:superadmin,admin,secretaire'])->pre
 
         // Configuration API (Email & SMS) - Page séparée
         Route::get('api-settings', [ApiSettingController::class, 'index'])->name('api-settings');
-        
+
         Route::controller(ApiSettingController::class)->prefix('api-settings')->name('api-settings.')->group(function () {
             Route::post('email', 'updateEmailConfig')->name('update-email');
             Route::post('sms', 'storeSmsProvider')->name('store-sms');
@@ -359,7 +355,7 @@ Route::middleware(['auth', 'verified', 'role:superadmin,admin,secretaire'])->pre
     });
 
     // Traçabilité des patients
-    Route::middleware(['permission:corbeille.acceder'])->group(function () {
+    Route::middleware(['permission:corbeille.voir'])->group(function () {
         Route::get('trace-patients', [TracePatientController::class, 'index'])->name('trace-patients');
         Route::controller(TracePatientController::class)->prefix('trace-patients')->name('trace-patient.')->group(function () {
             Route::post('patients/{id}/restore', 'restorePatientById')->name('patients.restore');

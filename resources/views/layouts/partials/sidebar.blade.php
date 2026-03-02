@@ -221,7 +221,7 @@
                         </li>
                     @endif
 
-                    @if(auth()->check() && auth()->user()->hasPermission('corbeille.acceder'))
+                    @if(auth()->check() && auth()->user()->hasPermission('corbeille.voir'))
                         @php
                             $countTrace = \App\Models\Patient::onlyTrashed()->count()
                                 + \App\Models\Prescription::onlyTrashed()->count();
@@ -374,7 +374,7 @@
                     @endif
 
                     {{-- Section Administration --}}
-                    @if(auth()->check() && auth()->user()->hasAnyPermission(['utilisateurs.gerer', 'parametres.gerer']))
+                    @if(auth()->check() && auth()->user()->hasAnyPermission(['utilisateurs.gerer', 'parametres.gerer', 'branding.gerer']))
                         <li
                             class="relative first:pt-1 pt-6 pb-1 px-4 before:absolute before:h-px before:w-full before:start-0 before:top-1/2 before:bg-gray-200 dark:before:bg-gray-900 first:before:hidden before:opacity-0 group-[&.is-compact:not(.has-hover)]/sidebar:before:opacity-100">
                             <h6
@@ -382,6 +382,7 @@
                                 Administration</h6>
                         </li>
 
+                        @if(auth()->user()->hasPermission('utilisateurs.gerer'))
                         <li class="nk-menu-item py-0{{ request()->routeIs('admin.users') ? ' active' : '' }} group/item">
                             <a href="{{ route('admin.users') }}"
                                 class="nk-menu-link flex relative items-center align-middle py-2 ps-5 pe-8 font-heading font-bold tracking-snug group">
@@ -394,7 +395,9 @@
                                     class="group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0 flex-grow-1 inline-block whitespace-nowrap transition-all duration-300 text-sm text-slate-600 dark:text-slate-500 group-[.active]/item:text-primary-500 group-hover:text-primary-500">Utilisateurs</span>
                             </a>
                         </li>
+                        @endif
 
+                        @if(auth()->user()->hasRole('superadmin'))
                         <li
                             class="nk-menu-item py-0{{ request()->routeIs('admin.permissions') ? ' active' : '' }} group/item">
                             <a href="{{ route('admin.permissions') }}"
@@ -408,9 +411,9 @@
                                     class="group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0 flex-grow-1 inline-block whitespace-nowrap transition-all duration-300 text-sm text-slate-600 dark:text-slate-500 group-[.active]/item:text-primary-500 group-hover:text-primary-500">Permissions</span>
                             </a>
                         </li>
-                    @endif
+                        @endif
 
-                    @if(auth()->check() && auth()->user()->hasPermission('parametres.gerer'))
+                        @if(auth()->user()->hasPermission('parametres.gerer'))
                         <li class="nk-menu-item py-0{{ request()->routeIs('admin.settings') ? ' active' : '' }} group/item">
                             <a href="{{ route('admin.settings') }}"
                                 class="nk-menu-link flex relative items-center align-middle py-2 ps-5 pe-8 font-heading font-bold tracking-snug group">
@@ -423,6 +426,34 @@
                                     class="group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0 flex-grow-1 inline-block whitespace-nowrap transition-all duration-300 text-sm text-slate-600 dark:text-slate-500 group-[.active]/item:text-primary-500 group-hover:text-primary-500">Paramètres</span>
                             </a>
                         </li>
+                        <li class="nk-menu-item py-0{{ request()->routeIs('admin.api-settings') ? ' active' : '' }} group/item">
+                            <a href="{{ route('admin.api-settings') }}"
+                                class="nk-menu-link flex relative items-center align-middle py-2 ps-5 pe-8 font-heading font-bold tracking-snug group">
+                                <span
+                                    class="font-normal tracking-normal w-8 inline-flex flex-grow-0 flex-shrink-0 text-slate-400 group-[.active]/item:text-primary-500 group-hover:text-primary-500">
+                                    <em
+                                        class="text-xl leading-none text-current transition-all duration-300 icon ni ni-link-group"></em>
+                                </span>
+                                <span
+                                    class="group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0 flex-grow-1 inline-block whitespace-nowrap transition-all duration-300 text-sm text-slate-600 dark:text-slate-500 group-[.active]/item:text-primary-500 group-hover:text-primary-500">API & Notifications</span>
+                            </a>
+                        </li>
+                        @endif
+
+                        @if(auth()->user()->hasPermission('branding.gerer'))
+                        <li class="nk-menu-item py-0{{ request()->routeIs('admin.pdf-branding') ? ' active' : '' }} group/item">
+                            <a href="{{ route('admin.pdf-branding') }}"
+                                class="nk-menu-link flex relative items-center align-middle py-2 ps-5 pe-8 font-heading font-bold tracking-snug group">
+                                <span
+                                    class="font-normal tracking-normal w-8 inline-flex flex-grow-0 flex-shrink-0 text-slate-400 group-[.active]/item:text-primary-500 group-hover:text-primary-500">
+                                    <em
+                                        class="text-xl leading-none text-current transition-all duration-300 icon ni ni-file-pdf"></em>
+                                </span>
+                                <span
+                                    class="group-[&.is-compact:not(.has-hover)]/sidebar:opacity-0 flex-grow-1 inline-block whitespace-nowrap transition-all duration-300 text-sm text-slate-600 dark:text-slate-500 group-[.active]/item:text-primary-500 group-hover:text-primary-500">Branding PDF</span>
+                            </a>
+                        </li>
+                        @endif
                     @endif
                 </ul>
             </div>
