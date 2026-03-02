@@ -48,11 +48,12 @@ class SettingController extends Controller
      */
     public function updateEnterprise(Request $request)
     {
-        // Debug pour voir ce qui arrive
-        \Illuminate\Support\Facades\Log::info('Update Enterprise Request:', [
+        // Debug pour voir ce qui arrive au tout début
+        \Illuminate\Support\Facades\Log::info('Update Enterprise Request Start', [
+            'user_id' => auth()->id(),
+            'files' => $request->allFiles(),
             'has_logo' => $request->hasFile('logo'),
             'has_favicon' => $request->hasFile('favicon'),
-            'all_data' => $request->except(['logo', 'favicon']),
         ]);
 
         $validated = $request->validate([

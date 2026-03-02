@@ -36,6 +36,7 @@ const onSignatureChange = (e) => {
 
 const submit = () => {
     form.post(route('admin.pdf-branding.store'), {
+        forceFormData: true,
         onSuccess: () => {
             Swal.fire({
                 icon: 'success',
