@@ -142,12 +142,6 @@ class DashboardController extends Controller
             ];
         }
 
-        \Illuminate\Support\Facades\Log::info('DASHBOARD_PAYLOAD_DEBUG', [
-            'finances_stats' => $stats['finances'],
-            'kpis' => $strategicData['kpis'] ?? 'N/A',
-            'user_type' => $user->type,
-        ]);
-
         return Inertia::render('Dashboard', [
             'stats' => $stats,
             'roleData' => $roleData,
@@ -223,13 +217,6 @@ class DashboardController extends Controller
         try {
             $recettesJour = Paiement::where('status', true)->whereDate('date_paiement', $today)->sum('montant') ?? 0;
             $recettesMois = Paiement::where('status', true)->where('date_paiement', '>=', $startOfMonth)->sum('montant') ?? 0;
-
-            \Illuminate\Support\Facades\Log::debug('Dashboard Finance Stats:', [
-                'recetteJour' => $recettesJour,
-                'caMois' => $recettesMois,
-                'today' => $today->toDateString(),
-                'startOfMonth' => $startOfMonth->toDateString(),
-            ]);
 
             return [
                 'recettes_jour' => $recettesJour,
