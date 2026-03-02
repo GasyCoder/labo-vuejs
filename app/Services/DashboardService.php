@@ -22,7 +22,7 @@ class DashboardService
 
         // Revenue calculations
         $revenueToday = Paiement::where('status', true)->whereDate('date_paiement', $today)->sum('montant') ?? 0;
-        $revenueThisMonth = Paiement::where('status', true)->whereDate('date_paiement', '>=', $startOfMonth)->sum('montant') ?? 0;
+        $revenueThisMonth = Paiement::where('status', true)->where('date_paiement', '>=', $startOfMonth)->sum('montant') ?? 0;
 
         // We fetch prescriptions over the current month and calculate exactly to avoid SQL inconsistencies
         // and handle specific package pricing / promotions gracefully
@@ -34,7 +34,7 @@ class DashboardService
             return $p->montant_total;
         });
 
-        $totalPaidMonth = Paiement::where('status', true)->whereDate('date_paiement', '>=', $startOfMonth)->sum('montant') ?? 0;
+        $totalPaidMonth = Paiement::where('status', true)->where('date_paiement', '>=', $startOfMonth)->sum('montant') ?? 0;
         $unpaidAmount = max(0, $totalExpectedMonth - $totalPaidMonth);
 
         // Calculate a rough payment rate for the month
@@ -170,7 +170,7 @@ class DashboardService
             return $p->montant_total;
         });
 
-        $totalPaidMonth = Paiement::where('status', true)->whereDate('date_paiement', '>=', $startOfMonth)->sum('montant') ?? 0;
+        $totalPaidMonth = Paiement::where('status', true)->where('date_paiement', '>=', $startOfMonth)->sum('montant') ?? 0;
         $unpaidMonth = max(0, $expectedQueryMonth - $totalPaidMonth);
 
         return [
@@ -188,7 +188,7 @@ class DashboardService
         $lastMonthStart = Carbon::now()->subMonth()->startOfMonth();
         $lastMonthEnd = Carbon::now()->subMonth()->endOfMonth();
 
-        $revenueThisMonth = Paiement::where('status', true)->whereDate('date_paiement', '>=', $thisMonthStart)->sum('montant');
+        $revenueThisMonth = Paiement::where('status', true)->where('date_paiement', '>=', $thisMonthStart)->sum('montant');
         $revenueLastMonth = Paiement::where('status', true)->whereBetween('date_paiement', [$lastMonthStart, $lastMonthEnd])->sum('montant');
 
         $growth = 0;
