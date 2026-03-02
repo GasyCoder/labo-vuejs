@@ -12,33 +12,35 @@ class DashboardService
     /**
      * Build the KPIs for the top section (Admin/Superadmin only)
      */
-    public function getKpis()
+    public function getKpis($startDate = null, $endDate = null)
     {
         $today = Carbon::today();
-        $startOfMonth = Carbon::now()->startOfMonth();
+        $startDate = $startDate ? Carbon::parse($startDate)->startOfDay() : Carbon::now()->startOfMonth();
+        $endDate = $endDate ? Carbon::parse($endDate)->endOfDay() : Carbon::now()->endOfDay();
 
-        // Prescriptions count
+        // Prescriptions count (for selected period)
+        $prescriptionsCount = Prescription::whereBetween('created_at', [$startDate, $endDate])->count();
         $prescriptionsToday = Prescription::whereDate('created_at', $today)->count();
 
         // Revenue calculations
         $revenueToday = Paiement::where('status', true)->whereDate('date_paiement', $today)->sum('montant') ?? 0;
-        $revenueThisMonth = Paiement::where('status', true)->where('date_paiement', '>=', $startOfMonth)->sum('montant') ?? 0;
+        $revenuePeriod = Paiement::where('status', true)->whereBetween('date_paiement', [$startDate, $endDate])->sum('montant') ?? 0;
 
-        // We fetch prescriptions over the current month and calculate exactly to avoid SQL inconsistencies
+        // We fetch prescriptions over the period and calculate exactly to avoid SQL inconsistencies
         // and handle specific package pricing / promotions gracefully
-        $monthlyPrescriptions = Prescription::with(['analyses.parent', 'tubes'])
-            ->where('created_at', '>=', $startOfMonth)
+        $periodPrescriptions = Prescription::with(['analyses.parent', 'tubes'])
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->get();
 
-        $totalExpectedMonth = $monthlyPrescriptions->sum(function ($p) {
+        $totalExpectedPeriod = $periodPrescriptions->sum(function ($p) {
             return $p->montant_total;
         });
 
-        $totalPaidMonth = Paiement::where('status', true)->where('date_paiement', '>=', $startOfMonth)->sum('montant') ?? 0;
-        $unpaidAmount = max(0, $totalExpectedMonth - $totalPaidMonth);
+        $totalPaidPeriod = Paiement::where('status', true)->whereBetween('date_paiement', [$startDate, $endDate])->sum('montant') ?? 0;
+        $unpaidAmount = max(0, $totalExpectedPeriod - $totalPaidPeriod);
 
-        // Calculate a rough payment rate for the month
-        $paymentRate = $totalExpectedMonth > 0 ? min(100, round(($totalPaidMonth / $totalExpectedMonth) * 100, 2)) : 0;
+        // Calculate a rough payment rate for the period
+        $paymentRate = $totalExpectedPeriod > 0 ? min(100, round(($totalPaidPeriod / $totalExpectedPeriod) * 100, 2)) : 0;
 
         // Pending analyses count
         $pendingAnalyses = DB::table('prescription_analyse as pa')
@@ -55,8 +57,9 @@ class DashboardService
 
         return [
             'prescriptionsToday' => $prescriptionsToday,
+            'prescriptionsPeriod' => $prescriptionsCount,
             'revenueToday' => $revenueToday,
-            'revenueThisMonth' => $revenueThisMonth,
+            'revenueThisMonth' => $revenuePeriod, // Kept key name for frontend compatibility
             'unpaidAmount' => $unpaidAmount,
             'pendingAnalyses' => $pendingAnalyses,
             'paymentRate' => $paymentRate,
@@ -64,18 +67,19 @@ class DashboardService
     }
 
     /**
-     * Line chart: Revenue last 30 days
+     * Line chart: Revenue trend for period
      */
-    public function getRevenueLast30Days()
+    public function getRevenueTrend($startDate = null, $endDate = null)
     {
-        $last30Days = Carbon::now()->subDays(29)->startOfDay();
+        $startDate = $startDate ? Carbon::parse($startDate)->startOfDay() : Carbon::now()->subDays(29)->startOfDay();
+        $endDate = $endDate ? Carbon::parse($endDate)->endOfDay() : Carbon::now()->endOfDay();
 
         $revenues = Paiement::select(
             DB::raw('DATE(date_paiement) as date'),
             DB::raw('SUM(montant) as total')
         )
             ->where('status', true)
-            ->where('date_paiement', '>=', $last30Days)
+            ->whereBetween('date_paiement', [$startDate, $endDate])
             ->groupBy('date')
             ->orderBy('date', 'asc')
             ->get();
@@ -83,9 +87,10 @@ class DashboardService
         $labels = [];
         $data = [];
 
-        // Fill empty days for continuous graph
-        for ($i = 0; $i < 30; $i++) {
-            $date = Carbon::now()->subDays(29 - $i)->format('Y-m-d');
+        $diffInDays = $startDate->diffInDays($endDate);
+
+        for ($i = 0; $i <= $diffInDays; $i++) {
+            $date = $startDate->copy()->addDays($i)->format('Y-m-d');
             $row = $revenues->firstWhere('date', $date);
 
             $labels[] = Carbon::parse($date)->format('d/m');
@@ -99,17 +104,18 @@ class DashboardService
     }
 
     /**
-     * Bar chart: Prescriptions per day (last 30 days)
+     * Bar chart: Prescriptions per day for period
      */
-    public function getPrescriptionsLast30Days()
+    public function getPrescriptionsTrend($startDate = null, $endDate = null)
     {
-        $last30Days = Carbon::now()->subDays(29)->startOfDay();
+        $startDate = $startDate ? Carbon::parse($startDate)->startOfDay() : Carbon::now()->subDays(29)->startOfDay();
+        $endDate = $endDate ? Carbon::parse($endDate)->endOfDay() : Carbon::now()->endOfDay();
 
         $prescriptions = Prescription::select(
             DB::raw('DATE(created_at) as date'),
             DB::raw('COUNT(id) as total')
         )
-            ->where('created_at', '>=', $last30Days)
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->groupBy('date')
             ->orderBy('date', 'asc')
             ->get();
@@ -117,9 +123,10 @@ class DashboardService
         $labels = [];
         $data = [];
 
-        // Fill empty days
-        for ($i = 0; $i < 30; $i++) {
-            $date = Carbon::now()->subDays(29 - $i)->format('Y-m-d');
+        $diffInDays = $startDate->diffInDays($endDate);
+
+        for ($i = 0; $i <= $diffInDays; $i++) {
+            $date = $startDate->copy()->addDays($i)->format('Y-m-d');
             $row = $prescriptions->firstWhere('date', $date);
 
             $labels[] = Carbon::parse($date)->format('d/m');
@@ -133,49 +140,47 @@ class DashboardService
     }
 
     /**
-     * Pie chart: Top 5 analyses performed overall or this month
+     * Get daily breakdown of revenue
      */
-    public function getTopAnalyses()
+    public function getDailyRevenueBreakdown($startDate = null, $endDate = null)
     {
-        $startOfMonth = Carbon::now()->startOfMonth();
+        $startDate = $startDate ? Carbon::parse($startDate)->startOfDay() : Carbon::now()->startOfMonth();
+        $endDate = $endDate ? Carbon::parse($endDate)->endOfDay() : Carbon::now()->endOfDay();
 
-        $top = DB::table('prescription_analyse as pa')
-            ->join('analyses as a', 'pa.analyse_id', '=', 'a.id')
-            ->join('prescriptions as p', 'pa.prescription_id', '=', 'p.id')
-            ->where('p.created_at', '>=', $startOfMonth)
-            ->select('a.designation', DB::raw('COUNT(pa.analyse_id) as count'))
-            ->groupBy('a.designation')
-            ->orderByDesc('count')
-            ->limit(5)
+        return Paiement::select(
+            DB::raw('DATE(date_paiement) as date'),
+            DB::raw('SUM(montant) as total'),
+            DB::raw('COUNT(id) as count')
+        )
+            ->where('status', true)
+            ->whereBetween('date_paiement', [$startDate, $endDate])
+            ->groupBy('date')
+            ->orderBy('date', 'desc')
             ->get();
-
-        return [
-            'labels' => $top->pluck('designation'),
-            'series' => $top->pluck('count'),
-        ];
     }
 
     /**
-     * Doughnut chart: Paid vs Unpaid ratio current month
+     * Doughnut chart: Paid vs Unpaid ratio for period
      */
-    public function getPaymentRatio()
+    public function getPaymentRatio($startDate = null, $endDate = null)
     {
-        $startOfMonth = Carbon::now()->startOfMonth();
+        $startDate = $startDate ? Carbon::parse($startDate)->startOfDay() : Carbon::now()->startOfMonth();
+        $endDate = $endDate ? Carbon::parse($endDate)->endOfDay() : Carbon::now()->endOfDay();
 
-        $monthlyPrescriptions = Prescription::with(['analyses.parent', 'tubes'])
-            ->where('created_at', '>=', $startOfMonth)
+        $periodPrescriptions = Prescription::with(['analyses.parent', 'tubes'])
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->get();
 
-        $expectedQueryMonth = $monthlyPrescriptions->sum(function ($p) {
+        $expectedQueryPeriod = $periodPrescriptions->sum(function ($p) {
             return $p->montant_total;
         });
 
-        $totalPaidMonth = Paiement::where('status', true)->where('date_paiement', '>=', $startOfMonth)->sum('montant') ?? 0;
-        $unpaidMonth = max(0, $expectedQueryMonth - $totalPaidMonth);
+        $totalPaidPeriod = Paiement::where('status', true)->whereBetween('date_paiement', [$startDate, $endDate])->sum('montant') ?? 0;
+        $unpaidPeriod = max(0, $expectedQueryPeriod - $totalPaidPeriod);
 
         return [
             'labels' => ['Payé', 'Reste à payer'],
-            'series' => [(float) $totalPaidMonth, (float) $unpaidMonth],
+            'series' => [(float) $totalPaidPeriod, (float) $unpaidPeriod],
         ];
     }
 
@@ -203,6 +208,29 @@ class DashboardService
             'revenueLastMonth' => $revenueLastMonth,
             'growthPercentage' => round($growth, 2),
             'isPositive' => $growth >= 0,
+        ];
+    }
+
+    /**
+     * Pie chart: Top 5 analyses performed this month
+     */
+    public function getTopAnalyses()
+    {
+        $startOfMonth = Carbon::now()->startOfMonth();
+
+        $top = DB::table('prescription_analyse as pa')
+            ->join('analyses as a', 'pa.analyse_id', '=', 'a.id')
+            ->join('prescriptions as p', 'pa.prescription_id', '=', 'p.id')
+            ->where('p.created_at', '>=', $startOfMonth)
+            ->select('a.designation', DB::raw('COUNT(pa.analyse_id) as count'))
+            ->groupBy('a.designation')
+            ->orderByDesc('count')
+            ->limit(5)
+            ->get();
+
+        return [
+            'labels' => $top->pluck('designation'),
+            'series' => $top->pluck('count'),
         ];
     }
 
