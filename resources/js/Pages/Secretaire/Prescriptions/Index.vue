@@ -4,7 +4,7 @@ import { Link, router, usePage } from '@inertiajs/vue3';
 import debounce from 'lodash/debounce';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
-import Swal from 'sweetalert2';
+import ConfirmModal from '@/Components/ConfirmModal.vue';
 
 const page = usePage();
 
@@ -61,154 +61,15 @@ watch(() => [form.tab, form.search, form.payment], () => {
     selectedIds.value = [];
 });
 
-const handleBulkDelete = () => {
-    if (selectedIds.value.length === 0) return;
-
-    Swal.fire({
-        title: 'Suppression groupée',
-        text: `Êtes-vous sûr de vouloir mettre ${selectedIds.value.length} prescriptions en corbeille ?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#64748b',
-        confirmButtonText: 'Oui, supprimer tout',
-        cancelButtonText: 'Annuler'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            router.post(route('secretaire.prescription.bulkDestroy'), {
-                ids: selectedIds.value
-            }, {
-                onSuccess: () => {
-                    selectedIds.value = [];
-                    Swal.fire('Supprimé !', 'Les prescriptions ont été mises en corbeille.', 'success');
-                }
-            });
-        }
-    });
-};
-
-const handleBulkArchive = () => {
-    if (selectedIds.value.length === 0) return;
-
-    Swal.fire({
-        title: 'Archivage groupé',
-        text: `Voulez-vous archiver les ${selectedIds.value.length} prescriptions sélectionnées ? Seules les prescriptions validées seront archivées.`,
-        icon: 'info',
-        showCancelButton: true,
-        confirmButtonColor: '#64748b',
-        cancelButtonColor: '#94a3b8',
-        confirmButtonText: 'Oui, archiver',
-        cancelButtonText: 'Annuler'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            router.post(route('secretaire.prescription.bulkArchive'), {
-                ids: selectedIds.value
-            }, {
-                onSuccess: () => {
-                    selectedIds.value = [];
-                    Swal.fire('Archivé !', 'Les prescriptions éligibles ont été archivées.', 'success');
-                }
-            });
-        }
-    });
-};
-
-const handleBulkRestore = () => {
-    if (selectedIds.value.length === 0) return;
-
-    Swal.fire({
-        title: 'Restauration groupée',
-        text: `Voulez-vous restaurer les ${selectedIds.value.length} prescriptions sélectionnées ?`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#f59e0b',
-        cancelButtonColor: '#94a3b8',
-        confirmButtonText: 'Oui, restaurer',
-        cancelButtonText: 'Annuler'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            router.post(route('secretaire.prescription.bulkRestore'), {
-                ids: selectedIds.value
-            }, {
-                onSuccess: () => {
-                    selectedIds.value = [];
-                    Swal.fire('Restauré !', 'Les prescriptions ont été restaurées.', 'success');
-                }
-            });
-        }
-    });
-};
-
-const handleBulkForceDelete = () => {
-    if (selectedIds.value.length === 0) return;
-
-    Swal.fire({
-        title: 'Suppression définitive groupée',
-        text: `ATTENTION : Vous allez supprimer définitivement ${selectedIds.value.length} prescriptions. Cette action est irréversible !`,
-        icon: 'error',
-        showCancelButton: true,
-        confirmButtonColor: '#dc2626',
-        cancelButtonColor: '#94a3b8',
-        confirmButtonText: 'Oui, supprimer définitivement',
-        cancelButtonText: 'Annuler'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            router.post(route('secretaire.prescription.bulkForceDelete'), {
-                ids: selectedIds.value
-            }, {
-                onSuccess: () => {
-                    selectedIds.value = [];
-                    Swal.fire('Supprimé !', 'Les prescriptions ont été supprimées définitivement.', 'success');
-                }
-            });
-        }
-    });
-};
-
-const handleBulkTogglePayment = (status) => {
-    if (selectedIds.value.length === 0) return;
-
-    const action = status ? 'marquer comme payés' : 'marquer comme non payés';
-    Swal.fire({
-        title: 'Paiement groupé',
-        text: `Voulez-vous ${action} les ${selectedIds.value.length} prescriptions sélectionnées ?`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: status ? '#10b981' : '#f43f5e',
-        cancelButtonColor: '#94a3b8',
-        confirmButtonText: 'Oui, confirmer',
-        cancelButtonText: 'Annuler'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            router.post(route('secretaire.prescription.bulkTogglePayment'), {
-                ids: selectedIds.value,
-                status: status
-            }, {
-                onSuccess: () => {
-                    selectedIds.value = [];
-                    Swal.fire('Succès !', 'Les statuts de paiement ont été mis à jour.', 'success');
-                }
-            });
-        }
-    });
-};
-
-// Legacy computed kept for template backward compat
-const canCreate = computed(() => perm.value.canCreate);
-const canAccessTrash = computed(() => perm.value.canAccessTrash);
-const canRestore = computed(() => perm.value.canRestore);
-const canForceDelete = computed(() => perm.value.canForceDelete);
-
 // Modal state
 const modal = reactive({
     show: false,
-    type: '', // delete, restore, permanentDelete, archive, unarchive, pay, unpay
-    prescriptionId: null,
+    type: '', // delete, restore, permanentDelete, archive, unarchive, pay, unpay, bulkDelete, bulkRestore, bulkForceDelete, bulkArchive, bulkPay, bulkUnpay
+    prescriptionId: null, // Used for single actions
     processing: false,
 });
 
-const openModal = (type, id) => {
-    if (type === 'notify') return; // handled by openNotifyModal now
+const openModal = (type, id = null) => {
     modal.type = type;
     modal.prescriptionId = id;
     modal.show = true;
@@ -224,32 +85,154 @@ const closeModal = () => {
 
 const modalConfig = computed(() => {
     const configs = {
-        delete: { title: 'Mettre en corbeille ?', desc: 'Cette action peut etre annulee depuis la corbeille.', color: 'red', btn: 'Supprimer', routeName: 'secretaire.prescription.destroy', method: 'delete' },
-        restore: { title: 'Restaurer cette prescription ?', desc: 'Elle sera remise dans la liste active.', color: 'amber', btn: 'Restaurer', routeName: 'secretaire.prescription.restore', method: 'post' },
-        permanentDelete: { title: 'Supprimer definitivement ?', desc: 'Cette action est irreversible.', color: 'red', btn: 'Supprimer', routeName: 'secretaire.prescription.forceDelete', method: 'delete' },
-        archive: { title: 'Archiver cette prescription ?', desc: 'Elle sera deplacee vers les archives.', color: 'slate', btn: 'Archiver', routeName: 'secretaire.prescription.archive', method: 'post' },
-        unarchive: { title: 'Desarchiver cette prescription ?', desc: 'Elle sera remise dans les prescriptions validees.', color: 'amber', btn: 'Desarchiver', routeName: 'secretaire.prescription.unarchive', method: 'post' },
-        pay: { title: 'Confirmer le paiement', desc: 'Marquer comme paye ? La date sera enregistree automatiquement.', color: 'emerald', btn: 'Confirmer', routeName: 'secretaire.prescription.togglePayment', method: 'post' },
-        unpay: { title: 'Annuler le paiement', desc: 'Marquer comme non paye ? La date de paiement sera supprimee.', color: 'red', btn: 'Confirmer', routeName: 'secretaire.prescription.togglePayment', method: 'post' },
+        // Single actions
+        delete: { 
+            title: 'Mettre en corbeille ?', 
+            desc: 'Cette action peut être annulée depuis la corbeille.', 
+            variant: 'danger', 
+            btn: 'Supprimer', 
+            routeName: 'secretaire.prescription.destroy', 
+            method: 'delete',
+            isBulk: false
+        },
+        restore: { 
+            title: 'Restaurer cette prescription ?', 
+            desc: 'Elle sera remise dans la liste active.', 
+            variant: 'warning', 
+            btn: 'Restaurer', 
+            routeName: 'secretaire.prescription.restore', 
+            method: 'post',
+            isBulk: false
+        },
+        permanentDelete: { 
+            title: 'Supprimer définitivement ?', 
+            desc: 'Cette action est irréversible.', 
+            variant: 'danger', 
+            btn: 'Supprimer', 
+            routeName: 'secretaire.prescription.forceDelete', 
+            method: 'delete',
+            isBulk: false
+        },
+        archive: { 
+            title: 'Archiver cette prescription ?', 
+            desc: 'Elle sera déplacée vers les archives.', 
+            variant: 'slate', 
+            btn: 'Archiver', 
+            routeName: 'secretaire.prescription.archive', 
+            method: 'post',
+            isBulk: false
+        },
+        pay: { 
+            title: 'Confirmer le paiement', 
+            desc: 'Marquer comme payé ? La date sera enregistrée automatiquement.', 
+            variant: 'success', 
+            btn: 'Confirmer', 
+            routeName: 'secretaire.prescription.togglePayment', 
+            method: 'post',
+            isBulk: false
+        },
+        unpay: { 
+            title: 'Annuler le paiement', 
+            desc: 'Marquer comme non payé ? La date de paiement sera supprimée.', 
+            variant: 'danger', 
+            btn: 'Confirmer', 
+            routeName: 'secretaire.prescription.togglePayment', 
+            method: 'post',
+            isBulk: false
+        },
+        
+        // Bulk actions
+        bulkDelete: { 
+            title: 'Suppression groupée', 
+            desc: `Êtes-vous sûr de vouloir mettre ${selectedIds.value.length} prescriptions en corbeille ?`, 
+            variant: 'danger', 
+            btn: 'Oui, supprimer tout', 
+            routeName: 'secretaire.prescription.bulkDestroy', 
+            method: 'post',
+            isBulk: true
+        },
+        bulkRestore: { 
+            title: 'Restauration groupée', 
+            desc: `Voulez-vous restaurer les ${selectedIds.value.length} prescriptions sélectionnées ?`, 
+            variant: 'warning', 
+            btn: 'Oui, restaurer', 
+            routeName: 'secretaire.prescription.bulkRestore', 
+            method: 'post',
+            isBulk: true
+        },
+        bulkForceDelete: { 
+            title: 'Suppression définitive groupée', 
+            desc: `ATTENTION : Vous allez supprimer définitivement ${selectedIds.value.length} prescriptions. Cette action est irréversible !`, 
+            variant: 'danger', 
+            btn: 'Oui, supprimer définitivement', 
+            routeName: 'secretaire.prescription.bulkForceDelete', 
+            method: 'post',
+            isBulk: true
+        },
+        bulkArchive: { 
+            title: 'Archivage groupée', 
+            desc: `Voulez-vous archiver les ${selectedIds.value.length} prescriptions sélectionnées ? Seules les prescriptions validées seront archivées.`, 
+            variant: 'slate', 
+            btn: 'Oui, archiver', 
+            routeName: 'secretaire.prescription.bulkArchive', 
+            method: 'post',
+            isBulk: true
+        },
+        bulkPay: { 
+            title: 'Paiement groupé', 
+            desc: `Voulez-vous marquer comme payés les ${selectedIds.value.length} prescriptions sélectionnées ?`, 
+            variant: 'success', 
+            btn: 'Oui, confirmer', 
+            routeName: 'secretaire.prescription.bulkTogglePayment', 
+            method: 'post',
+            params: { status: true },
+            isBulk: true
+        },
+        bulkUnpay: { 
+            title: 'Paiement groupé', 
+            desc: `Voulez-vous marquer comme non payés les ${selectedIds.value.length} prescriptions sélectionnées ?`, 
+            variant: 'danger', 
+            btn: 'Oui, confirmer', 
+            routeName: 'secretaire.prescription.bulkTogglePayment', 
+            method: 'post',
+            params: { status: false },
+            isBulk: true
+        }
     };
     return configs[modal.type] || {};
 });
 
 const executeModalAction = () => {
-    if (!modal.prescriptionId || modal.processing) return;
-    modal.processing = true;
     const cfg = modalConfig.value;
-    const url = route(cfg.routeName, modal.prescriptionId);
+    if (modal.processing) return;
+    
+    modal.processing = true;
+    
+    let url;
+    let data = {};
+    
+    if (cfg.isBulk) {
+        url = route(cfg.routeName);
+        data = { ids: selectedIds.value, ...(cfg.params || {}) };
+    } else {
+        if (!modal.prescriptionId) return;
+        url = route(cfg.routeName, modal.prescriptionId);
+    }
+
     const opts = {
         preserveScroll: true,
-        onSuccess: () => closeModal(),
+        onSuccess: () => {
+            if (cfg.isBulk) selectedIds.value = [];
+            closeModal();
+        },
         onError: () => { modal.processing = false; },
         onFinish: () => { modal.processing = false; },
     };
+
     if (cfg.method === 'delete') {
         router.delete(url, opts);
     } else {
-        router[cfg.method](url, {}, opts);
+        router.post(url, data, opts);
     }
 };
 
@@ -393,10 +376,10 @@ const initials = (p) => {
 const truncate = (v, max) => { const t = String(v || ''); return t.length <= max ? t : `${t.slice(0, max)}...`; };
 const number = (v) => Number(v || 0).toLocaleString('fr-FR');
 
-const btnColor = (color) => {
-    const map = { red: 'bg-red-600 hover:bg-red-700', amber: 'bg-amber-600 hover:bg-amber-700', slate: 'bg-slate-600 hover:bg-slate-700', emerald: 'bg-emerald-600 hover:bg-emerald-700' };
-    return map[color] || 'bg-primary-600 hover:bg-primary-700';
-};
+const canCreate = computed(() => perm.value.canCreate);
+const canAccessTrash = computed(() => perm.value.canAccessTrash);
+const canRestore = computed(() => perm.value.canRestore);
+const canForceDelete = computed(() => perm.value.canForceDelete);
 </script>
 
 <template>
@@ -419,7 +402,7 @@ const btnColor = (color) => {
                     <template v-if="form.tab === 'actives' || form.tab === 'valide'">
                         <button 
                             v-if="perm.canDelete"
-                            @click="handleBulkDelete"
+                            @click="openModal('bulkDelete')"
                             class="inline-flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition-all hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
                         >
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
@@ -427,7 +410,7 @@ const btnColor = (color) => {
                         </button>
                         <button 
                             v-if="form.tab === 'valide' && perm.canAccessArchive"
-                            @click="handleBulkArchive"
+                            @click="openModal('bulkArchive')"
                             class="inline-flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm font-bold text-slate-600 transition-all hover:bg-slate-100 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
                         >
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
@@ -437,7 +420,7 @@ const btnColor = (color) => {
                         <!-- Payment Actions -->
                         <button 
                             v-if="perm.canEdit"
-                            @click="handleBulkTogglePayment(true)"
+                            @click="openModal('bulkPay')"
                             class="inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-600 transition-all hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/30"
                         >
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -445,7 +428,7 @@ const btnColor = (color) => {
                         </button>
                         <button 
                             v-if="perm.canEdit"
-                            @click="handleBulkTogglePayment(false)"
+                            @click="openModal('bulkUnpay')"
                             class="inline-flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm font-bold text-amber-600 transition-all hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30"
                         >
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2.25m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -457,7 +440,7 @@ const btnColor = (color) => {
                     <template v-else-if="form.tab === 'deleted'">
                         <button 
                             v-if="perm.canRestore"
-                            @click="handleBulkRestore"
+                            @click="openModal('bulkRestore')"
                             class="inline-flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm font-bold text-amber-600 transition-all hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30"
                         >
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/></svg>
@@ -465,7 +448,7 @@ const btnColor = (color) => {
                         </button>
                         <button 
                             v-if="perm.canForceDelete"
-                            @click="handleBulkForceDelete"
+                            @click="openModal('bulkForceDelete')"
                             class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-sm font-bold text-white transition-all hover:bg-red-700 shadow-sm"
                         >
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
@@ -811,7 +794,7 @@ const btnColor = (color) => {
                                             <button v-if="perm.canRestore" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/40 transition-colors" title="Restaurer" @click="openModal('restore', prescription.id)">
                                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/></svg>
                                             </button>
-                                            <button v-if="perm.canForceDelete" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 transition-colors" title="Supprimer definitivement" @click="openModal('permanentDelete', prescription.id)">
+                                            <button v-if="perm.canForceDelete" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 transition-colors" title="Supprimer définitivement" @click="openModal('permanentDelete', prescription.id)">
                                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
                                             </button>
                                         </template>
@@ -827,8 +810,8 @@ const btnColor = (color) => {
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375H8.25" />
                                             </svg>
                                         </div>
-                                        <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Aucune prescription trouvee</p>
-                                        <p v-if="form.search" class="mt-1 text-xs text-slate-400 dark:text-slate-500">Essayez de modifier vos criteres de recherche</p>
+                                        <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Aucune prescription trouvée</p>
+                                        <p v-if="form.search" class="mt-1 text-xs text-slate-400 dark:text-slate-500">Essayez de modifier vos critères de recherche</p>
                                     </div>
                                 </td>
                             </tr>
@@ -914,7 +897,7 @@ const btnColor = (color) => {
                                     <button v-if="perm.canRestore" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/40 transition-colors" title="Restaurer" @click="openModal('restore', prescription.id)">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/></svg>
                                     </button>
-                                    <button v-if="perm.canForceDelete" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 transition-colors" title="Supprimer definitivement" @click="openModal('permanentDelete', prescription.id)">
+                                    <button v-if="perm.canForceDelete" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 transition-colors" title="Supprimer définitivement" @click="openModal('permanentDelete', prescription.id)">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
                                     </button>
                                 </template>
@@ -923,14 +906,14 @@ const btnColor = (color) => {
                     </div>
 
                     <div v-if="prescriptions.data.length === 0" class="py-12 text-center">
-                        <p class="text-sm text-slate-500">Aucune prescription trouvee</p>
+                        <p class="text-sm text-slate-500">Aucune prescription trouvée</p>
                     </div>
                 </div>
 
                 <div v-if="prescriptions.links && prescriptions.links.length > 3" class="border-t border-slate-100 bg-slate-50/50 px-4 py-3 dark:border-slate-700/50 dark:bg-slate-800/50">
                     <div class="flex flex-col items-center justify-between gap-3 sm:flex-row">
                         <p class="text-xs text-slate-500 dark:text-slate-400">
-                            <span class="font-medium">{{ prescriptions.from || 0 }}</span> a
+                            <span class="font-medium">{{ prescriptions.from || 0 }}</span> à
                             <span class="font-medium">{{ prescriptions.to || 0 }}</span> sur
                             <span class="font-medium">{{ prescriptions.total || 0 }}</span>
                         </p>
@@ -940,39 +923,17 @@ const btnColor = (color) => {
             </div>
         </div>
 
-        <!-- Confirmation Modal -->
-        <Teleport to="body">
-            <div v-if="modal.show" class="fixed inset-0 z-[60] overflow-y-auto">
-                <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" @click="closeModal"></div>
-                <div class="flex min-h-full items-center justify-center p-4">
-                    <div class="relative w-full max-sm rounded-2xl bg-white shadow-xl dark:bg-slate-800" @click.stop>
-                        <div class="p-6 text-center">
-                            <div class="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full" :class="{
-                                'bg-red-100 dark:bg-red-900/30': modalConfig.color === 'red',
-                                'bg-amber-100 dark:bg-amber-900/30': modalConfig.color === 'amber',
-                                'bg-slate-100 dark:bg-slate-700': modalConfig.color === 'slate',
-                                'bg-emerald-100 dark:bg-emerald-900/30': modalConfig.color === 'emerald',
-                            }">
-                                <svg class="h-5 w-5" :class="{
-                                    'text-red-600 dark:text-red-400': modalConfig.color === 'red',
-                                    'text-amber-600 dark:text-amber-400': modalConfig.color === 'amber',
-                                    'text-slate-600 dark:text-slate-400': modalConfig.color === 'slate',
-                                    'text-emerald-600 dark:text-emerald-400': modalConfig.color === 'emerald',
-                                }" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                                </svg>
-                            </div>
-                            <h3 class="mb-1 text-lg font-semibold text-slate-900 dark:text-white">{{ modalConfig.title }}</h3>
-                            <p class="text-sm text-slate-500 dark:text-slate-400">{{ modalConfig.desc }}</p>
-                        </div>
-                        <div class="flex gap-3 px-6 pb-6">
-                            <button type="button" class="flex-1 rounded-lg bg-slate-100 px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600" @click="closeModal">Annuler</button>
-                            <button type="button" class="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors" :class="btnColor(modalConfig.color)" :disabled="modal.processing" @click="executeModalAction">{{ modal.processing ? '...' : modalConfig.btn }}</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </Teleport>
+        <!-- Reusable Confirmation Modal -->
+        <ConfirmModal
+            :show="modal.show"
+            :title="modalConfig.title"
+            :description="modalConfig.description || modalConfig.desc"
+            :confirm-text="modalConfig.btn"
+            :variant="modalConfig.variant"
+            :processing="modal.processing"
+            @close="closeModal"
+            @confirm="executeModalAction"
+        />
 
         <!-- Notification Modal (SMS / Email) -->
         <Teleport to="body">

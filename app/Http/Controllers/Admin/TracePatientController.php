@@ -51,6 +51,8 @@ class TracePatientController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
+        $user = auth()->user();
+
         return Inertia::render('Admin/TracePatient', [
             'patients' => $patients,
             'prescriptions' => $prescriptions,
@@ -59,6 +61,10 @@ class TracePatientController extends Controller
                 'tab' => $activeTab,
             ],
             'stats' => $this->getStats(),
+            'permissions' => [
+                'canRestore' => $user->hasPermission('corbeille.restaurer'),
+                'canForceDelete' => $user->hasPermission('corbeille.vider'),
+            ],
         ]);
     }
 
@@ -94,6 +100,10 @@ class TracePatientController extends Controller
 
     public function restorePatientById($id)
     {
+        if (! auth()->user()->hasPermission('corbeille.restaurer')) {
+            return redirect()->back()->with('error', 'Vous n\'avez pas la permission de restaurer des éléments.');
+        }
+
         $patient = Patient::onlyTrashed()->findOrFail($id);
         $patient->restore();
 
@@ -102,6 +112,10 @@ class TracePatientController extends Controller
 
     public function forceDeletePatientById($id)
     {
+        if (! auth()->user()->hasPermission('corbeille.vider')) {
+            return redirect()->back()->with('error', 'Vous n\'avez pas la permission de supprimer définitivement des éléments.');
+        }
+
         $patient = Patient::onlyTrashed()->findOrFail($id);
         $patient->forceDeleteWithRelations();
 
@@ -110,6 +124,10 @@ class TracePatientController extends Controller
 
     public function restoreMultiplePatients(Request $request)
     {
+        if (! auth()->user()->hasPermission('corbeille.restaurer')) {
+            return redirect()->back()->with('error', 'Vous n\'avez pas la permission de restaurer des éléments.');
+        }
+
         $validated = $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'integer',
@@ -122,6 +140,10 @@ class TracePatientController extends Controller
 
     public function forceDeleteMultiplePatients(Request $request)
     {
+        if (! auth()->user()->hasPermission('corbeille.vider')) {
+            return redirect()->back()->with('error', 'Vous n\'avez pas la permission de supprimer définitivement des éléments.');
+        }
+
         $validated = $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'integer',
@@ -138,6 +160,10 @@ class TracePatientController extends Controller
 
     public function emptyPatientsTrash()
     {
+        if (! auth()->user()->hasPermission('corbeille.vider')) {
+            return redirect()->back()->with('error', 'Vous n\'avez pas la permission de vider la corbeille.');
+        }
+
         $patients = Patient::onlyTrashed()->get();
 
         foreach ($patients as $patient) {
@@ -151,6 +177,10 @@ class TracePatientController extends Controller
 
     public function restorePrescriptionById($id)
     {
+        if (! auth()->user()->hasPermission('corbeille.restaurer')) {
+            return redirect()->back()->with('error', 'Vous n\'avez pas la permission de restaurer des éléments.');
+        }
+
         $prescription = Prescription::onlyTrashed()->findOrFail($id);
         $prescription->restore();
 
@@ -159,6 +189,10 @@ class TracePatientController extends Controller
 
     public function forceDeletePrescriptionById($id)
     {
+        if (! auth()->user()->hasPermission('corbeille.vider')) {
+            return redirect()->back()->with('error', 'Vous n\'avez pas la permission de supprimer définitivement des éléments.');
+        }
+
         $prescription = Prescription::onlyTrashed()->findOrFail($id);
         $prescription->forceDeleteWithRelations();
 
@@ -167,6 +201,10 @@ class TracePatientController extends Controller
 
     public function restoreMultiplePrescriptions(Request $request)
     {
+        if (! auth()->user()->hasPermission('corbeille.restaurer')) {
+            return redirect()->back()->with('error', 'Vous n\'avez pas la permission de restaurer des éléments.');
+        }
+
         $validated = $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'integer',
@@ -179,6 +217,10 @@ class TracePatientController extends Controller
 
     public function forceDeleteMultiplePrescriptions(Request $request)
     {
+        if (! auth()->user()->hasPermission('corbeille.vider')) {
+            return redirect()->back()->with('error', 'Vous n\'avez pas la permission de supprimer définitivement des éléments.');
+        }
+
         $validated = $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'integer',
@@ -195,6 +237,10 @@ class TracePatientController extends Controller
 
     public function emptyPrescriptionsTrash()
     {
+        if (! auth()->user()->hasPermission('corbeille.vider')) {
+            return redirect()->back()->with('error', 'Vous n\'avez pas la permission de vider la corbeille.');
+        }
+
         $prescriptions = Prescription::onlyTrashed()->get();
 
         foreach ($prescriptions as $prescription) {
