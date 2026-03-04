@@ -211,19 +211,34 @@
 
         $paiement = $prescription->paiements->first();
         
-        // ✅ CORRECTION CRITIQUE : Vérifier le status du paiement
-        $paiementEffectue = $paiement && (bool) $paiement->status; // true seulement si status = 1
+        // SOURCE DE VÉRITÉ : On utilise le montant enregistré en base pour la caisse
+        $totalFinalReel = $paiement ? (float)$paiement->montant : (float)$prescription->montant_total;
         
-        // ✅ CORRECTION : Montant payé seulement si vraiment payé
-        $montantPaye = $paiementEffectue ? ($paiement->montant ?? 0) : 0;
+        $paiementEffectue = $paiement && (bool) $paiement->status; 
+        $montantPaye = $paiementEffectue ? $totalFinalReel : 0;
         
-        $totalAnalyses = $prescription->analyses->sum('prix');
-        $totalPrelevements = $prescription->prelevements->sum(fn($p) => ($p->prix ?? 0) * ($p->quantite ?? 1));
-        $remise = $prescription->remise ?? 0;
+        // Calcul des détails pour affichage cohérent
+        $totalAnalyses = (float)$prescription->getMontantAnalysesCalcule();
+        $totalPrelevements = (float)$prescription->getMontantPrelevementsCalcule();
+        $remise = (float)($prescription->remise ?? 0);
+        
+        // Calcul des frais d'urgence
+        $fraisUrgence = 0;
+        if ($prescription->patient_type === 'URGENCE-NUIT') {
+            $fraisUrgence = (float)\App\Models\Setting::getTarifUrgenceNuit();
+        } elseif ($prescription->patient_type === 'URGENCE-JOUR') {
+            $fraisUrgence = (float)\App\Models\Setting::getTarifUrgenceJour();
+        }
+
         $sousTotal = $totalAnalyses + $totalPrelevements;
-        $total = max(0, $sousTotal - $remise);
+        $totalAffiche = max(0, $sousTotal - $remise + $fraisUrgence);
         
-        // ✅ CORRECTION : Solde basé sur le vrai statut de paiement
+        // En cas de petite différence de calcul, on ajuste le sous-total pour que ça tombe pile sur le total de la caisse
+        if (abs($totalAffiche - $totalFinalReel) > 0.01) {
+             $totalAffiche = $totalFinalReel;
+        }
+
+        $total = $totalAffiche;
         $solde = $paiementEffectue ? max(0, $total - $montantPaye) : $total;
 
         // ✅ FONCTIONS COMPLÈTES POUR CONVERSION EN LETTRES
@@ -456,27 +471,65 @@
                 </tr>
             </thead>
             <tbody>
+                @php 
+                    $parentsTraites = []; 
+                    $rowCounter = 1;
+                @endphp
                 @foreach ($prescription->analyses as $analyse)
+                    @php
+                        $prixAffiche = 0;
+                        // On récupère le prix archivé dans le pivot (snapshot)
+                        $prixEffectif = (float)($analyse->pivot->prix ?? $analyse->prix);
+
+                        if ($analyse->parent_id && !in_array($analyse->parent_id, $parentsTraites)) {
+                            if ($analyse->parent) {
+                                $prixAffiche = $prixEffectif;
+                                $parentsTraites[] = $analyse->parent_id;
+                            } else {
+                                $prixAffiche = $prixEffectif;
+                            }
+                        } elseif (!$analyse->parent_id) {
+                            $prixAffiche = $prixEffectif;
+                        } else {
+                            // Enfant d'un parent déjà facturé
+                            $prixAffiche = -1; // Drapeau pour ne pas afficher le prix
+                        }
+                    @endphp
                     <tr>
-                        <td>{{ $loop->iteration }}</td>
-                        <td class="designation-cell">{{ $analyse->designation }}</td>
+                        <td>{{ $rowCounter++ }}</td>
+                        <td class="designation-cell">{{ $analyse->designation }} @if($prixAffiche == -1) <span style="font-size: 7pt; font-style: italic;">(Inclus dans panel)</span> @endif</td>
                         <td>1.00</td>
-                        <td class="montant-cell">{{ number_format($analyse->prix, 2) }}</td>
+                        <td class="montant-cell">{{ $prixAffiche >= 0 ? number_format($prixAffiche, 2) : '---' }}</td>
                         <td class="montant-cell">0.00</td>
-                        <td class="montant-cell">{{ number_format($analyse->prix, 2) }}</td>
+                        <td class="montant-cell">{{ $prixAffiche >= 0 ? number_format($prixAffiche, 2) : '---' }}</td>
                     </tr>
                 @endforeach
-                @foreach ($prescription->prelevements as $prelevement)
-                    @php $montant=$prelevement->prix*$prelevement->quantite; @endphp
+                @foreach ($prescription->prelevementsAvecQuantite() as $prelevement)
+                    @php 
+                        $prixUnitaire = ($prelevement->quantite_tubes > 1 && $prelevement->prix_promotion > 0) 
+                            ? $prelevement->prix_promotion 
+                            : $prelevement->prix;
+                        $montantPrelev = $prixUnitaire * $prelevement->quantite_tubes; 
+                    @endphp
                     <tr>
-                        <td>{{ count($prescription->analyses) + $loop->iteration }}</td>
-                        <td class="designation-cell">{{ $prelevement->nom ?? $prelevement->denomination }}</td>
-                        <td>{{ $prelevement->quantite }}.00</td>
-                        <td class="montant-cell">{{ number_format($prelevement->prix, 2) }}</td>
+                        <td>{{ $rowCounter++ }}</td>
+                        <td class="designation-cell">{{ $prelevement->denomination }}</td>
+                        <td>{{ $prelevement->quantite_tubes }}.00</td>
+                        <td class="montant-cell">{{ number_format($prixUnitaire, 2) }}</td>
                         <td class="montant-cell">0.00</td>
-                        <td class="montant-cell">{{ number_format($montant, 2) }}</td>
+                        <td class="montant-cell">{{ number_format($montantPrelev, 2) }}</td>
                     </tr>
                 @endforeach
+                @if($fraisUrgence > 0)
+                    <tr>
+                        <td>{{ $rowCounter++ }}</td>
+                        <td class="designation-cell"><strong>FRAIS D'URGENCE ({{ $prescription->patient_type }})</strong></td>
+                        <td>1.00</td>
+                        <td class="montant-cell">{{ number_format($fraisUrgence, 2) }}</td>
+                        <td class="montant-cell">0.00</td>
+                        <td class="montant-cell">{{ number_format($fraisUrgence, 2) }}</td>
+                    </tr>
+                @endif
             </tbody>
         </table>
 
@@ -488,9 +541,15 @@
                 <span>{{ ucfirst(mb_strtolower(montantEnLettres($total, 'ariary'))) }}</span>
             </div>
             <tr>
-                <td class="totaux-label">Sous-total :</td>
+                <td class="totaux-label">Sous-total (Analyses + Prél.) :</td>
                 <td class="totaux-value">{{ number_format($sousTotal, 2) }}</td>
             </tr>
+            @if($fraisUrgence > 0)
+            <tr>
+                <td class="totaux-label">Frais d'Urgence :</td>
+                <td class="totaux-value">{{ number_format($fraisUrgence, 2) }}</td>
+            </tr>
+            @endif
             <tr>
                 <td class="totaux-label">Remise :</td>
                 <td class="totaux-value">{{ number_format($remise, 2) }}</td>

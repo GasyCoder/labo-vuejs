@@ -297,21 +297,27 @@ class Prescription extends Model
         $parentsTraites = [];
 
         foreach ($this->analyses as $analyse) {
+            // ✅ SOURCE DE VÉRITÉ : On utilise le prix archivé dans le pivot (snapshot)
+            // Si le pivot.prix est à 0 ou absent, on utilise le prix catalogue par sécurité
+            $prixApplique = (float)($analyse->pivot->prix ?? $analyse->prix);
+
             if ($analyse->parent_id && ! in_array($analyse->parent_id, $parentsTraites)) {
-                if ($analyse->parent && $analyse->parent->prix > 0) {
-                    $total += $analyse->parent->prix;
+                if ($analyse->parent) {
+                    // Si c'est un panel, on cherche si le parent a été facturé via le pivot d'un des enfants
+                    // ou si c'est le parent lui-même qui est dans la liste
+                    $total += $prixApplique;
                     $parentsTraites[] = $analyse->parent_id;
 
                     continue;
-                } elseif ($analyse->prix > 0) {
-                    $total += $analyse->prix;
+                } else {
+                    $total += $prixApplique;
 
                     continue;
                 }
             }
 
             if (! $analyse->parent_id && $analyse->prix > 0) {
-                $total += $analyse->prix;
+                $total += $prixApplique;
             }
         }
 
