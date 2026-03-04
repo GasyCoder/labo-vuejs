@@ -25,9 +25,24 @@ class Patient extends Model
         'statut',
     ];
 
+    // On retire le cast 'date' car la colonne est un string dans la migration
+    // et cela cause des problèmes de formatage lors du save.
     protected $casts = [
-        'date_naissance' => 'date', // ✅ Cast automatique en Carbon
+        'statut' => 'string',
     ];
+
+    /**
+     * Mutateur pour s'assurer que la date est toujours au format Y-m-d
+     */
+    public function setDateNaissanceAttribute($value)
+    {
+        if (empty($value)) {
+            $this->attributes['date_naissance'] = null;
+        } else {
+            // On s'assure de ne stocker que la partie date Y-m-d
+            $this->attributes['date_naissance'] = Carbon::parse($value)->format('Y-m-d');
+        }
+    }
 
     // ✅ CONSTANTES POUR LES CIVILITÉS
     const CIVILITES = [

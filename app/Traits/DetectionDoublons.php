@@ -121,7 +121,7 @@ trait DetectionDoublons
             'nom' => $this->nom,
             'prenom' => $this->prenom,
             'civilite' => $this->civilite,
-            'date_naissance' => $this->date_naissance?->format('Y-m-d'),
+            'date_naissance' => $this->date_naissance,
             'age_formate' => $this->age_formate,
             'telephone' => $this->telephone,
             'email' => $this->email,

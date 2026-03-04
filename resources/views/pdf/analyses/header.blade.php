@@ -23,7 +23,7 @@
                 @if($prescription->patient?->date_naissance)
                     <span class="info-label">Date de naissance :</span>
                     <span class="text-fine">
-                        {{ $prescription->patient->date_naissance->format('d-m-Y') }}
+                        {{ \Carbon\Carbon::parse($prescription->patient->date_naissance)->format('d-m-Y') }}
                         @if(!empty($prescription->age))
                             ({{ $prescription->age }} {{ $prescription->unite_age ?? '' }})
                         @endif

@@ -153,8 +153,8 @@ class PatientController extends Controller
             'telephone' => $patient->telephone,
             'email' => $patient->email,
             'adresse' => $patient->adresse,
-            'date_naissance' => $patient->date_naissance?->format('Y-m-d'),
-            'date_naissance_formatee' => $patient->date_naissance?->format('d/m/Y'),
+            'date_naissance' => $patient->date_naissance,
+            'date_naissance_formatee' => $patient->date_naissance ? Carbon::parse($patient->date_naissance)->format('d/m/Y') : null,
             'created_at' => $patient->created_at->toISOString(),
             'created_at_formatted' => $patient->created_at->format('d/m/Y à H:i'),
         ];
