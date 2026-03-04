@@ -67,10 +67,10 @@
                                     :key="civ"
                                     type="button"
                                     class="rounded-lg border px-2 py-2 text-xs font-bold transition-all"
-                                    :class="patientForm.civilite === civ 
+                                    :class="form.patient.civilite === civ 
                                         ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400' 
                                         : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400'"
-                                    @click="patientForm.civilite = civ"
+                                    @click="form.patient.civilite = civ"
                                 >
                                     {{ civ }}
                                 </button>
@@ -79,32 +79,32 @@
 
                         <div class="space-y-1.5">
                             <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Nom de famille <span class="text-red-500">*</span></label>
-                            <input v-model="patientForm.nom" type="text" class="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 text-sm font-bold focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900" placeholder="Ex: RAKOTO">
+                            <input v-model="form.patient.nom" type="text" class="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 text-sm font-bold focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900" placeholder="Ex: RAKOTO">
                         </div>
 
                         <div class="space-y-1.5">
                             <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Prenoms</label>
-                            <input v-model="patientForm.prenom" type="text" class="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 text-sm font-bold focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900" placeholder="Ex: Jean Paul">
+                            <input v-model="form.patient.prenom" type="text" class="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 text-sm font-bold focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900" placeholder="Ex: Jean Paul">
                         </div>
 
                         <div class="space-y-1.5">
                             <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Date de Naissance</label>
-                            <input v-model="patientForm.date_naissance" type="date" class="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 text-sm font-bold focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900" @change="syncAgeFromBirthDate">
+                            <input v-model="form.patient.date_naissance" type="date" class="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 text-sm font-bold focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900" @change="syncAgeFromBirthDate">
                         </div>
 
                         <div class="space-y-1.5">
                             <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Telephone</label>
-                            <input v-model="patientForm.telephone" type="tel" class="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 text-sm font-bold focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900" placeholder="034 00 000 00">
+                            <input v-model="form.patient.telephone" type="tel" class="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 text-sm font-bold focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900" placeholder="034 00 000 00">
                         </div>
 
                         <div class="space-y-1.5">
                             <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Adresse</label>
-                            <input v-model="patientForm.adresse" type="text" class="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 text-sm font-bold focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900" placeholder="Ville, quartier...">
+                            <input v-model="form.patient.adresse" type="text" class="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 text-sm font-bold focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900" placeholder="Ville, quartier...">
                         </div>
                     </div>
 
                     <div class="mt-8 flex justify-end">
-                        <button type="button" class="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-primary-200 transition-all hover:bg-primary-700 active:scale-95 disabled:opacity-50 dark:shadow-none" :disabled="!patientForm.nom.trim()" @click="goToStep('clinique')">
+                        <button type="button" class="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-primary-200 transition-all hover:bg-primary-700 active:scale-95 disabled:opacity-50 dark:shadow-none" :disabled="!form.patient.nom.trim()" @click="goToStep('clinique')">
                             Continuer <em class="ni ni-arrow-right"></em>
                         </button>
                     </div>
@@ -128,7 +128,7 @@
                         <div class="space-y-1.5">
                             <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Medecin Prescripteur <span class="text-red-500">*</span></label>
                             <Combobox
-                                v-model="clinicalForm.prescripteur_id"
+                                v-model="form.prescripteur_id"
                                 :options="prescripteurs"
                                 label-key="nom_complet"
                                 secondary-key="grade"
@@ -140,21 +140,21 @@
                             <div class="space-y-1.5">
                                 <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Age lors du prelevement</label>
                                 <div class="flex">
-                                    <input v-model.number="clinicalForm.age" type="number" class="w-20 rounded-l-xl border-slate-200 bg-slate-50 py-2.5 text-sm font-bold focus:border-cyan-500 focus:ring-cyan-500 dark:border-slate-700 dark:bg-slate-900">
-                                    <select v-model="clinicalForm.unite_age" class="flex-1 rounded-r-xl border-l-0 border-slate-200 bg-slate-50 py-2.5 text-xs font-bold focus:border-cyan-500 focus:ring-cyan-500 dark:border-slate-700 dark:bg-slate-900">
+                                    <input v-model.number="form.age" type="number" class="w-20 rounded-l-xl border-slate-200 bg-slate-50 py-2.5 text-sm font-bold focus:border-cyan-500 focus:ring-cyan-500 dark:border-slate-700 dark:bg-slate-900">
+                                    <select v-model="form.unite_age" class="flex-1 rounded-r-xl border-l-0 border-slate-200 bg-slate-50 py-2.5 text-xs font-bold focus:border-cyan-500 focus:ring-cyan-500 dark:border-slate-700 dark:bg-slate-900">
                                         <option>Ans</option><option>Mois</option><option>Jours</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="space-y-1.5">
                                 <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Poids (kg)</label>
-                                <input v-model="clinicalForm.poids" type="text" class="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 text-sm font-bold focus:border-cyan-500 focus:ring-cyan-500 dark:border-slate-700 dark:bg-slate-900" placeholder="Ex: 65">
+                                <input v-model="form.poids" type="text" class="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 text-sm font-bold focus:border-cyan-500 focus:ring-cyan-500 dark:border-slate-700 dark:bg-slate-900" placeholder="Ex: 65">
                             </div>
                         </div>
 
                         <div class="md:col-span-2 space-y-1.5">
                             <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Renseignements cliniques</label>
-                            <textarea v-model="clinicalForm.renseignement_clinique" rows="3" class="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 text-sm font-medium focus:border-cyan-500 focus:ring-cyan-500 dark:border-slate-700 dark:bg-slate-900" placeholder="Saisissez ici les motifs, symptomes ou observations..."></textarea>
+                            <textarea v-model="form.renseignement_clinique" rows="3" class="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 text-sm font-medium focus:border-cyan-500 focus:ring-cyan-500 dark:border-slate-700 dark:bg-slate-900" placeholder="Saisissez ici les motifs, symptomes ou observations..."></textarea>
                         </div>
                     </div>
 
@@ -162,7 +162,7 @@
                         <button type="button" class="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-5 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300" @click="goToStep('patient')">
                             <em class="ni ni-arrow-left"></em> Retour
                         </button>
-                        <button type="button" class="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-100 transition-all hover:bg-cyan-700 active:scale-95 disabled:opacity-50 dark:shadow-none" :disabled="!clinicalForm.prescripteur_id" @click="goToStep('analyses')">
+                        <button type="button" class="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-100 transition-all hover:bg-cyan-700 active:scale-95 disabled:opacity-50 dark:shadow-none" :disabled="!form.prescripteur_id" @click="goToStep('analyses')">
                             Suivant <em class="ni ni-arrow-right"></em>
                         </button>
                     </div>
@@ -338,21 +338,21 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div class="space-y-1.5">
                                     <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Mode de paiement <span class="text-red-500">*</span></label>
-                                    <select v-model="paymentForm.payment_method" class="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 text-sm font-bold focus:border-red-500 focus:ring-red-500 dark:border-slate-700 dark:bg-slate-900">
+                                    <select v-model="form.payment_method" class="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 text-sm font-bold focus:border-red-500 focus:ring-red-500 dark:border-slate-700 dark:bg-slate-900">
                                         <option v-for="m in paymentMethods" :key="m.code" :value="m.code">{{ m.label }}</option>
                                     </select>
                                 </div>
                                 <div class="space-y-1.5">
                                     <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Remise (%)</label>
                                     <div class="relative">
-                                        <input v-model.number="paymentForm.remise" type="number" min="0" max="100" class="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 pr-10 text-sm font-bold focus:border-red-500 focus:ring-red-500 dark:border-slate-700 dark:bg-slate-900">
+                                        <input v-model.number="form.remise" type="number" min="0" max="100" class="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 pr-10 text-sm font-bold focus:border-red-500 focus:ring-red-500 dark:border-slate-700 dark:bg-slate-900">
                                         <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <label class="flex items-center gap-4 cursor-pointer p-4 rounded-xl border-2 transition-all" :class="paymentForm.paiement_statut ? 'border-emerald-500 bg-emerald-50/30 dark:bg-emerald-900/10' : 'border-slate-100 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/50'">
-                                <input v-model="paymentForm.paiement_statut" type="checkbox" class="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                            <label class="flex items-center gap-4 cursor-pointer p-4 rounded-xl border-2 transition-all" :class="form.paiement_statut ? 'border-emerald-500 bg-emerald-50/30 dark:bg-emerald-900/10' : 'border-slate-100 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/50'">
+                                <input v-model="form.paiement_statut" type="checkbox" class="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
                                 <div>
                                     <div class="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-tighter">Confirmer le paiement immédiat</div>
                                     <div class="text-[10px] text-slate-500">Cochez si le patient a déjà réglé la totalité ou une partie.</div>
@@ -368,7 +368,7 @@
                                     <span class="font-bold">{{ formatCurrency(analysesSubtotal + prelevementsSubtotal) }}</span>
                                 </div>
                                 <div v-if="remiseAmount > 0" class="flex justify-between text-xs text-red-400">
-                                    <span class="opacity-60">Remise ({{ paymentForm.remise }}%)</span>
+                                    <span class="opacity-60">Remise ({{ form.remise }}%)</span>
                                     <span class="font-bold">- {{ formatCurrency(remiseAmount) }}</span>
                                 </div>
                                 <div v-if="urgencyFee > 0" class="flex justify-between text-xs text-amber-400">
@@ -506,8 +506,8 @@
                                 </div>
                                 <div class="min-w-0">
                                     <div class="text-[8px] font-black uppercase tracking-wider text-slate-400 mb-0.5">Détails Patient</div>
-                                    <div class="text-sm font-bold text-slate-900 dark:text-white truncate">{{ patientForm.nom }} {{ patientForm.prenom }}</div>
-                                    <div class="text-[10px] font-medium text-slate-500">{{ clinicalForm.age }} {{ clinicalForm.unite_age }} • {{ patientForm.civilite }}</div>
+                                    <div class="text-sm font-bold text-slate-900 dark:text-white truncate">{{ form.patient.nom }} {{ form.patient.prenom }}</div>
+                                    <div class="text-[10px] font-medium text-slate-500">{{ form.age }} {{ form.unite_age }} • {{ form.patient.civilite }}</div>
                                 </div>
                             </div>
                             <div v-if="prescripteurName" class="mt-4 pt-4 border-t border-dashed border-slate-100 dark:border-slate-700">
@@ -543,7 +543,7 @@
                             <div class="p-5 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700">
                                 <div class="space-y-2">
                                     <div v-if="remiseAmount > 0" class="flex justify-between text-[9px] font-medium text-slate-500 uppercase">
-                                        <span>Remise ({{ paymentForm.remise }}%)</span>
+                                        <span>Remise ({{ form.remise }}%)</span>
                                         <span class="text-red-500 font-bold">-{{ formatCurrency(remiseAmount) }}</span>
                                     </div>
                                     <div v-if="urgencyFee > 0" class="flex justify-between text-[9px] font-medium text-slate-500 uppercase">
@@ -556,9 +556,9 @@
                                     </div>
                                     <div class="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-700">
                                         <div class="flex items-center gap-1.5">
-                                            <div class="h-1.5 w-1.5 rounded-full" :class="paymentForm.paiement_statut ? 'bg-emerald-500' : 'bg-amber-500'"></div>
+                                            <div class="h-1.5 w-1.5 rounded-full" :class="form.paiement_statut ? 'bg-emerald-500' : 'bg-amber-500'"></div>
                                             <span class="text-[8px] font-black uppercase tracking-widest text-slate-400">
-                                                {{ paymentForm.paiement_statut ? 'Réglé' : 'En attente' }}
+                                                {{ form.paiement_statut ? 'Réglé' : 'En attente' }}
                                             </span>
                                         </div>
                                         <span class="text-[8px] font-bold text-slate-300 dark:text-slate-600 italic">ID: #{{ prescription?.id }}</span>
@@ -575,8 +575,8 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
-import { Link, router, usePage } from '@inertiajs/vue3';
+import { computed, ref, onMounted, watch } from 'vue';
+import { Link, router, usePage, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Combobox from '@/Components/Combobox.vue';
 
@@ -606,8 +606,64 @@ const steps = [
     { key: 'confirmation', icon: 'check-circle', label: 'Fini' },
 ];
 
-const currentStep = ref('patient');
-const isSubmitting = ref(false);
+// Helper to get initial step from URL
+const getInitialStep = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const step = urlParams.get('step');
+    return (step && steps.some(s => s.key === step)) ? step : 'patient';
+};
+
+const currentStep = ref(getInitialStep());
+
+// FIX: Robust reactive step synchronization for Inertia redirects
+const syncStepFromUrl = () => {
+    try {
+        // usePage().url includes the full path + query string
+        const url = new URL(page.url, window.location.origin);
+        const step = url.searchParams.get('step');
+        if (step && steps.some(s => s.key === step)) {
+            currentStep.value = step;
+        }
+    } catch (e) {
+        // Fallback to manual check if URL object fails
+        const urlParams = new URLSearchParams(window.location.search);
+        const step = urlParams.get('step');
+        if (step && steps.some(s => s.key === step)) {
+            currentStep.value = step;
+        }
+    }
+};
+
+watch(() => page.url, () => {
+    syncStepFromUrl();
+});
+
+const form = useForm({
+    patient_id: props.prescription.patient_id,
+    patient: {
+        nom: props.prescription.patient.nom || '',
+        prenom: props.prescription.patient.prenom || '',
+        civilite: props.prescription.patient.civilite || props.civilites[0],
+        date_naissance: props.prescription.patient.date_naissance || '',
+        telephone: props.prescription.patient.telephone || '',
+        email: props.prescription.patient.email || '',
+        adresse: props.prescription.patient.adresse || '',
+    },
+    prescripteur_id: props.prescription.prescripteur_id || '',
+    patient_type: props.prescription.patient_type || 'EXTERNE',
+    age: Number(props.prescription.age || 0),
+    unite_age: props.prescription.unite_age || 'Ans',
+    poids: props.prescription.poids || '',
+    renseignement_clinique: props.prescription.renseignement_clinique || '',
+    analyse_ids: props.prescription.analyses?.map(a => a.id) || [],
+    prelevements: props.prescription.prelevements?.map(p => ({ 
+        id: p.id, 
+        quantite: p.pivot?.quantite || 1 
+    })) || [],
+    payment_method: props.prescription.paiements?.[0]?.payment_method?.code || props.paymentMethods[0]?.code || '',
+    remise: props.prescription.remise || 0,
+    paiement_statut: !!props.prescription.paiements?.[0]?.status,
+});
 
 const analyseSearch = ref('');
 const analyseResults = ref([]);
@@ -619,103 +675,34 @@ const prelevementResults = ref([]);
 const selectedPrelevements = ref([]);
 let prelevementsSearchTimer = null;
 
-const patientForm = ref({
-    nom: '',
-    prenom: '',
-    civilite: props.civilites[0] || 'Monsieur',
-    date_naissance: '',
-    telephone: '',
-    email: '',
-    adresse: '',
-});
-
-const clinicalForm = ref({
-    prescripteur_id: '',
-    patient_type: 'EXTERNE',
-    age: 0,
-    unite_age: 'Ans',
-    poids: '',
-    renseignement_clinique: '',
-});
-
-const paymentForm = ref({
-    payment_method: props.paymentMethods[0]?.code || '',
-    remise: 0,
-    paiement_statut: true,
-});
-
 onMounted(() => {
-    if (props.prescription) {
-        // Hydrate Patient
-        if (props.prescription.patient) {
-            patientForm.value = {
-                nom: props.prescription.patient.nom || '',
-                prenom: props.prescription.patient.prenom || '',
-                civilite: props.prescription.patient.civilite || props.civilites[0],
-                date_naissance: props.prescription.patient.date_naissance || '',
-                telephone: props.prescription.patient.telephone || '',
-                email: props.prescription.patient.email || '',
-                adresse: props.prescription.patient.adresse || '',
-            };
-        }
+    if (props.prescription.analyses?.length > 0) {
+        selectedAnalyses.value = props.prescription.analyses.map(a => ({
+            id: a.id,
+            code: a.code,
+            designation: a.designation,
+            prix: a.prix,
+            parent_id: a.parent_id,
+            parent: a.parent,
+            level: a.level
+        }));
+    }
 
-        // Hydrate Clinical
-        clinicalForm.value = {
-            prescripteur_id: props.prescription.prescripteur_id || '',
-            patient_type: props.prescription.patient_type || 'EXTERNE',
-            age: Number(props.prescription.age || 0),
-            unite_age: props.prescription.unite_age || 'Ans',
-            poids: props.prescription.poids || '',
-            renseignement_clinique: props.prescription.renseignement_clinique || '',
-        };
-
-        // Hydrate Analyses
-        if (props.prescription.analyses?.length > 0) {
-            selectedAnalyses.value = props.prescription.analyses.map(a => ({
-                id: a.id,
-                code: a.code,
-                designation: a.designation,
-                prix: a.prix,
-                parent_id: a.parent_id,
-                parent: a.parent,
-                level: a.level
-            }));
-        }
-
-        // Hydrate Prelevements
-        if (props.prescription.prelevements?.length > 0) {
-            selectedPrelevements.value = props.prescription.prelevements.map(p => ({
-                id: p.id,
-                denomination: p.denomination,
-                prix: p.prix,
-                prix_promotion: p.prix_promotion,
-                quantite: p.pivot?.quantite || 1,
-            }));
-        }
-
-        // Hydrate Paiement
-        if (props.prescription.paiements?.length > 0) {
-            const paiement = props.prescription.paiements[0];
-            paymentForm.value = {
-                payment_method: paiement.payment_method?.code || props.paymentMethods[0]?.code || '',
-                remise: props.prescription.remise > 0 ? ((props.prescription.remise / (paiement.montant || 1)) * 100).toFixed(0) : 0,
-                paiement_statut: !!paiement.status,
-            };
-        }
-
-        // Handle URL step parameter
-        const urlParams = new URLSearchParams(window.location.search);
-        const step = urlParams.get('step');
-        if (step && steps.some(s => s.key === step)) {
-            currentStep.value = step;
-        }
+    if (props.prescription.prelevements?.length > 0) {
+        selectedPrelevements.value = props.prescription.prelevements.map(p => ({
+            id: p.id,
+            denomination: p.denomination,
+            prix: p.prix,
+            prix_promotion: p.prix_promotion,
+            quantite: p.pivot?.quantite || 1,
+        }));
     }
 });
 
 const nowLabel = computed(() => new Date().toLocaleString('fr-FR'));
 
 const prescripteurName = computed(() => {
-    const p = props.prescripteurs.find(item => item.id === clinicalForm.value.prescripteur_id);
+    const p = props.prescripteurs.find(item => item.id === form.prescripteur_id);
     return p ? p.nom_complet : 'Non spécifié';
 });
 
@@ -745,11 +732,11 @@ const prelevementsSubtotal = computed(() => {
 });
 
 const urgencyFee = computed(() => {
-    if (clinicalForm.value.patient_type === 'URGENCE-JOUR') {
+    if (form.patient_type === 'URGENCE-JOUR') {
         return Number(props.urgenceFees.jour || 0);
     }
 
-    if (clinicalForm.value.patient_type === 'URGENCE-NUIT') {
+    if (form.patient_type === 'URGENCE-NUIT') {
         return Number(props.urgenceFees.nuit || 0);
     }
 
@@ -757,7 +744,7 @@ const urgencyFee = computed(() => {
 });
 
 const remiseAmount = computed(() => {
-    const percent = Math.max(0, Number(paymentForm.value.remise || 0));
+    const percent = Math.max(0, Number(form.remise || 0));
     const servicesTotal = analysesSubtotal.value + prelevementsSubtotal.value;
 
     return servicesTotal * (percent / 100);
@@ -809,7 +796,7 @@ const civiliteOptionLabel = (civilite) => {
 
 
 const syncAgeFromBirthDate = () => {
-    const date = patientForm.value.date_naissance;
+    const date = form.patient.date_naissance;
     if (!date) {
         return;
     }
@@ -822,29 +809,29 @@ const syncAgeFromBirthDate = () => {
     const years = Math.floor(months / 12);
 
     if (days <= 60) {
-        clinicalForm.value.age = days;
-        clinicalForm.value.unite_age = 'Jours';
+        form.age = days;
+        form.unite_age = 'Jours';
 
         return;
     }
 
     if (months < 24) {
-        clinicalForm.value.age = months;
-        clinicalForm.value.unite_age = 'Mois';
+        form.age = months;
+        form.unite_age = 'Mois';
 
         return;
     }
 
-    clinicalForm.value.age = years;
-    clinicalForm.value.unite_age = 'Ans';
+    form.age = years;
+    form.unite_age = 'Ans';
 };
 
 const goToStep = async (stepKey) => {
-    if (stepKey === 'clinique' && !patientForm.value.nom.trim()) {
+    if (stepKey === 'clinique' && !form.patient.nom.trim()) {
         return;
     }
 
-    if (stepKey === 'analyses' && !clinicalForm.value.prescripteur_id) {
+    if (stepKey === 'analyses' && !form.prescripteur_id) {
         return;
     }
 
@@ -865,8 +852,7 @@ const goToStep = async (stepKey) => {
 
 const resetWorkflow = () => {
     currentStep.value = 'patient';
-    isSubmitting.value = false;
-
+    
     analyseSearch.value = '';
     analyseResults.value = [];
     selectedAnalyses.value = [];
@@ -874,30 +860,7 @@ const resetWorkflow = () => {
     prelevementResults.value = [];
     selectedPrelevements.value = [];
 
-    patientForm.value = {
-        nom: '',
-        prenom: '',
-        civilite: props.civilites[0] || 'Monsieur',
-        date_naissance: '',
-        telephone: '',
-        email: '',
-        adresse: '',
-    };
-
-    clinicalForm.value = {
-        prescripteur_id: '',
-        patient_type: 'EXTERNE',
-        age: 0,
-        unite_age: 'Ans',
-        poids: '',
-        renseignement_clinique: '',
-    };
-
-    paymentForm.value = {
-        payment_method: props.paymentMethods[0]?.code || '',
-        remise: 0,
-        paiement_statut: true,
-    };
+    form.reset();
 };
 
 
@@ -1041,13 +1004,25 @@ const removePrelevement = (prelevementId) => {
 };
 
 const submitPrescription = () => {
-    if (!patientForm.value.nom.trim() || !clinicalForm.value.prescripteur_id || selectedAnalyses.value.length === 0 || !paymentForm.value.payment_method) {
+    if (!form.patient.nom.trim() || !form.prescripteur_id || selectedAnalyses.value.length === 0 || !form.payment_method) {
         return;
     }
 
-    // In Edit mode, we don't need to post to create unless it's a completely modified wizard. To keep UI functional without an update endpoint right now, we just proceed to Tubes.
-    // If we wanted to update, we'd fire an Inertia PUT to update, but since we are just mocking the final steps in UI for the user's checklist:
-    goToStep('confirmation');
+    form.analyse_ids = selectedAnalyses.value.map(a => a.id);
+    form.prelevements = selectedPrelevements.value.map(p => ({ id: p.id, quantite: p.quantite }));
+
+    form.put(route('secretaire.prescription.update', props.prescription.id), {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => {
+            // FIX: Force navigation to the final step to avoid returning to step 1
+            currentStep.value = 'confirmation';
+            console.log('Update success, forced confirmation step.');
+        },
+        onError: (errors) => {
+            console.error('Validation errors:', errors);
+        }
+    });
 };
 
 </script>

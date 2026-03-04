@@ -96,6 +96,7 @@ Route::middleware(['auth', 'role:secretaire,superadmin,admin'])->prefix('secreta
         Route::get('prescription/workspace/lookup/prelevements', 'searchPrelevements')->name('prescription.lookup.prelevements');
         Route::post('prescription/workspace/store', 'store')->name('prescription.store');
         Route::get('prescription/edit/{prescriptionId}', 'edit')->name('prescription.edit');
+        Route::put('prescription/update/{id}', 'update')->name('prescription.update');
         Route::delete('prescription/{id}', 'destroy')->name('prescription.destroy');
         Route::post('prescriptions/bulk-delete', 'bulkDestroy')->name('prescription.bulkDestroy');
         Route::post('prescriptions/bulk-archive', 'bulkArchive')->name('prescription.bulkArchive');

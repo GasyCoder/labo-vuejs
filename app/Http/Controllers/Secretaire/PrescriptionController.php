@@ -236,7 +236,7 @@ class PrescriptionController extends Controller
                     'telephone' => $patient->telephone,
                     'email' => $patient->email,
                     'adresse' => $patient->adresse,
-                    'date_naissance' => $patient->date_naissance?->format('Y-m-d'),
+                    'date_naissance' => $patient->date_naissance,
                     'age' => $age['age'] ?? null,
                     'unite_age' => $age['unite'] ?? 'Ans',
                 ];
@@ -479,7 +479,7 @@ class PrescriptionController extends Controller
             $total = max(0, ($servicesTotal - $remiseAmount) + $urgenceFee);
 
             $ageData = $this->calculateAgeData(
-                $patient->date_naissance?->format('Y-m-d'),
+                $patient->date_naissance,
                 $validated['age'] ?? null,
                 $validated['unite_age'] ?? null,
             );
@@ -497,7 +497,16 @@ class PrescriptionController extends Controller
                 'status' => Prescription::STATUS_EN_ATTENTE,
             ]);
 
-            $prescription->analyses()->sync($selectedAnalyseIds->all());
+            // Synchroniser les analyses avec persistance du prix (Snapshot)
+            $syncData = [];
+            foreach ($selectedAnalyseIds as $analyseId) {
+                $analyse = $analyses->get($analyseId);
+                $syncData[$analyseId] = [
+                    'prix' => $analyse ? $analyse->prix : 0,
+                    'status' => 'EN_ATTENTE'
+                ];
+            }
+            $prescription->analyses()->sync($syncData);
 
             $paymentMethod = PaymentMethod::query()
                 ->where('code', $validated['payment_method'])
@@ -543,6 +552,154 @@ class PrescriptionController extends Controller
             ->with('prescription_action', 'created');
     }
 
+    public function update(StorePrescriptionRequest $request, int $id): RedirectResponse
+    {
+        $prescription = Prescription::findOrFail($id);
+        $validated = $request->validated();
+
+        $selectedAnalyseIds = collect($validated['analyse_ids'] ?? [])
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->values();
+
+        $selectedPrelevements = collect($validated['prelevements'] ?? [])
+            ->map(function (array $item): array {
+                return [
+                    'id' => (int) $item['id'],
+                    'quantite' => max(1, (int) $item['quantite']),
+                ];
+            })
+            ->unique('id')
+            ->values();
+
+        DB::transaction(function () use ($validated, $selectedAnalyseIds, $selectedPrelevements, $prescription): void {
+            $patient = $this->resolveOrCreatePatient($validated);
+
+            $analyses = Analyse::query()
+                ->whereIn('id', $selectedAnalyseIds)
+                ->with('parent:id,prix')
+                ->get()
+                ->keyBy('id');
+
+            $prelevements = Prelevement::query()
+                ->whereIn('id', $selectedPrelevements->pluck('id'))
+                ->get()
+                ->keyBy('id');
+
+            $analysesTotal = $this->calculateAnalysesSubtotal($analyses, $selectedAnalyseIds);
+            $prelevementsTotal = $this->calculatePrelevementsTotal($prelevements, $selectedPrelevements);
+            $servicesTotal = $analysesTotal + $prelevementsTotal;
+
+            $remisePercent = (float) ($validated['remise'] ?? 0);
+            $remiseAmount = $servicesTotal * ($remisePercent / 100);
+
+            $urgenceFee = 0.0;
+            if (($validated['patient_type'] ?? 'EXTERNE') === 'URGENCE-JOUR') {
+                $urgenceFee = (float) Setting::getTarifUrgenceJour();
+            }
+            if (($validated['patient_type'] ?? 'EXTERNE') === 'URGENCE-NUIT') {
+                $urgenceFee = (float) Setting::getTarifUrgenceNuit();
+            }
+
+            $total = max(0, ($servicesTotal - $remiseAmount) + $urgenceFee);
+
+            $ageData = $this->calculateAgeData(
+                $patient->date_naissance,
+                $validated['age'] ?? null,
+                $validated['unite_age'] ?? null,
+            );
+
+            $prescription->update([
+                'patient_id' => $patient->id,
+                'prescripteur_id' => (int) $validated['prescripteur_id'],
+                'patient_type' => $validated['patient_type'],
+                'age' => $ageData['age'],
+                'unite_age' => $ageData['unite_age'],
+                'poids' => $validated['poids'] ?? null,
+                'renseignement_clinique' => $validated['renseignement_clinique'] ?? null,
+                'remise' => $remiseAmount,
+            ]);
+
+            // Synchroniser les analyses avec persistance du prix (Snapshot)
+            $syncData = [];
+            foreach ($selectedAnalyseIds as $analyseId) {
+                $analyse = $analyses->get($analyseId);
+                $syncData[$analyseId] = [
+                    'prix' => $analyse ? $analyse->prix : 0,
+                    'status' => 'EN_ATTENTE'
+                ];
+            }
+            $prescription->analyses()->sync($syncData);
+
+            // Gérer les résultats
+            // Supprimer les résultats pour les analyses qui ne sont plus présentes
+            $prescription->resultats()->whereNotIn('analyse_id', $selectedAnalyseIds)->delete();
+
+            // S'assurer que les résultats existent pour toutes les analyses sélectionnées
+            foreach ($selectedAnalyseIds as $analyseId) {
+                $prescription->resultats()->firstOrCreate(
+                    ['analyse_id' => $analyseId],
+                    ['status' => 'EN_ATTENTE']
+                );
+            }
+
+            // Mettre à jour le paiement
+            $paymentMethod = PaymentMethod::query()
+                ->where('code', $validated['payment_method'])
+                ->where('is_active', true)
+                ->firstOrFail();
+
+            $isPaid = (bool) ($validated['paiement_statut'] ?? true);
+
+            $paiement = $prescription->paiements()->first();
+            if ($paiement) {
+                $paiement->update([
+                    'montant' => $total,
+                    'payment_method_id' => $paymentMethod->id,
+                    'status' => $isPaid,
+                    'date_paiement' => $isPaid ? ($paiement->date_paiement ?? now()) : null,
+                ]);
+            } else {
+                Paiement::query()->create([
+                    'prescription_id' => $prescription->id,
+                    'montant' => $total,
+                    'payment_method_id' => $paymentMethod->id,
+                    'recu_par' => Auth::id(),
+                    'status' => $isPaid,
+                    'date_paiement' => $isPaid ? now() : null,
+                ]);
+            }
+
+            // Mettre à jour les tubes: Recréer si en EN_ATTENTE
+            if ($prescription->status === Prescription::STATUS_EN_ATTENTE) {
+                $prescription->tubes()->forceDelete();
+                $tubeCounter = 1;
+                foreach ($selectedPrelevements as $item) {
+                    $prelevement = $prelevements->get($item['id']);
+                    if (! $prelevement) {
+                        continue;
+                    }
+
+                    for ($i = 0; $i < $item['quantite']; $i++) {
+                        Tube::query()->create([
+                            'prescription_id' => $prescription->id,
+                            'patient_id' => $patient->id,
+                            'prelevement_id' => $prelevement->id,
+                            'code_barre' => $prescription->reference.'-T'.str_pad((string) $tubeCounter, 2, '0', STR_PAD_LEFT),
+                        ]);
+
+                        $tubeCounter++;
+                    }
+                }
+            }
+        });
+
+        return redirect()
+            ->route('secretaire.prescription.edit', ['prescriptionId' => $prescription->id, 'step' => 'confirmation'])
+            ->with('success', 'Prescription mise à jour avec succès.')
+            ->with('prescription_action', 'updated');
+    }
+
     public function edit(int $prescriptionId): Response
     {
         $prescription = Prescription::with([
@@ -553,6 +710,14 @@ class PrescriptionController extends Controller
             'paiements.paymentMethod',
             'tubes',
         ])->findOrFail($prescriptionId);
+
+        if ($prescription->patient && $prescription->patient->date_naissance) {
+            try {
+                $prescription->patient->date_naissance = Carbon::parse($prescription->patient->date_naissance)->format('Y-m-d');
+            } catch (\Exception $e) {
+                // Keep as is if parsing fails
+            }
+        }
 
         return Inertia::render('Secretaire/Prescriptions/Edit', [
             'prescription' => $prescription,
@@ -839,6 +1004,7 @@ class PrescriptionController extends Controller
     private function resolveOrCreatePatient(array $validated): Patient
     {
         $patientPayload = $validated['patient'] ?? [];
+        $dateNaissance = ! empty($patientPayload['date_naissance']) ? $patientPayload['date_naissance'] : null;
 
         if (! empty($validated['patient_id'])) {
             $patient = Patient::query()->findOrFail((int) $validated['patient_id']);
@@ -851,9 +1017,11 @@ class PrescriptionController extends Controller
                     'telephone' => $patientPayload['telephone'] ?? $patient->telephone,
                     'email' => $patientPayload['email'] ?? $patient->email,
                     'adresse' => $patientPayload['adresse'] ?? $patient->adresse,
-                    'date_naissance' => $patientPayload['date_naissance'] ?? $patient->date_naissance,
+                    'date_naissance' => $dateNaissance,
                 ]);
             }
+            
+            $patient->refresh();
 
             return $patient;
         }
@@ -865,7 +1033,7 @@ class PrescriptionController extends Controller
             'telephone' => $patientPayload['telephone'] ?? null,
             'email' => $patientPayload['email'] ?? null,
             'adresse' => $patientPayload['adresse'] ?? null,
-            'date_naissance' => $patientPayload['date_naissance'] ?? null,
+            'date_naissance' => $dateNaissance,
         ]);
     }
 
