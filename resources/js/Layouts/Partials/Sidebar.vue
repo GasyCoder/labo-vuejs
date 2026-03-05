@@ -177,7 +177,7 @@
                     </template>
 
                     <!-- Technicien -->
-                    <template v-if="$page.props.auth.user && hasPermission('analyses.effectuer')">
+                    <template v-if="$page.props.auth.user && ($page.props.auth.user.roles.includes('technicien') || $page.props.auth.user.isAdmin) && $page.props.auth.user.permissions.includes('analyses.effectuer')">
                         <li
                             :class="['nk-menu-item py-0 group/item', { 'active': route().current('technicien.*') }]">
                             <Link :href="route('technicien.index')"
@@ -196,7 +196,7 @@
                     </template>
 
                     <!-- Biologiste -->
-                    <template v-if="$page.props.auth.user && hasPermission('analyses.valider')">
+                    <template v-if="$page.props.auth.user && ($page.props.auth.user.roles.includes('biologiste') || $page.props.auth.user.isAdmin) && $page.props.auth.user.permissions.includes('analyses.valider')">
                         <li
                             :class="['nk-menu-item py-0 group/item', { 'active': route().current('biologiste.*') }]">
                             <Link :href="route('biologiste.analyse.index')"
@@ -503,10 +503,10 @@ const baseUrl = '/';
 const auth = computed(() => page.props.auth);
 
 const hasPermission = (permission) => {
-    return auth.value?.user?.permissions?.includes(permission);
+    return page.props.auth.user?.permissions?.includes(permission);
 };
 
 const hasAnyPermission = (permissions) => {
-    return permissions.some(p => auth.value?.user?.permissions?.includes(p));
+    return permissions.some(p => page.props.auth.user?.permissions?.includes(p));
 };
 </script>

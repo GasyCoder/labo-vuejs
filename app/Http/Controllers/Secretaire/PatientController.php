@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\PatientInvoiceMail;
 use App\Models\Patient;
 use App\Models\Prescription;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;

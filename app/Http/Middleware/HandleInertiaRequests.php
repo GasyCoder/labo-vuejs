@@ -47,20 +47,20 @@ class HandleInertiaRequests extends Middleware
                     'email' => $request->user()->email,
                     'type' => $request->user()->type,
                     'permissions' => method_exists($request->user(), 'getAllPermissions') ? $request->user()->getAllPermissions()->pluck('name') : [],
-                    'roles' => method_exists($request->user(), 'getRoleNames') ? $request->user()->getRoleNames() : [],
+                    'roles' => method_exists($request->user(), 'getRoleNames') ? $request->user()->getRoleNames()->toArray() : [],
                     'isAdmin' => method_exists($request->user(), 'isAdmin') ? $request->user()->isAdmin() : false,
                 ] : null,
             ],
             'enabledFeatures' => function () use ($request) {
                 if ($request->user()) {
                     $featureService = app(\App\Services\FeatureService::class);
-                    
+
                     // If superadmin but has a client, we want to show the REAL client status in the UI
                     // but they still bypass the checks in logic because of isEnabledForCurrentUser()
                     if ($request->user()->type === 'superadmin' && $request->user()->client_id) {
                         return $featureService->getAllForClient($request->user()->client_id);
                     }
-                    
+
                     // Fallback for superadmins without client_id (system level)
                     if ($request->user()->type === 'superadmin') {
                         $registeredFeatures = config('features.list', []);
