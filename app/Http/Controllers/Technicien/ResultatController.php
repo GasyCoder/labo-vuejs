@@ -298,6 +298,19 @@ class ResultatController extends Controller
         }
     }
 
+    public function getNotes(Analyse $analyse, Request $request): JsonResponse
+    {
+        $request->validate(['prescription_id' => 'required|integer|exists:prescriptions,id']);
+        
+        $notes = \App\Models\AnalyseConclusionNote::where('prescription_id', $request->prescription_id)
+            ->where('analyse_id', $analyse->id)
+            ->with('technicien:id,name')
+            ->latest()
+            ->get();
+
+        return response()->json($notes);
+    }
+
     public function syncAntibiogrammes(Request $request): JsonResponse
     {
         $request->validate(['prescription_id' => 'required|integer|exists:prescriptions,id', 'analyse_id' => 'required|integer|exists:analyses,id', 'bacteries' => 'array']);

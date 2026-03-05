@@ -197,6 +197,7 @@ Route::middleware(['auth', 'role:technicien,superadmin,admin,biologiste'])->pref
     // Nouveaux endpoints pour les notes et conclusions
     Route::post('resultats/group-conclusion', [TechnicienResultatController::class, 'saveGroupConclusion'])->name('resultats.groupConclusion');
     Route::post('resultats/notes', [TechnicienResultatController::class, 'addConclusionNote'])->name('resultats.addNote');
+    Route::get('resultats/notes/{analyse}', [TechnicienResultatController::class, 'getNotes'])->name('resultats.notes.index');
     Route::put('resultats/notes/{id}', [TechnicienResultatController::class, 'updateConclusionNote'])->name('resultats.updateNote');
     Route::delete('resultats/notes/{id}', [TechnicienResultatController::class, 'deleteConclusionNote'])->name('resultats.deleteNote');
 
@@ -251,6 +252,12 @@ Route::middleware(['auth', 'role:technicien,biologiste,superadmin,admin'])->pref
             Route::put('listes/{analyse}', 'update')->name('listes.update');
             Route::post('listes/{analyse}/toggle', 'toggleStatus')->name('listes.toggle');
             Route::delete('listes/{analyse}', 'destroy')->name('listes.destroy');
+        });
+
+        Route::controller(\App\Http\Controllers\Laboratoire\AnalyseRangeController::class)->prefix('ranges')->name('ranges.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{analyse}/edit', 'edit')->name('edit');
+            Route::post('/{analyse}', 'store')->name('store');
         });
         Route::controller(PrelevementController::class)->group(function () {
             Route::get('prelevements', 'index')->name('prelevements');

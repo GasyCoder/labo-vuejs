@@ -306,6 +306,15 @@
                                     </Link>
                                 </li>
                                 <li
+                                    :class="['nk-menu-item py-px sub has-sub group/sub1', { 'active': route().current('laboratoire.analyses.ranges.*') }]">
+                                    <Link :href="route('laboratoire.analyses.ranges.index')"
+                                        class="nk-menu-link flex relative items-center align-middle py-1 pe-8 ps-[calc(theme(spacing.5)+theme(spacing.8))] font-normal leading-5 text-xs tracking-normal normal-case">
+                                        <span
+                                            class="text-slate-600 dark:text-slate-500 group-[.active]/sub1:text-primary-500 hover:text-primary-500 whitespace-nowrap flex-grow inline-block">Intervalles
+                                            de référence</span>
+                                    </Link>
+                                </li>
+                                <li
                                     :class="['nk-menu-item py-px sub has-sub group/sub1', { 'active': route().current('laboratoire.analyses.prelevements') }]">
                                     <Link :href="route('laboratoire.analyses.prelevements')"
                                         class="nk-menu-link flex relative items-center align-middle py-1 pe-8 ps-[calc(theme(spacing.5)+theme(spacing.8))] font-normal leading-5 text-xs tracking-normal normal-case">

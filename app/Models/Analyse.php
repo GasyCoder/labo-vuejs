@@ -75,6 +75,96 @@ class Analyse extends Model
         return $this->hasMany(Resultat::class);
     }
 
+    public function ranges(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(AnalyseRange::class);
+    }
+
+    /**
+     * Valide une valeur par rapport aux bornes configurées.
+     */
+    public function validateValue($value, $patient = null): array
+    {
+        if ($value === null || $value === '') {
+            return ['status' => 'OK'];
+        }
+
+        $cleanValue = str_replace([' ', ','], ['', '.'], $value);
+        if (! is_numeric($cleanValue)) {
+            return ['status' => 'OK'];
+        }
+
+        $numValue = (float) $cleanValue;
+        $context = null;
+
+        if ($patient && $patient->civilite) {
+            $civilite = strtolower(trim($patient->civilite));
+            
+            if (in_array($civilite, ['monsieur', 'mr', 'm.', 'homme'])) {
+                $context = 'HOMME';
+            } elseif (in_array($civilite, ['madame', 'mme', 'mme.', 'femme'])) {
+                $context = 'FEMME';
+            } elseif (str_contains($civilite, 'garçon') || str_contains($civilite, 'garcon')) {
+                $context = 'ENFANT_GARCON';
+            } elseif (str_contains($civilite, 'fille')) {
+                $context = 'ENFANT_FILLE';
+            }
+        }
+
+        // Si aucun contexte détecté, on ne peut pas valider précisément les bornes
+        if (! $context) {
+            return ['status' => 'OK'];
+        }
+
+        $range = $this->ranges()->where('context', $context)->first();
+
+        if (! $range) {
+            return ['status' => 'OK'];
+        }
+
+        // Vérification des bornes critiques (BLOCK)
+        if ($range->critical_min !== null && $numValue < (float)$range->critical_min) {
+            return [
+                'status' => 'BLOCK',
+                'message' => "Valeur extrêmement basse (Critique < {$range->critical_min})",
+                'expected' => "min: {$range->critical_min}",
+                'entered' => $value,
+                'unite' => $this->unite
+            ];
+        }
+        if ($range->critical_max !== null && $numValue > (float)$range->critical_max) {
+            return [
+                'status' => 'BLOCK',
+                'message' => "Valeur extrêmement élevée (Critique > {$range->critical_max})",
+                'expected' => "max: {$range->critical_max}",
+                'entered' => $value,
+                'unite' => $this->unite
+            ];
+        }
+
+        // Vérification des bornes normales (WARNING)
+        if ($range->normal_min !== null && $numValue < (float)$range->normal_min) {
+            return [
+                'status' => 'WARNING',
+                'message' => "Valeur en dehors des normes (Min: {$range->normal_min})",
+                'expected' => "min: {$range->normal_min}",
+                'entered' => $value,
+                'unite' => $this->unite
+            ];
+        }
+        if ($range->normal_max !== null && $numValue > (float)$range->normal_max) {
+            return [
+                'status' => 'WARNING',
+                'message' => "Valeur en dehors des normes (Max: {$range->normal_max})",
+                'expected' => "max: {$range->normal_max}",
+                'entered' => $value,
+                'unite' => $this->unite
+            ];
+        }
+
+        return ['status' => 'OK'];
+    }
+
     // Scopes utiles
     public function scopeActives($q)
     {
