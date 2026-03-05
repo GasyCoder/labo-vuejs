@@ -7,6 +7,10 @@ const props = defineProps({
     familles: Array,
     getFormValue: Function,
     setFormValue: Function,
+    canEditResults: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 // Standard options
@@ -205,7 +209,7 @@ const removeResultatAntibiotique = async (bacterieId, resultatId) => {
 <template>
 <div class="space-y-6 pt-2">
     <!-- Action Barre -->
-    <div class="flex justify-end mb-2">
+    <div v-if="canEditResults" class="flex justify-end mb-2">
         <button v-if="selectedOptions.length || autreValeur" @click="clearGermeSelection"
             class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg transition-all duration-200">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -219,9 +223,14 @@ const removeResultatAntibiotique = async (bacterieId, resultatId) => {
     <div>
         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Options standards (exclusives)</label>
         <div class="flex flex-wrap gap-2">
-            <button v-for="opt in standardOptionsList" :key="opt.value" @click="toggleStandardOption(opt.value)"
+            <button v-for="opt in standardOptionsList" :key="opt.value" 
+                :disabled="!canEditResults"
+                @click="toggleStandardOption(opt.value)"
                 class="px-3 py-1.5 rounded-full text-xs font-medium border transition"
-                :class="selectedOptions.includes(opt.value) ? 'bg-yellow-600 text-white border-yellow-700' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700'">
+                :class="[
+                    selectedOptions.includes(opt.value) ? 'bg-yellow-600 text-white border-yellow-700' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700',
+                    !canEditResults ? 'opacity-60 cursor-not-allowed' : ''
+                ]">
                 {{ opt.label }}
             </button>
         </div>
@@ -230,8 +239,8 @@ const removeResultatAntibiotique = async (bacterieId, resultatId) => {
     <!-- Champ "Autre" -->
     <div v-if="selectedOptions.includes('Autre')" class="p-4 bg-white dark:bg-slate-800 rounded-lg border border-yellow-200 dark:border-yellow-700">
         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Précisez la bactérie non listée</label>
-        <input type="text" :value="autreValeur" @input="updateAutreValeur($event.target.value)"
-            class="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-colors"
+        <input type="text" :disabled="!canEditResults" :value="autreValeur" @input="updateAutreValeur($event.target.value)"
+            class="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-colors disabled:bg-slate-100 dark:disabled:bg-slate-800"
             placeholder="Ex: Enterococcus faecalis, Candida albicans..." />
     </div>
 
@@ -243,10 +252,13 @@ const removeResultatAntibiotique = async (bacterieId, resultatId) => {
                     {{ famille.designation }}
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <button v-for="bac in famille.bacteries" :key="bac.id" @click="toggleBacterieOption(bac.id)"
-                        :disabled="hasStandardOption"
+                    <button v-for="bac in famille.bacteries" :key="bac.id" 
+                        @click="toggleBacterieOption(bac.id)"
+                        :disabled="hasStandardOption || !canEditResults"
                         class="px-3 py-1.5 rounded-full text-xs font-medium border transition"
-                        :class="selectedOptions.includes('bacterie-' + bac.id) ? 'bg-green-600 text-white border-green-700 shadow-sm' : (hasStandardOption ? 'bg-slate-100 dark:bg-slate-900/40 text-slate-400 border-slate-200 opacity-60 cursor-not-allowed' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:bg-slate-100 hover:border-slate-400')">
+                        :class="[
+                            selectedOptions.includes('bacterie-' + bac.id) ? 'bg-green-600 text-white border-green-700 shadow-sm' : (hasStandardOption || !canEditResults ? 'bg-slate-100 dark:bg-slate-900/40 text-slate-400 border-slate-200 opacity-60 cursor-not-allowed' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:bg-slate-100 hover:border-slate-400'),
+                        ]">
                         {{ bac.designation }}
                     </button>
                 </div>
@@ -264,13 +276,13 @@ const removeResultatAntibiotique = async (bacterieId, resultatId) => {
                     <p class="text-xs text-green-700 dark:text-green-300">Cliquez sur Synchroniser pour charger les tableaux.</p>
                 </div>
             </div>
-            <button @click="syncAntibiogrammes" :disabled="isSyncing"
+            <button v-if="canEditResults" @click="syncAntibiogrammes" :disabled="isSyncing"
                 class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
                 {{ isSyncing ? 'Synchronisation…' : 'Synchroniser' }}
             </button>
         </div>
 
-        <div v-if="isDirty" class="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 text-orange-800 dark:text-orange-300 rounded-lg text-sm">
+        <div v-if="isDirty && canEditResults" class="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 text-orange-800 dark:text-orange-300 rounded-lg text-sm">
             ⚠️ Sélection modifiée — veuillez cliquer sur <strong>Synchroniser</strong> pour mettre à jour les antibiogrammes.
         </div>
         <div v-else class="space-y-4">
@@ -293,7 +305,7 @@ const removeResultatAntibiotique = async (bacterieId, resultatId) => {
                     <div v-if="loadStates[bacId]" class="p-6 text-center text-sm text-slate-500"><div class="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>Chargement des données...</div>
                     <div v-else-if="antibiogrammesData[bacId]" class="p-4">
                         <!-- Add Form -->
-                        <div class="flex flex-wrap gap-3 items-end mb-4 bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <div v-if="canEditResults" class="flex flex-wrap gap-3 items-end mb-4 bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
                             <div class="flex-1 min-w-[200px]">
                                 <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Antibiotique</label>
                                 <select v-model="newAntibiotiqueInput[bacId]" class="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-sm dark:text-white">
@@ -322,24 +334,24 @@ const removeResultatAntibiotique = async (bacterieId, resultatId) => {
                                         <th class="px-4 py-3">Antibiotique</th>
                                         <th class="px-4 py-3 text-center">Interprétation</th>
                                         <th class="px-4 py-3 text-center">Diamètre (mm)</th>
-                                        <th class="px-4 py-3 text-center">Actions</th>
+                                        <th v-if="canEditResults" class="px-4 py-3 text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-slate-900">
                                     <tr v-for="res in antibiogrammesData[bacId].resultats" :key="res.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                                         <td class="px-4 py-2 font-medium text-slate-900 dark:text-slate-100">{{ res.antibiotique_designation }}</td>
                                         <td class="px-4 py-2 text-center">
-                                            <select :value="res.interpretation" @change="updateResultatAntibiotique(bacId, res.id, 'interpretation', $event.target.value)"
-                                                class="px-2 py-1 text-xs font-bold rounded border dark:border-slate-600 focus:ring-0"
+                                            <select :disabled="!canEditResults" :value="res.interpretation" @change="updateResultatAntibiotique(bacId, res.id, 'interpretation', $event.target.value)"
+                                                class="px-2 py-1 text-xs font-bold rounded border dark:border-slate-600 focus:ring-0 disabled:opacity-80"
                                                 :class="{'bg-green-50 text-green-700': res.interpretation==='S', 'bg-yellow-50 text-yellow-700': res.interpretation==='I', 'bg-red-50 text-red-700': res.interpretation==='R'}">
                                                 <option value="S">S</option><option value="I">I</option><option value="R">R</option>
                                             </select>
                                         </td>
                                         <td class="px-4 py-2 text-center">
-                                            <input type="number" step="0.1" :value="res.diametre_mm" @change="updateResultatAntibiotique(bacId, res.id, 'diametre_mm', $event.target.value)"
-                                                class="w-16 px-2 py-1 text-center text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 dark:text-white" placeholder="-" />
+                                            <input type="number" :disabled="!canEditResults" step="0.1" :value="res.diametre_mm" @change="updateResultatAntibiotique(bacId, res.id, 'diametre_mm', $event.target.value)"
+                                                class="w-16 px-2 py-1 text-center text-xs border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 dark:text-white disabled:bg-slate-50" placeholder="-" />
                                         </td>
-                                        <td class="px-4 py-2 text-center">
+                                        <td v-if="canEditResults" class="px-4 py-2 text-center">
                                             <button @click="removeResultatAntibiotique(bacId, res.id)" class="text-red-500 hover:text-red-700 p-1 bg-red-50 dark:bg-red-900/30 rounded"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg></button>
                                         </td>
                                     </tr>

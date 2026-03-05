@@ -1,11 +1,13 @@
 <script setup>
 import { ref, reactive, watch, computed, onMounted, onUnmounted } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import AnalyseNode from './AnalyseNode.vue';
 import AnalysesSidebar from './AnalysesSidebar.vue';
+
+const page = usePage();
 
 const props = defineProps({
     context: String,
@@ -16,6 +18,7 @@ const props = defineProps({
     familles: Array,
     notes: Object,
     conclusionsGroupes: Object,
+    canEditResults: Boolean,
     canEditConclusions: Boolean,
 });
 
@@ -103,6 +106,15 @@ onUnmounted(() => {
 });
 
 // ----- Computed -----
+const canEditResults = computed(() => {
+    return props.canEditResults;
+});
+
+const canValidate = computed(() => {
+    const user = page.props.auth.user;
+    return user?.permissions?.includes('analyses.valider') || user?.isAdmin;
+});
+
 const selectedParent = computed(() => {
     if (!selectedParentId.value) return null;
     return props.analysesTree.find(a => a.id === selectedParentId.value);
@@ -279,7 +291,11 @@ const finalizePrescription = async () => {
                 showConfirmButton: false,
                 timer: 3000
             });
-            router.visit(route('technicien.index'));
+            const redirectRoute = props.context === 'biologiste' 
+                ? route('biologiste.analyse.index') 
+                : route('technicien.index');
+            
+            router.visit(redirectRoute);
         }
     } catch (e) {
         if (e.response && e.response.status === 422) {
@@ -405,7 +421,7 @@ const statusBadge = (status) => {
                     <!-- Row 2: Back Button + Status -->
                     <div class="flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-700/50 pt-4">
                         <div class="flex gap-3">
-                            <Link :href="route('technicien.index')"
+                            <Link :href="props.context === 'biologiste' ? route('biologiste.analyse.index') : route('technicien.index')"
                                 class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-transparent hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg transition-all duration-200 shadow-sm">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -495,6 +511,7 @@ const statusBadge = (status) => {
                                             :setFormValue="setFormValue"
                                             :saveStatus="saveStatus"
                                             :savedAt="savedAt"
+                                            :canEditResults="canEditResults"
                                             :canEditConclusions="canEditConclusions"
                                             :notesState="notesState"
                                             :noteDrafts="noteDrafts"

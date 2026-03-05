@@ -182,7 +182,7 @@ Route::middleware(['auth', 'role:secretaire,biologiste,superadmin,admin'])->pref
 // ============================================
 // ROUTES SPÉCIFIQUES AUX TECHNICIENS
 // ============================================
-Route::middleware(['auth', 'role:technicien,superadmin,admin'])->prefix('technicien')->name('technicien.')->group(function () {
+Route::middleware(['auth', 'role:technicien,superadmin,admin,biologiste'])->prefix('technicien')->name('technicien.')->group(function () {
     Route::get('traitement', [TechnicienController::class, 'index'])->name('index');
     Route::post('prescription/{id}/start', [TechnicienController::class, 'startAnalysis'])->name('prescription.start');
     Route::post('prescription/{id}/continue', [TechnicienController::class, 'continueAnalysis'])->name('prescription.continue');
@@ -218,6 +218,7 @@ Route::middleware(['auth', 'role:biologiste,superadmin,admin'])->prefix('biologi
     // Routes principales
     Route::get('/analyse-valide', [RoleWorklistController::class, 'biologiste'])->name('analyse.index');
     Route::get('/prescription/{prescription}', [PrescriptionWorkspaceController::class, 'showBiologiste'])->name('prescription.show');
+    Route::get('/workspace/{prescription}', [PrescriptionWorkspaceController::class, 'showBiologisteWorkspace'])->name('prescription.workspace');
     Route::get('/valide/{prescription}/analyse', [PrescriptionWorkspaceController::class, 'showBiologisteValidation'])->name('valide.show');
 
     // Validation actions

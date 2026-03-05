@@ -31,6 +31,10 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    canEditResults: {
+        type: Boolean,
+        default: false,
+    },
     canEditConclusions: {
         type: Boolean,
         default: false,
@@ -140,6 +144,7 @@ const props = defineProps({
                 :setFormValue="setFormValue"
                 :saveStatus="saveStatus"
                 :savedAt="savedAt"
+                :canEditResults="canEditResults"
                 :canEditConclusions="canEditConclusions"
                 :notesState="notesState"
                 :noteDrafts="noteDrafts"
@@ -171,6 +176,7 @@ const props = defineProps({
                     :familles="familles"
                     :getFormValue="getFormValue"
                     :setFormValue="setFormValue"
+                    :canEditResults="canEditResults"
                 />
             </div>
 
@@ -181,13 +187,13 @@ const props = defineProps({
                         Valeur <span v-if="node.unite">({{ node.unite }})</span>
                         <span v-if="node.valeur_ref" class="ml-2 text-green-600 dark:text-green-400 font-medium">({{ node.valeur_ref_label }}: {{ node.valeur_ref }}{{ node.unite ? ' ' + node.unite : '' }})</span>
                     </label>
-                    <input type="text" :value="getFormValue(node.id, 'valeur')" @input="setFormValue(node.id, 'valeur', $event.target.value)" placeholder="Entrez une valeur"
-                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+                    <input type="text" :disabled="!canEditResults" :value="getFormValue(node.id, 'valeur')" @input="setFormValue(node.id, 'valeur', $event.target.value)" placeholder="Entrez une valeur"
+                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-slate-50 dark:disabled:bg-slate-800 disabled:text-slate-500" />
                 </div>
                 <div class="space-y-2">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Interprétation</label>
-                    <select :value="getFormValue(node.id, 'interpretation')" @change="setFormValue(node.id, 'interpretation', $event.target.value)"
-                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                    <select :disabled="!canEditResults" :value="getFormValue(node.id, 'interpretation')" @change="setFormValue(node.id, 'interpretation', $event.target.value)"
+                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-slate-50 dark:disabled:bg-slate-800">
                         <option value="">Sélectionner</option>
                         <option value="NORMAL">Normal</option>
                         <option value="PATHOLOGIQUE">Pathologique</option>
@@ -202,8 +208,8 @@ const props = defineProps({
                         Valeur <span v-if="node.unite">({{ node.unite }})</span>
                     </label>
                     <div class="flex">
-                        <input type="text" :value="getFormValue(node.id, 'valeur')" @input="setFormValue(node.id, 'valeur', $event.target.value)" placeholder="Entrez une valeur"
-                            class="flex-1 px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-l-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+                        <input type="text" :disabled="!canEditResults" :value="getFormValue(node.id, 'valeur')" @input="setFormValue(node.id, 'valeur', $event.target.value)" placeholder="Entrez une valeur"
+                            class="flex-1 px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-l-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-slate-50 dark:disabled:bg-slate-800" />
                         <span v-if="node.suffixe" class="inline-flex items-center px-3 py-2 bg-slate-100 dark:bg-slate-800 border border-l-0 border-slate-300 dark:border-slate-600 rounded-r-lg text-slate-700 dark:text-slate-300 text-sm font-medium">
                             {{ node.suffixe }}
                         </span>
@@ -211,8 +217,8 @@ const props = defineProps({
                 </div>
                 <div class="space-y-2">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Interprétation</label>
-                    <select :value="getFormValue(node.id, 'interpretation')" @change="setFormValue(node.id, 'interpretation', $event.target.value)"
-                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                    <select :disabled="!canEditResults" :value="getFormValue(node.id, 'interpretation')" @change="setFormValue(node.id, 'interpretation', $event.target.value)"
+                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-slate-50 dark:disabled:bg-slate-800">
                         <option value="">Sélectionner</option>
                         <option value="NORMAL">Normal</option>
                         <option value="PATHOLOGIQUE">Pathologique</option>
@@ -225,21 +231,21 @@ const props = defineProps({
                 <div class="space-y-2">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Sélection</label>
                     <div v-if="node.valeurs_predefinies?.length" class="space-y-2">
-                        <select :value="getFormValue(node.id, 'resultats')" @change="setFormValue(node.id, 'resultats', $event.target.value)"
-                            class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                        <select :disabled="!canEditResults" :value="getFormValue(node.id, 'resultats')" @change="setFormValue(node.id, 'resultats', $event.target.value)"
+                            class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-slate-50 dark:disabled:bg-slate-800">
                             <option value="">Veuillez choisir</option>
                             <option v-for="opt in node.valeurs_predefinies" :key="opt" :value="opt">{{ opt }}</option>
                         </select>
-                        <input v-if="getFormValue(node.id, 'resultats') === 'Autre'" type="text" :value="getFormValue(node.id, 'valeur')" @input="setFormValue(node.id, 'valeur', $event.target.value)" placeholder="Précisez..."
-                            class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+                        <input v-if="getFormValue(node.id, 'resultats') === 'Autre'" type="text" :disabled="!canEditResults" :value="getFormValue(node.id, 'valeur')" @input="setFormValue(node.id, 'valeur', $event.target.value)" placeholder="Précisez..."
+                            class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-slate-50 dark:disabled:bg-slate-800" />
                     </div>
-                    <input v-else type="text" :value="getFormValue(node.id, 'valeur')" @input="setFormValue(node.id, 'valeur', $event.target.value)" placeholder="Entrez une valeur"
-                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+                    <input v-else type="text" :disabled="!canEditResults" :value="getFormValue(node.id, 'valeur')" @input="setFormValue(node.id, 'valeur', $event.target.value)" placeholder="Entrez une valeur"
+                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-slate-50 dark:disabled:bg-slate-800" />
                 </div>
                 <div class="space-y-2">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Interprétation</label>
-                    <select :value="getFormValue(node.id, 'interpretation')" @change="setFormValue(node.id, 'interpretation', $event.target.value)"
-                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                    <select :disabled="!canEditResults" :value="getFormValue(node.id, 'interpretation')" @change="setFormValue(node.id, 'interpretation', $event.target.value)"
+                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-slate-50 dark:disabled:bg-slate-800">
                         <option value="">Sélectionner</option>
                         <option value="NORMAL">Normal</option>
                         <option value="PATHOLOGIQUE">Pathologique</option>
@@ -252,13 +258,13 @@ const props = defineProps({
                 <div class="space-y-3">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Résultat</label>
                     <div class="flex gap-6">
-                        <label class="flex items-center gap-3 cursor-pointer group">
-                            <input type="radio" value="NEGATIF" :checked="getFormValue(node.id, 'valeur') === 'NEGATIF'" @change="setFormValue(node.id, 'valeur', 'NEGATIF')"
+                        <label class="flex items-center gap-3 cursor-pointer group" :class="{'opacity-60 cursor-not-allowed': !canEditResults}">
+                            <input type="radio" :disabled="!canEditResults" value="NEGATIF" :checked="getFormValue(node.id, 'valeur') === 'NEGATIF'" @change="setFormValue(node.id, 'valeur', 'NEGATIF')"
                                 class="w-4 h-4 text-green-600 border-slate-300 focus:ring-green-500" />
                             <span class="text-green-600 dark:text-green-400 font-medium text-sm">Négatif</span>
                         </label>
-                        <label class="flex items-center gap-3 cursor-pointer group">
-                            <input type="radio" value="POSITIF" :checked="getFormValue(node.id, 'valeur') === 'POSITIF'" @change="setFormValue(node.id, 'valeur', 'POSITIF')"
+                        <label class="flex items-center gap-3 cursor-pointer group" :class="{'opacity-60 cursor-not-allowed': !canEditResults}">
+                            <input type="radio" :disabled="!canEditResults" value="POSITIF" :checked="getFormValue(node.id, 'valeur') === 'POSITIF'" @change="setFormValue(node.id, 'valeur', 'POSITIF')"
                                 class="w-4 h-4 text-red-600 border-slate-300 focus:ring-red-500" />
                             <span class="text-red-600 dark:text-red-400 font-medium text-sm">Positif</span>
                         </label>
@@ -266,8 +272,8 @@ const props = defineProps({
                 </div>
                 <div class="space-y-2">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Interprétation</label>
-                    <select :value="getFormValue(node.id, 'interpretation')" @change="setFormValue(node.id, 'interpretation', $event.target.value)"
-                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                    <select :disabled="!canEditResults" :value="getFormValue(node.id, 'interpretation')" @change="setFormValue(node.id, 'interpretation', $event.target.value)"
+                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-slate-50 dark:disabled:bg-slate-800">
                         <option value="">Sélectionner</option>
                         <option value="NORMAL">Normal</option>
                         <option value="PATHOLOGIQUE">Pathologique</option>
@@ -280,13 +286,13 @@ const props = defineProps({
                 <div class="space-y-3">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Résultat</label>
                     <div class="flex gap-6">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" value="NEGATIF" :checked="getFormValue(node.id, 'valeur') === 'NEGATIF'" @change="setFormValue(node.id, 'valeur', 'NEGATIF')"
+                        <label class="flex items-center gap-2 cursor-pointer" :class="{'opacity-60 cursor-not-allowed': !canEditResults}">
+                            <input type="radio" :disabled="!canEditResults" value="NEGATIF" :checked="getFormValue(node.id, 'valeur') === 'NEGATIF'" @change="setFormValue(node.id, 'valeur', 'NEGATIF')"
                                 class="w-4 h-4 text-green-600 border-slate-300 focus:ring-green-500" />
                             <span class="text-green-600 dark:text-green-400 font-medium text-sm">Négatif</span>
                         </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" value="POSITIF" :checked="getFormValue(node.id, 'valeur') === 'POSITIF'" @change="setFormValue(node.id, 'valeur', 'POSITIF')"
+                        <label class="flex items-center gap-2 cursor-pointer" :class="{'opacity-60 cursor-not-allowed': !canEditResults}">
+                            <input type="radio" :disabled="!canEditResults" value="POSITIF" :checked="getFormValue(node.id, 'valeur') === 'POSITIF'" @change="setFormValue(node.id, 'valeur', 'POSITIF')"
                                 class="w-4 h-4 text-red-600 border-slate-300 focus:ring-red-500" />
                             <span class="text-red-600 dark:text-red-400 font-medium text-sm">Positif</span>
                         </label>
@@ -294,8 +300,8 @@ const props = defineProps({
                 </div>
                 <div class="space-y-2">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Valeur <span v-if="node.unite">({{ node.unite }})</span></label>
-                    <input type="text" :value="getFormValue(node.id, 'resultats')" @input="setFormValue(node.id, 'resultats', $event.target.value)" placeholder="Valeur de référence"
-                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+                    <input type="text" :disabled="!canEditResults" :value="getFormValue(node.id, 'resultats')" @input="setFormValue(node.id, 'resultats', $event.target.value)" placeholder="Valeur de référence"
+                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-slate-50 dark:disabled:bg-slate-800" />
                 </div>
             </div>
 
@@ -304,13 +310,13 @@ const props = defineProps({
                 <div class="space-y-3">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Résultat</label>
                     <div class="flex gap-4">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" value="ABSENCE" :checked="getFormValue(node.id, 'valeur') === 'ABSENCE'" @change="setFormValue(node.id, 'valeur', 'ABSENCE')"
+                        <label class="flex items-center gap-2 cursor-pointer" :class="{'opacity-60 cursor-not-allowed': !canEditResults}">
+                            <input type="radio" :disabled="!canEditResults" value="ABSENCE" :checked="getFormValue(node.id, 'valeur') === 'ABSENCE'" @change="setFormValue(node.id, 'valeur', 'ABSENCE')"
                                 class="w-4 h-4 text-green-600 border-slate-300 focus:ring-green-500" />
                             <span class="text-green-600 dark:text-green-400 font-medium text-sm">Absence</span>
                         </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" value="PRESENCE" :checked="getFormValue(node.id, 'valeur') === 'PRESENCE'" @change="setFormValue(node.id, 'valeur', 'PRESENCE')"
+                        <label class="flex items-center gap-2 cursor-pointer" :class="{'opacity-60 cursor-not-allowed': !canEditResults}">
+                            <input type="radio" :disabled="!canEditResults" value="PRESENCE" :checked="getFormValue(node.id, 'valeur') === 'PRESENCE'" @change="setFormValue(node.id, 'valeur', 'PRESENCE')"
                                 class="w-4 h-4 text-red-600 border-slate-300 focus:ring-red-500" />
                             <span class="text-red-600 dark:text-red-400 font-medium text-sm">Présence</span>
                         </label>
@@ -318,13 +324,13 @@ const props = defineProps({
                 </div>
                 <div class="space-y-2">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Valeur <span v-if="node.unite">({{ node.unite }})</span></label>
-                    <input type="text" :value="getFormValue(node.id, 'resultats')" @input="setFormValue(node.id, 'resultats', $event.target.value)" placeholder="Préciser la valeur"
-                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+                    <input type="text" :disabled="!canEditResults" :value="getFormValue(node.id, 'resultats')" @input="setFormValue(node.id, 'resultats', $event.target.value)" placeholder="Préciser la valeur"
+                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-slate-50 dark:disabled:bg-slate-800" />
                 </div>
                 <div class="space-y-2">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Interprétation</label>
-                    <select :value="getFormValue(node.id, 'interpretation')" @change="setFormValue(node.id, 'interpretation', $event.target.value)"
-                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                    <select :disabled="!canEditResults" :value="getFormValue(node.id, 'interpretation')" @change="setFormValue(node.id, 'interpretation', $event.target.value)"
+                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-slate-50 dark:disabled:bg-slate-800">
                         <option value="">Sélectionner</option>
                         <option value="NORMAL">Normal</option>
                         <option value="PATHOLOGIQUE">Pathologique</option>
@@ -336,18 +342,18 @@ const props = defineProps({
             <div v-else-if="node.type === 'LEUCOCYTES'" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="space-y-2">
                     <label class="block text-xs text-slate-700 dark:text-slate-300">Valeur</label>
-                    <input type="number" :value="getFormValue(node.id, 'valeur')" @input="setFormValue(node.id, 'valeur', $event.target.value)" placeholder="Valeur"
-                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+                    <input type="number" :disabled="!canEditResults" :value="getFormValue(node.id, 'valeur')" @input="setFormValue(node.id, 'valeur', $event.target.value)" placeholder="Valeur"
+                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-slate-50 dark:disabled:bg-slate-800" />
                 </div>
                 <div class="space-y-2">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Polynucléaires (%)</label>
-                    <input type="number" min="0" max="100" :value="getFormValue(node.id, 'polynucleaires')" @input="setFormValue(node.id, 'polynucleaires', $event.target.value)"
-                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+                    <input type="number" :disabled="!canEditResults" min="0" max="100" :value="getFormValue(node.id, 'polynucleaires')" @input="setFormValue(node.id, 'polynucleaires', $event.target.value)"
+                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-slate-50 dark:disabled:bg-slate-800" />
                 </div>
                 <div class="space-y-2">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Lymphocytes (%)</label>
-                    <input type="number" min="0" max="100" :value="getFormValue(node.id, 'lymphocytes')" @input="setFormValue(node.id, 'lymphocytes', $event.target.value)"
-                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+                    <input type="number" :disabled="!canEditResults" min="0" max="100" :value="getFormValue(node.id, 'lymphocytes')" @input="setFormValue(node.id, 'lymphocytes', $event.target.value)"
+                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-slate-50 dark:disabled:bg-slate-800" />
                 </div>
             </div>
 
@@ -364,21 +370,21 @@ const props = defineProps({
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Résultat</label>
                         <div v-if="node.valeurs_predefinies?.length" class="space-y-2">
-                            <select :value="getFormValue(node.id, 'resultats')" @change="setFormValue(node.id, 'resultats', $event.target.value)"
-                                class="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors">
+                            <select :disabled="!canEditResults" :value="getFormValue(node.id, 'resultats')" @change="setFormValue(node.id, 'resultats', $event.target.value)"
+                                class="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors disabled:bg-slate-50 dark:disabled:bg-slate-800">
                                 <option value="">Veuillez choisir</option>
                                 <option v-for="opt in node.valeurs_predefinies" :key="opt" :value="opt">{{ opt }}</option>
                             </select>
-                            <input v-if="getFormValue(node.id, 'resultats') === 'Autre'" type="text" :value="getFormValue(node.id, 'valeur')" @input="setFormValue(node.id, 'valeur', $event.target.value)" placeholder="Précisez..."
-                                class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors" />
+                            <input v-if="getFormValue(node.id, 'resultats') === 'Autre'" type="text" :disabled="!canEditResults" :value="getFormValue(node.id, 'valeur')" @input="setFormValue(node.id, 'valeur', $event.target.value)" placeholder="Précisez..."
+                                class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors disabled:bg-slate-50 dark:disabled:bg-slate-800" />
                         </div>
-                        <textarea v-else rows="3" :value="getFormValue(node.id, 'resultats')" @input="setFormValue(node.id, 'resultats', $event.target.value)" placeholder="Décrivez la flore vaginale..."
-                            class="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 resize-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors" />
+                        <textarea v-else :disabled="!canEditResults" rows="3" :value="getFormValue(node.id, 'resultats')" @input="setFormValue(node.id, 'resultats', $event.target.value)" placeholder="Décrivez la flore vaginale..."
+                            class="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 resize-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors disabled:bg-slate-50 dark:disabled:bg-slate-800" />
                     </div>
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Interprétation</label>
-                        <select :value="getFormValue(node.id, 'interpretation')" @change="setFormValue(node.id, 'interpretation', $event.target.value)"
-                            class="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors">
+                        <select :disabled="!canEditResults" :value="getFormValue(node.id, 'interpretation')" @change="setFormValue(node.id, 'interpretation', $event.target.value)"
+                            class="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors disabled:bg-slate-50 dark:disabled:bg-slate-800">
                             <option value="">Sélectionner</option>
                             <option value="NORMAL">Normal</option>
                             <option value="PATHOLOGIQUE">Pathologique</option>
@@ -394,16 +400,16 @@ const props = defineProps({
                     <span v-if="node.valeur_ref" class="ml-2 text-green-600 dark:text-green-400 font-medium text-xs">({{ node.valeur_ref_label }}: {{ node.valeur_ref }}{{ node.unite ? ' ' + node.unite : '' }})</span>
                 </label>
                 <div v-if="node.valeurs_predefinies?.length" class="space-y-2">
-                    <select :value="getFormValue(node.id, 'resultats')" @change="setFormValue(node.id, 'resultats', $event.target.value)"
-                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                    <select :disabled="!canEditResults" :value="getFormValue(node.id, 'resultats')" @change="setFormValue(node.id, 'resultats', $event.target.value)"
+                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-slate-50 dark:disabled:bg-slate-800">
                         <option value="">Veuillez choisir</option>
                         <option v-for="opt in node.valeurs_predefinies" :key="opt" :value="opt">{{ opt }}</option>
                     </select>
-                    <input v-if="getFormValue(node.id, 'resultats') === 'Autre'" type="text" :value="getFormValue(node.id, 'valeur')" @input="setFormValue(node.id, 'valeur', $event.target.value)" placeholder="Précisez..."
-                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+                    <input v-if="getFormValue(node.id, 'resultats') === 'Autre'" type="text" :disabled="!canEditResults" :value="getFormValue(node.id, 'valeur')" @input="setFormValue(node.id, 'valeur', $event.target.value)" placeholder="Précisez..."
+                        class="w-full px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-slate-50 dark:disabled:bg-slate-800" />
                 </div>
-                <textarea v-else rows="4" :value="getFormValue(node.id, 'resultats')" @input="setFormValue(node.id, 'resultats', $event.target.value)" placeholder="Saisie libre…"
-                    class="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+                <textarea v-else :disabled="!canEditResults" rows="4" :value="getFormValue(node.id, 'resultats')" @input="setFormValue(node.id, 'resultats', $event.target.value)" placeholder="Saisie libre…"
+                    class="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-slate-50 dark:disabled:bg-slate-800" />
             </div>
         </div>
 
@@ -422,7 +428,7 @@ const props = defineProps({
                 <div v-if="notesState[node.id]?.length" class="space-y-2 mt-2">
                     <div v-for="note in notesState[node.id]" :key="note.id" class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg text-sm border border-slate-200 dark:border-slate-700">
                         <div class="flex justify-between items-start mb-1">
-                            <span class="text-xs text-slate-500 dark:text-slate-400">{{ note.created_at }} par {{ note.technicien_name }}</span>
+                            <span class="text-xs text-slate-500 dark:text-slate-400">Note</span>
                             <div v-if="canEditConclusions" class="flex gap-2 text-xs font-semibold">
                                 <button @click="startEditNote(node.id, note)" class="text-blue-600 dark:text-blue-400 hover:underline">Modifier</button>
                                 <button @click="deleteConclusionNote(node.id, note.id)" class="text-red-600 dark:text-red-400 hover:underline">Supprimer</button>

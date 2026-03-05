@@ -101,6 +101,11 @@ const handleView = (p) => {
     router.get(route('biologiste.prescription.show', p.id));
 };
 
+// --- Treat as Technician ---
+const handleTreat = (p) => {
+    router.get(route('biologiste.prescription.workspace', p.id));
+};
+
 // --- Toast ---
 const showToast = (message, type = 'success') => {
     clearTimeout(toastTimer);
@@ -173,6 +178,7 @@ const emptyMessages = {
                             @reject="openRejectModal"
                             @preview="handlePreview"
                             @view="handleView"
+                            @treat="handleTreat"
                         />
                     </div>
 

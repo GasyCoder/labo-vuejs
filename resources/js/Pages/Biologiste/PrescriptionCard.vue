@@ -1,4 +1,6 @@
 <script setup>
+import { computed } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import GroupTagList from './GroupTagList.vue';
 
 const props = defineProps({
@@ -16,7 +18,13 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['validate', 'reject', 'view', 'preview']);
+const emit = defineEmits(['validate', 'reject', 'view', 'preview', 'treat']);
+
+const page = usePage();
+const canPerformAnalyses = computed(() => {
+    const user = page.props.auth.user;
+    return user?.permissions?.includes('analyses.effectuer') || user?.isAdmin;
+});
 
 const getInitials = (p) => p ? (p.prenom?.[0] || '') + (p.nom?.[0] || '') : '??';
 
@@ -91,16 +99,27 @@ const status = statusConfig[props.tab] || statusConfig.a_valider;
         <div class="px-4 pb-4 pt-1 border-t border-gray-100 dark:border-gray-700/50">
             <!-- À valider tab: Valider (primary full-width) + Aperçu & À refaire row -->
             <div v-if="tab === 'a_valider'" class="space-y-2">
-                <button
-                    @click="emit('validate', prescription)"
-                    :disabled="actionProcessing !== null"
-                    class="w-full flex items-center justify-center gap-2 h-11 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-lg text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    aria-label="Valider cette prescription"
-                >
-                    <svg v-if="actionProcessing === 'validate-' + prescription.id" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-                    <svg v-else class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                    <span>{{ actionProcessing === 'validate-' + prescription.id ? 'Validation...' : 'Valider' }}</span>
-                </button>
+                <div class="flex gap-2">
+                    <button
+                        @click="emit('validate', prescription)"
+                        :disabled="actionProcessing !== null"
+                        class="flex-1 flex items-center justify-center gap-2 h-11 px-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-lg text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label="Valider cette prescription"
+                    >
+                        <svg v-if="actionProcessing === 'validate-' + prescription.id" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                        <svg v-else class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                        <span>{{ actionProcessing === 'validate-' + prescription.id ? 'Validation...' : 'Valider' }}</span>
+                    </button>
+                    <button
+                        v-if="canPerformAnalyses"
+                        @click="emit('treat', prescription)"
+                        class="flex-1 flex items-center justify-center gap-2 h-11 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold transition-colors"
+                        aria-label="Traiter comme technicien"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        <span>Traiter</span>
+                    </button>
+                </div>
                 <div class="grid grid-cols-2 gap-2">
                     <button
                         @click="emit('preview', prescription)"

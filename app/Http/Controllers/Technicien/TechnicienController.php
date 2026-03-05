@@ -15,6 +15,11 @@ class TechnicienController extends Controller
 {
     public function index(Request $request): Response
     {
+        $user = Auth::user();
+        if ($user->hasRole('biologiste') && ! $user->hasPermissionTo('analyses.effectuer')) {
+            abort(403, 'Vous n\'avez pas la permission d\'effectuer des analyses.');
+        }
+
         $tab = $request->input('tab', 'en_attente');
         $search = $request->input('search', '');
 

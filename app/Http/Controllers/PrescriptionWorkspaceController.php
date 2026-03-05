@@ -14,12 +14,27 @@ class PrescriptionWorkspaceController extends Controller
 {
     public function showTechnicien(Prescription $prescription): Response
     {
+        $user = auth()->user();
+        if ($user->hasRole('biologiste') && ! $user->hasPermissionTo('analyses.effectuer')) {
+            abort(403, 'Vous n\'avez pas la permission d\'effectuer des analyses.');
+        }
+
         return $this->renderWorkspace($prescription, 'technicien', 'Espace Technicien');
     }
 
     public function showBiologiste(Prescription $prescription): Response
     {
         return $this->renderWorkspace($prescription, 'biologiste', 'Espace Biologiste');
+    }
+
+    public function showBiologisteWorkspace(Prescription $prescription): Response
+    {
+        $user = auth()->user();
+        if ($user->hasRole('biologiste') && ! $user->hasPermissionTo('analyses.effectuer')) {
+            abort(403, 'Vous n\'avez pas la permission d\'effectuer des analyses.');
+        }
+
+        return $this->renderWorkspace($prescription, 'biologiste', 'Saisie Résultats (Biologiste)');
     }
 
     public function showBiologisteValidation(Prescription $prescription): Response
@@ -105,7 +120,8 @@ class PrescriptionWorkspaceController extends Controller
                 ->get()
                 ->keyBy('examen_id')
                 ->map(fn ($c) => $c->conclusion),
-            'canEditConclusions' => auth()->user()?->can('analyses.conclusion') ?? true, // Fallback to true if no permission set for testing
+            'canEditResults' => auth()->user()?->isSuperAdmin() || auth()->user()?->hasRole('admin') || auth()->user()?->hasPermissionTo('analyses.effectuer'),
+            'canEditConclusions' => auth()->user()?->isSuperAdmin() || auth()->user()?->hasRole('admin') || auth()->user()?->hasPermissionTo('analyses.conclusion'),
             'resultats' => $resultatsMap->map(fn ($r) => [
                 'id' => $r->id,
                 'analyse_id' => $r->analyse_id,
