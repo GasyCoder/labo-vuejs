@@ -28,44 +28,8 @@
         </td>
         <td class="col-anteriorite">
             @if($resultat && $resultat->anteriorite)
-                @php
-                    $affichageAnteriorite = $resultat->anteriorite;
-
-                    $dateFormatee = '';
-                    if ($resultat->anteriorite_date) {
-                        if (is_string($resultat->anteriorite_date)) {
-                            $dateFormatee = $resultat->anteriorite_date;
-                        } elseif (is_object($resultat->anteriorite_date) && method_exists($resultat->anteriorite_date, 'format')) {
-                            $dateFormatee = $resultat->anteriorite_date->format('d/m/Y');
-                        } else {
-                            try {
-                                $dateFormatee = \Carbon\Carbon::parse($resultat->anteriorite_date)->format('d/m/Y');
-                            } catch (\Exception $e) {
-                                $dateFormatee = $resultat->anteriorite_date;
-                            }
-                        }
-                    }
-
-                    if ($dateFormatee) {
-                        $affichageAnteriorite .= ' (' . $dateFormatee . ')';
-                    }
-
-                    $comparaison = $resultat->anteriorite_comparaison;
-                    $texteComparaison = '';
-
-                    if ($comparaison) {
-                        if ($comparaison['tendance'] === 'hausse') {
-                            $texteComparaison = '+' . abs($comparaison['difference']);
-                        } elseif ($comparaison['tendance'] === 'baisse') {
-                            $texteComparaison = '-' . abs($comparaison['difference']);
-                        } else {
-                            $texteComparaison = '=';
-                        }
-                    }
-                @endphp
-
                 <div style="font-size: 8pt; color: #999; white-space: nowrap;">
-                    {{ $affichageAnteriorite }}@if($texteComparaison), {{ $texteComparaison }}@endif
+                    {{ $resultat->anteriorite_formattee }}
                 </div>
             @endif
         </td>
@@ -178,7 +142,6 @@
                 <div style="font-weight: 600; margin-bottom: 2px;">Notes :</div>
                 @foreach($notes as $note)
                     <div style="margin-bottom: 2px;">
-                        • {{ optional($note->created_at)->format('d/m/Y H:i') }} —
                         {!! nl2br(e($note->note)) !!}
                     </div>
                 @endforeach

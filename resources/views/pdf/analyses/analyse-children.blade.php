@@ -56,8 +56,8 @@
                             {{-- Si on a des sous-détails, fermer cette cellule et créer de nouvelles lignes --}}
                             @if(isset($leucoData['polynucleaires']) || isset($leucoData['lymphocytes']))
                                 </td><td class="col-valref">{{ $child->getValeurReferenceByPatient($prescription->patient ?? null) ?? '' }}</td><td class="col-anteriorite">
-                                @if($resultat && isset($resultat->antecedent))
-                                    {{ $resultat->antecedent }}
+                                @if($resultat && $resultat->anteriorite)
+                                    {{ $resultat->anteriorite_formattee }}
                                 @endif
                                 </td></tr>
                                 
@@ -212,8 +212,8 @@
                 {{ $child->getValeurReferenceByPatient($prescription->patient ?? null) ?? '' }}
             </td>
             <td class="col-anteriorite">
-                @if($resultat && isset($resultat->antecedent))
-                    {{ $resultat->antecedent }}
+                @if($resultat && $resultat->anteriorite)
+                    {{ $resultat->anteriorite_formattee }}
                 @endif
             </td>
         </tr>
@@ -302,7 +302,6 @@
                 <td colspan="3" style="font-size: 9pt; line-height: 1.3;">
                     @foreach($notes as $note)
                         <div style="margin-bottom: 2px;">
-                            • {{ optional($note->created_at)->format('d/m/Y H:i') }} —
                             {!! nl2br(e($note->note)) !!}
                         </div>
                     @endforeach

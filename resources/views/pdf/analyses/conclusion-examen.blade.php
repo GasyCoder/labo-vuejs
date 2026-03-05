@@ -40,7 +40,6 @@
             @foreach($notes as $note)
                 <div style="margin-bottom: 4px;">
                     <strong>{{ $designationById[$note->analyse_id] ?? 'Analyse' }}:</strong>
-                    {{ optional($note->created_at)->format('d/m/Y H:i') }} —
                     {!! nl2br(e($note->note)) !!}
                 </div>
             @endforeach
