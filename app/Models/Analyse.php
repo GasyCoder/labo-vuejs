@@ -126,7 +126,7 @@ class Analyse extends Model
         if ($range->critical_min !== null && $numValue < (float)$range->critical_min) {
             return [
                 'status' => 'BLOCK',
-                'message' => "Valeur extrêmement basse (Critique < {$range->critical_min})",
+                'message' => "VALEUR IMPOSSIBLE (Trop basse)",
                 'expected' => "min: {$range->critical_min}",
                 'entered' => $value,
                 'unite' => $this->unite
@@ -135,7 +135,7 @@ class Analyse extends Model
         if ($range->critical_max !== null && $numValue > (float)$range->critical_max) {
             return [
                 'status' => 'BLOCK',
-                'message' => "Valeur extrêmement élevée (Critique > {$range->critical_max})",
+                'message' => "VALEUR IMPOSSIBLE (Trop élevée)",
                 'expected' => "max: {$range->critical_max}",
                 'entered' => $value,
                 'unite' => $this->unite
@@ -146,7 +146,7 @@ class Analyse extends Model
         if ($range->normal_min !== null && $numValue < (float)$range->normal_min) {
             return [
                 'status' => 'WARNING',
-                'message' => "Valeur en dehors des normes (Min: {$range->normal_min})",
+                'message' => "RÉSULTAT TROP BAS",
                 'expected' => "min: {$range->normal_min}",
                 'entered' => $value,
                 'unite' => $this->unite
@@ -155,7 +155,7 @@ class Analyse extends Model
         if ($range->normal_max !== null && $numValue > (float)$range->normal_max) {
             return [
                 'status' => 'WARNING',
-                'message' => "Valeur en dehors des normes (Max: {$range->normal_max})",
+                'message' => "RÉSULTAT TROP ÉLEVÉ",
                 'expected' => "max: {$range->normal_max}",
                 'entered' => $value,
                 'unite' => $this->unite
@@ -319,49 +319,68 @@ class Analyse extends Model
         return $total;
     }
 
+    public function getFullRangesByPatient($patient = null)
+    {
+        if (! $patient) return null;
+
+        $civilite = strtolower(trim($patient->civilite ?? ''));
+        $context = null;
+
+        if (in_array($civilite, ['monsieur', 'mr', 'm.', 'homme'])) {
+            $context = 'HOMME';
+        } elseif (in_array($civilite, ['madame', 'mme', 'mme.', 'femme'])) {
+            $context = 'FEMME';
+        } elseif (str_contains($civilite, 'garçon') || str_contains($civilite, 'garcon')) {
+            $context = 'ENFANT_GARCON';
+        } elseif (str_contains($civilite, 'fille')) {
+            $context = 'ENFANT_FILLE';
+        }
+
+        if (! $context) return null;
+
+        return $this->ranges()->where('context', $context)->first();
+    }
+
     /**
-     * Obtenir la valeur de référence selon le genre/civilité du patient
+     * Obtenir la valeur de référence selon le genre/civilité du patient (via AnalyseRange)
      */
     public function getValeurReferenceByPatient($patient = null)
     {
-        $field = null;
-        if ($patient && $patient->civilite) {
-            $civilite = strtolower(trim($patient->civilite));
+        $civilite = strtolower(trim($patient->civilite ?? ''));
+        $context = null;
 
-            // Mapping des civilités vers les champs appropriés
-            $mapping = [
-                'monsieur' => 'valeur_ref_homme',
-                'mr' => 'valeur_ref_homme',
-                'm.' => 'valeur_ref_homme',
-                'homme' => 'valeur_ref_homme',
-
-                'madame' => 'valeur_ref_femme',
-                'mme' => 'valeur_ref_femme',
-                'mme.' => 'valeur_ref_femme',
-                'femme' => 'valeur_ref_femme',
-
-                'enfant (garçon)' => 'valeur_ref_enfant_garcon',
-                'enfant garçon' => 'valeur_ref_enfant_garcon',
-                'garçon' => 'valeur_ref_enfant_garcon',
-                'garcon' => 'valeur_ref_enfant_garcon',
-
-                'enfant (fille)' => 'valeur_ref_enfant_fille',
-                'enfant fille' => 'valeur_ref_enfant_fille',
-                'fille' => 'valeur_ref_enfant_fille',
-            ];
-
-            $field = $mapping[$civilite] ?? null;
+        if (in_array($civilite, ['monsieur', 'mr', 'm.', 'homme'])) {
+            $context = 'HOMME';
+        } elseif (in_array($civilite, ['madame', 'mme', 'mme.', 'femme'])) {
+            $context = 'FEMME';
+        } elseif (str_contains($civilite, 'garçon') || str_contains($civilite, 'garcon')) {
+            $context = 'ENFANT_GARCON';
+        } elseif (str_contains($civilite, 'fille')) {
+            $context = 'ENFANT_FILLE';
         }
 
-        if ($field && ! empty($this->$field)) {
-            return $this->$field;
+        // 1. Essayer la nouvelle table AnalyseRange
+        if ($context) {
+            $range = $this->ranges()->where('context', $context)->first();
+            if ($range) {
+                if ($range->normal_min !== null && $range->normal_max !== null) {
+                    return (float)$range->normal_min . ' - ' . (float)$range->normal_max;
+                }
+                if ($range->normal_min !== null) return '> ' . (float)$range->normal_min;
+                if ($range->normal_max !== null) return '< ' . (float)$range->normal_max;
+            }
         }
 
-        // Fallback intelligent : si pas de patient ou champ vide, on cherche la première ref non vide
-        return $this->valeur_ref_homme
-            ?? $this->valeur_ref_femme
-            ?? $this->valeur_ref_enfant_garcon
-            ?? $this->valeur_ref_enfant_fille;
+        // 2. Fallback sur les anciennes colonnes si rien dans la nouvelle table
+        $field = match($context) {
+            'HOMME' => 'valeur_ref_homme',
+            'FEMME' => 'valeur_ref_femme',
+            'ENFANT_GARCON' => 'valeur_ref_enfant_garcon',
+            'ENFANT_FILLE' => 'valeur_ref_enfant_fille',
+            default => 'valeur_ref_homme'
+        };
+
+        return $this->$field ?? $this->valeur_ref_homme;
     }
 
     /**
@@ -369,34 +388,7 @@ class Analyse extends Model
      */
     public function getLabelValeurReferenceByPatient($patient = null)
     {
-        if (! $patient || ! $patient->civilite) {
-            return 'Référence';
-        }
-
-        $civilite = strtolower(trim($patient->civilite));
-
-        $labels = [
-            'monsieur' => 'Référence (Homme)',
-            'mr' => 'Référence (Homme)',
-            'm.' => 'Référence (Homme)',
-            'homme' => 'Référence (Homme)',
-
-            'madame' => 'Référence (Femme)',
-            'mme' => 'Référence (Femme)',
-            'mme.' => 'Référence (Femme)',
-            'femme' => 'Référence (Femme)',
-
-            'enfant (garçon)' => 'Référence (Garçon)',
-            'enfant garçon' => 'Référence (Garçon)',
-            'garçon' => 'Référence (Garçon)',
-            'garcon' => 'Référence (Garçon)',
-
-            'enfant (fille)' => 'Référence (Fille)',
-            'enfant fille' => 'Référence (Fille)',
-            'fille' => 'Référence (Fille)',
-        ];
-
-        return $labels[$civilite] ?? 'Référence';
+        return 'Norme';
     }
 
     /**

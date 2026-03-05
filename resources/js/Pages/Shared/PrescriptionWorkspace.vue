@@ -125,16 +125,26 @@ const selectParent = (id) => {
     selectedParentId.value = id;
 };
 
-const getFormValue = (analyseId, field) => {
-    return formData[analyseId]?.[field] ?? (field === 'interpretation' ? 'NORMAL' : '');
+const getFormValue = (analyseId, field = null) => {
+    if (field) {
+        return formData[analyseId]?.[field] ?? (field === 'interpretation' ? 'NORMAL' : '');
+    }
+    return formData[analyseId];
 };
 
 const setFormValue = (analyseId, field, value) => {
     if (!formData[analyseId]) {
         formData[analyseId] = { valeur: '', resultats: '', interpretation: 'NORMAL' };
     }
+    
     formData[analyseId][field] = value;
-    debouncedSave(analyseId);
+
+    // Si c'est l'interprétation, on sauvegarde SANS délai (pas de debounce)
+    if (field === 'interpretation') {
+        autoSave(analyseId);
+    } else {
+        debouncedSave(analyseId);
+    }
 };
 
 // Auto-Save
@@ -148,7 +158,7 @@ const debouncedSave = (analyseId) => {
     }, 1000);
 };
 
-const autoSave = async (analyseId) => {
+const autoSave = async (analyseId, confirmed = false) => {
     const data = formData[analyseId];
     if (!data) return;
 
@@ -159,14 +169,35 @@ const autoSave = async (analyseId) => {
             valeur: data.valeur || null,
             resultats: data.resultats || null,
             interpretation: data.interpretation || 'NORMAL',
+            confirmed: confirmed
         });
+        
         const result = response.data;
         if (result.success) {
             saveStatus[analyseId] = 'saved';
             savedAt[analyseId] = result.saved_at;
+
+            // Synchronisation forcée de l'interprétation détectée par le serveur
+            if (formData[analyseId]) {
+                formData[analyseId].interpretation = result.interpretation;
+                formData[analyseId].validation_status = result.validation_status;
+                formData[analyseId].validation_message = result.validation_message;
+            }
+
             refreshProgression();
-        } else {
+        }
+ else if (result.level === 'block') {
             saveStatus[analyseId] = 'error';
+            Swal.fire({
+                icon: 'error',
+                title: 'Valeur Critique !',
+                html: `<div class="text-sm font-bold text-red-600 uppercase mb-2">${result.message}</div>
+                       <div class="p-3 bg-slate-50 rounded-lg text-xs">
+                         Saisie: <span class="font-black">${result.entered}</span><br>
+                         Intervalle: <span class="font-black text-primary-600">${result.expected}</span>
+                       </div>`,
+                confirmButtonText: 'Corriger la valeur'
+            });
         }
     } catch (e) {
         saveStatus[analyseId] = 'error';

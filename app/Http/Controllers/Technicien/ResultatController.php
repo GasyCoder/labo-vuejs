@@ -22,26 +22,45 @@ class ResultatController extends Controller
     public function save(SaveResultatRequest $request): JsonResponse
     {
         try {
-            // UPSERT : Solution atomique MySQL (INSERT ... ON DUPLICATE KEY UPDATE)
-            // Élimine totalement les erreurs de concurrence 1062.
+            $analyse = Analyse::findOrFail($request->analyse_id);
+            $prescription = Prescription::with('patient')->findOrFail($request->prescription_id);
+            
+            // Validation biologique automatique
+            $validation = $analyse->validateValue($request->valeur, $prescription->patient);
+            
+            // Si c'est critique (BLOCK) et non confirmé explicitement, on bloque
+            if ($validation['status'] === 'BLOCK' && ! $request->confirmed) {
+                return response()->json([
+                    'success' => false,
+                    'level' => 'block',
+                    'message' => $validation['message'],
+                    'expected' => $validation['expected'],
+                    'entered' => $validation['entered'],
+                    'unite' => $validation['unite'] ?? '',
+                ]);
+            }
+
+            // Détection automatique intelligente de l'interprétation
+            // Si le statut est OK -> NORMAL, sinon -> PATHOLOGIQUE
+            $interpretation = ($validation['status'] === 'OK') ? 'NORMAL' : 'PATHOLOGIQUE';
+
+            // UPSERT : Solution atomique MySQL
             Resultat::upsert([
                 [
                     'prescription_id' => $request->prescription_id,
                     'analyse_id' => $request->analyse_id,
                     'valeur' => $request->valeur,
                     'resultats' => is_array($request->resultats) ? json_encode($request->resultats, JSON_UNESCAPED_UNICODE) : $request->resultats,
-                    'interpretation' => $request->interpretation ?: 'NORMAL',
+                    'interpretation' => $interpretation,
                     'status' => 'EN_COURS',
                     'updated_at' => now(),
-                    // Note: created_at sera ignoré lors d'un UPDATE si on ne le met pas dans le 3ème argument
                     'created_at' => now(),
                 ],
             ],
-                ['prescription_id', 'analyse_id'], // Colonnes de la contrainte UNIQUE
-                ['valeur', 'resultats', 'interpretation', 'status', 'updated_at'] // Colonnes à mettre à jour
+                ['prescription_id', 'analyse_id'],
+                ['valeur', 'resultats', 'interpretation', 'status', 'updated_at']
             );
 
-            // Récupérer l'ID pour la réponse (inclure withTrashed au cas où un ancien résultat existe en corbeille)
             $resultat = Resultat::withTrashed()
                 ->where('prescription_id', $request->prescription_id)
                 ->where('analyse_id', $request->analyse_id)
@@ -51,21 +70,19 @@ class ResultatController extends Controller
                 $resultat->restore();
             }
 
-            // Mettre à jour le statut de la prescription
-            $prescription = Prescription::find($request->prescription_id);
-            if ($prescription && $prescription->status === 'EN_ATTENTE') {
+            if ($prescription->status === 'EN_ATTENTE') {
                 $prescription->update([
                     'status' => 'EN_COURS',
                     'technicien_id' => Auth::id(),
                 ]);
-                DB::table('prescription_analyse')
-                    ->where('prescription_id', $prescription->id)
-                    ->update(['status' => 'EN_COURS', 'updated_at' => now()]);
             }
 
             return response()->json([
                 'success' => true,
                 'resultat_id' => $resultat?->id,
+                'interpretation' => $interpretation,
+                'validation_status' => $validation['status'],
+                'validation_message' => $validation['message'] ?? null,
                 'saved_at' => now()->format('H:i'),
             ]);
 

@@ -52,7 +52,7 @@ class PrescriptionWorkspaceController extends Controller
         $prescription->load([
             'patient',
             'prescripteur:id,nom,prenom',
-            'analyses' => fn ($q) => $q->with(['type:id,name,libelle', 'examen:id,name', 'enfantsRecursive.type:id,name,libelle'])
+            'analyses' => fn ($q) => $q->with(['type:id,name,libelle', 'examen:id,name', 'ranges', 'enfantsRecursive.type:id,name,libelle', 'enfantsRecursive.ranges'])
                 ->orderBy('ordre')->orderBy('id'),
             'resultats:id,prescription_id,analyse_id,valeur,resultats,interpretation,status',
         ]);
@@ -302,6 +302,7 @@ class PrescriptionWorkspaceController extends Controller
             'is_bold' => $analyse->is_bold,
             'valeur_ref' => $analyse->getValeurReferenceByPatient($patient),
             'valeur_ref_label' => $analyse->getLabelValeurReferenceByPatient($patient),
+            'full_ranges' => $analyse->getFullRangesByPatient($patient),
             'valeurs_predefinies' => $analyse->valeurs_predefinies,
             'resultat' => $resultat ? [
                 'id' => $resultat->id,
