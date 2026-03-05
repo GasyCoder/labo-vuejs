@@ -40,82 +40,97 @@
 
         /* Section patient */
         .patient-section {
-            margin: 6mm 0;
+            margin: 4mm 0;
             page-break-inside: avoid;
-            border: 1px solid #000;
-            padding: 3mm;
+            border: 1pt solid #000;
+            padding: 2mm;
         }
 
         /* En-tête patient */
         .patient-header {
-            margin-bottom: 3mm;
-            padding: 2mm;
-            border: 1px solid #000;
+            margin-bottom: 2mm;
+            padding: 1.5mm;
+            border: 0.5pt solid #000;
             font-weight: bold;
-            font-size: 0.85rem;
+            font-size: 8pt;
+            background: #f9f9f9;
         }
 
         /* Ligne d'étiquettes */
-        .etiquettes-ligne {
-            display: table;
+        .etiquettes-ligne-flex {
             width: 100%;
-            margin-bottom: 3mm;
-            table-layout: fixed;
+            margin-bottom: 1.5mm;
+            page-break-inside: avoid;
         }
 
         /* Chaque étiquette */
         .etiquette-mini {
-            display: table-cell;
-            width: 35mm;
-            height: 18mm;
-            padding: 1.5mm;
-            border: 1px solid #000;
+            display: inline-block;
+            width: 37mm;
+            height: 22mm;
+            padding: 1mm;
+            border: 0.5pt solid #000;
             background: white;
             vertical-align: top;
-            font-size: 0.65rem;
-            margin-right: 2mm;
+            font-size: 7pt;
+            margin-right: 0.5mm;
+            margin-bottom: 1mm;
+            overflow: hidden;
+            position: relative;
         }
 
         .etiquette-mini-header {
             text-align: center;
             font-weight: bold;
-            font-size: 0.6rem;
-            margin-bottom: 1mm;
-            border-bottom: 1px solid #000;
-            padding-bottom: 1mm;
+            font-size: 6pt;
+            margin-bottom: 0.5mm;
+            border-bottom: 0.5pt solid #000;
+            padding-bottom: 0.5mm;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .barcode-mini {
             text-align: center;
-            margin: 1mm 0;
+            margin: 0.5mm 0;
+            height: 7mm;
         }
 
         .barcode-image-mini {
             height: 6mm;
-            max-width: 30mm;
+            width: auto;
+            max-width: 100%;
             display: block;
             margin: 0 auto;
         }
 
         .barcode-ascii-mini {
             font-family: 'Courier New', monospace;
-            font-size: 0.7rem;
-            letter-spacing: 0.02em;
+            font-size: 7pt;
+            letter-spacing: 0.05em;
             text-align: center;
             font-weight: bold;
         }
 
         .patient-info-mini {
-            font-size: 0.55rem;
-            line-height: 1;
+            font-size: 6pt;
+            line-height: 1.1;
             text-align: center;
-            border-top: 1px solid #000;
-            padding-top: 1mm;
+            border-top: 0.5pt solid #000;
+            padding-top: 0.5mm;
+            position: absolute;
+            bottom: 1mm;
+            left: 1mm;
+            right: 1mm;
         }
 
         .patient-name-mini {
             font-weight: bold;
-            font-size: 0.6rem;
+            font-size: 7pt;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* Section sans tubes */
@@ -235,7 +250,7 @@
                         {{ strtoupper($patient->nom ?? '') }} {{ ucfirst(strtolower($patient->prenom ?? '')) }}
                     </div>
                     <div style="font-size: 0.75rem;">
-                        {{ $prescription->reference }} | NIP: {{ $patient->numero_dossier ?? 'N/A' }} |
+                        {{ $prescription->reference }} | 
                         Age: {{ $prescription->age ?? 'N/A' }} {{ $prescription->unite_age ?? '' }} |
                         {{ $prescription->created_at->format('d/m/Y') }}
                         @if(isset($prescription->prescripteur))
@@ -246,7 +261,7 @@
 
                 <!-- Étiquettes répétées 5 fois horizontalement -->
                 @foreach($tubes as $tube)
-                    <div class="etiquettes-ligne">
+                    <div class="etiquettes-ligne-flex">
                         @for($rep = 1; $rep <= 5; $rep++)
                             <div class="etiquette-mini">
                                 <!-- En-tête étiquette -->
@@ -281,14 +296,12 @@
                                 <!-- Infos patient -->
                                 <div class="patient-info-mini">
                                     <div class="patient-name-mini">
-                                        ({{ $civilite }}) {{ $tube->code_barre }}
+                                        ({{ $civilite }}) {{ format_patient_name_short($patient->nom ?? '', $patient->prenom ?? '') }}
+                                    </div>                                    <div style="font-weight: bold;">
+                                        {{ $tube->code_barre }}
                                     </div>
                                     <div>
-                                        {{ strtoupper(Str::limit($patient->nom ?? '', 8)) }}
-                                        {{ ucfirst(strtolower(Str::limit($patient->prenom ?? '', 6))) }}
-                                    </div>
-                                    <div>
-                                        {{ $prescription->age ?? 'N/A' }}{{ $prescription->unite_age ?? '' }}
+                                        {{ $prescription->age ?? 'N/A' }}{{ $prescription->unite_age ?? '' }} | {{ $prescription->created_at->format('d/m/y') }}
                                     </div>
                                 </div>
                             </div>
@@ -309,7 +322,7 @@
                         SEULEMENT
                     </div>
                     <div style="font-size: 0.75rem;">
-                        {{ $prescription->reference }} | NIP: {{ $patient->numero_dossier ?? 'N/A' }} |
+                        {{ $prescription->reference }} | 
                         Age: {{ $prescription->age ?? 'N/A' }} {{ $prescription->unite_age ?? '' }} |
                         {{ $prescription->created_at->format('d/m/Y') }} | {{ $prescription->analyses_data->count() }}
                         analyse(s)
@@ -320,7 +333,7 @@
                 </div>
 
                 <!-- 5 étiquettes identiques pour prescription avec analyses -->
-                <div class="etiquettes-ligne">
+                <div class="etiquettes-ligne-flex">
                     @for($rep = 1; $rep <= 5; $rep++)
                         <div class="etiquette-mini">
                             <!-- En-tête étiquette -->
@@ -336,14 +349,13 @@
                             <!-- Infos patient -->
                             <div class="patient-info-mini">
                                 <div class="patient-name-mini">
-                                    ({{ $civilite }}) {{ $prescription->reference }}
+                                    ({{ $civilite }}) {{ format_patient_name_short($patient->nom ?? '', $patient->prenom ?? '') }}
+                                </div>
+                                <div style="font-weight: bold;">
+                                    {{ $prescription->reference }}
                                 </div>
                                 <div>
-                                    {{ strtoupper(Str::limit($patient->nom ?? '', 8)) }}
-                                    {{ ucfirst(strtolower(Str::limit($patient->prenom ?? '', 6))) }}
-                                </div>
-                                <div>
-                                    {{ $prescription->age ?? 'N/A' }}{{ $prescription->unite_age ?? '' }}
+                                    {{ $prescription->age ?? 'N/A' }}{{ $prescription->unite_age ?? '' }} | {{ $prescription->created_at->format('d/m/y') }}
                                 </div>
                             </div>
                         </div>
@@ -363,7 +375,7 @@
                         VIDE
                     </div>
                     <div style="font-size: 0.75rem;">
-                        {{ $prescription->reference }} | NIP: {{ $patient->numero_dossier ?? 'N/A' }} |
+                        {{ $prescription->reference }} | 
                         Age: {{ $prescription->age ?? 'N/A' }} {{ $prescription->unite_age ?? '' }} |
                         {{ $prescription->created_at->format('d/m/Y') }}
                         @if(isset($prescription->prescripteur))
@@ -373,7 +385,7 @@
                 </div>
 
                 <!-- 5 étiquettes identiques pour prescription vide -->
-                <div class="etiquettes-ligne">
+                <div class="etiquettes-ligne-flex">
                     @for($rep = 1; $rep <= 5; $rep++)
                         <div class="etiquette-mini">
                             <!-- En-tête étiquette -->
@@ -389,14 +401,13 @@
                             <!-- Infos patient -->
                             <div class="patient-info-mini">
                                 <div class="patient-name-mini">
-                                    ({{ $civilite }}) {{ $prescription->reference }}
+                                    ({{ $civilite }}) {{ format_patient_name_short($patient->nom ?? '', $patient->prenom ?? '') }}
+                                </div>
+                                <div style="font-weight: bold;">
+                                    {{ $prescription->reference }}
                                 </div>
                                 <div>
-                                    {{ strtoupper(Str::limit($patient->nom ?? '', 8)) }}
-                                    {{ ucfirst(strtolower(Str::limit($patient->prenom ?? '', 6))) }}
-                                </div>
-                                <div>
-                                    {{ $prescription->age ?? 'N/A' }}{{ $prescription->unite_age ?? '' }}
+                                    {{ $prescription->age ?? 'N/A' }}{{ $prescription->unite_age ?? '' }} | {{ $prescription->created_at->format('d/m/y') }}
                                 </div>
                             </div>
                         </div>

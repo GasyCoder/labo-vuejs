@@ -15,6 +15,40 @@ use Illuminate\Support\Str;
  *
  * @since 1.0
  */
+if (! function_exists('format_patient_name_short')) {
+    /**
+     * Format patient name for labels:
+     * Full Last Name + Full 1st Firstname + Initials for others if too long.
+     */
+    function format_patient_name_short($nom, $prenom, $maxLength = 18)
+    {
+        $nom = trim($nom ?? '');
+        $prenom = trim($prenom ?? '');
+
+        $fullName = strtoupper($nom).' '.ucfirst(strtolower($prenom));
+        if (strlen($fullName) <= $maxLength) {
+            return $fullName;
+        }
+
+        $prenoms = preg_split('/[\s,]+/', $prenom, -1, PREG_SPLIT_NO_EMPTY);
+        if (empty($prenoms)) {
+            return strtoupper($nom);
+        }
+
+        $firstPrenom = array_shift($prenoms);
+        $formatted = strtoupper($nom).' '.ucfirst(strtolower($firstPrenom));
+
+        foreach ($prenoms as $p) {
+            $initial = strtoupper(substr(trim($p), 0, 1));
+            if ($initial) {
+                $formatted .= ' '.$initial;
+            }
+        }
+
+        return $formatted;
+    }
+}
+
 if (! function_exists('site_info')) {
     /**
      * Get site info with helper function
