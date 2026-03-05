@@ -33,10 +33,10 @@ class JournalCaisseController extends Controller
                 'payment_method_label' => $paiement->paymentMethod ? $paiement->paymentMethod->label : 'NON DÉFINI',
                 'prescription' => $paiement->prescription ? [
                     'id' => $paiement->prescription->id,
+                    'reference' => $paiement->prescription->reference,
                     'is_modified' => $this->isPrescriptionModified($paiement->prescription),
                     'updated_at_format' => $paiement->prescription->updated_at->format('d/m/Y H:i:s'),
                     'patient' => $paiement->prescription->patient ? [
-                        'numero_dossier' => $paiement->prescription->patient->numero_dossier,
                         'nom' => $paiement->prescription->patient->nom,
                         'prenom' => $paiement->prescription->patient->prenom,
                     ] : null,

@@ -214,7 +214,7 @@
                         <div class="bg-gray-100 dark:bg-slate-800">
                             <div class="grid grid-cols-4 gap-4 px-6 py-3">
                                 <div class="font-semibold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">Date Paiement</div>
-                                <div class="font-semibold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">Dossier</div>
+                                <div class="font-semibold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">Preinscription</div>
                                 <div class="font-semibold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">Client</div>
                                 <div class="font-semibold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide text-right">Montant</div>
                             </div>
@@ -233,9 +233,9 @@
                                     </span>
                                 </div>
                                 
-                                <!-- Dossier -->
+                                <!-- Dossier (now Preinscription) -->
                                 <div class="font-medium text-blue-600 dark:text-blue-400 flex items-center flex-wrap">
-                                    <span>{{ paiement.prescription?.patient?.numero_dossier || 'N/A' }}</span>
+                                    <span>{{ paiement.prescription?.reference || 'N/A' }}</span>
                                     
                                     <!-- Badge "Modifié" si la prescription a été modifiée -->
                                     <span v-if="paiement.prescription?.is_modified" class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">

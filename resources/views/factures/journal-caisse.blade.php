@@ -73,9 +73,10 @@
         .table-header.right { text-align: right; }
         
         .data-row td {
-            padding: 3px 8px 3px 0;
+            padding: 6px 8px 6px 0;
             font-size: 10px;
             line-height: 1.4;
+            border-bottom: 0.1pt solid #eee;
         }
         
         .data-row .left { text-align: left; }
@@ -197,7 +198,7 @@
             <table>
                 <tr>
                     <td class="table-header left" style="width: 18%;">DATE PAIEMENT</td>
-                    <td class="table-header left" style="width: 15%;">DOSSIER</td>
+                    <td class="table-header left" style="width: 15%;">PREINSCRIPTION</td>
                     <td class="table-header left" style="width: 47%;">CLIENT</td>
                     <td class="table-header right" style="width: 20%;">MONTANT</td>
                 </tr>
@@ -214,7 +215,7 @@
                             @endif
                         </td>
                         <td class="left">
-                            {{ $paiement->prescription->patient->numero_dossier ?? 'N/A' }}
+                            {{ $paiement->prescription->reference ?? 'N/A' }}
                             
                             {{-- Badge "MODIFIÉ" si la prescription a été modifiée --}}
                             @if($paiement->prescription && $paiement->prescription->created_at->ne($paiement->prescription->updated_at))
