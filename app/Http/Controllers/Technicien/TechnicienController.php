@@ -25,6 +25,7 @@ class TechnicienController extends Controller
 
         $baseQuery = Prescription::with(['patient:id,nom,prenom', 'prescripteur:id,nom,prenom', 'analyses:id,code,designation'])
             ->withCount('analyses')
+            ->where('labo_traitement', 'LOCAL')
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($query) use ($search) {
                     $query->where('reference', 'like', '%'.$search.'%')
@@ -68,10 +69,10 @@ class TechnicienController extends Controller
 
         // Stats
         $stats = [
-            'en_attente' => Prescription::where('status', 'EN_ATTENTE')->count(),
-            'en_cours' => Prescription::where('status', 'EN_COURS')->count(),
-            'termine' => Prescription::where('status', 'TERMINE')->count(),
-            'a_refaire' => Prescription::where('status', 'A_REFAIRE')->count(),
+            'en_attente' => Prescription::where('status', 'EN_ATTENTE')->where('labo_traitement', 'LOCAL')->count(),
+            'en_cours' => Prescription::where('status', 'EN_COURS')->where('labo_traitement', 'LOCAL')->count(),
+            'termine' => Prescription::where('status', 'TERMINE')->where('labo_traitement', 'LOCAL')->count(),
+            'a_refaire' => Prescription::where('status', 'A_REFAIRE')->where('labo_traitement', 'LOCAL')->count(),
         ];
         $stats['toutes'] = $stats['en_attente'] + $stats['en_cours'];
 

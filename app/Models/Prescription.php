@@ -45,6 +45,8 @@ class Prescription extends Model
         'date_reprise_traitement',
         'notified_at',
         'commentaire_biologiste',
+        'labo_traitement',
+        'labo_autre_nom',
     ];
 
     protected $casts = [
@@ -299,7 +301,7 @@ class Prescription extends Model
         foreach ($this->analyses as $analyse) {
             // ✅ SOURCE DE VÉRITÉ : On utilise le prix archivé dans le pivot (snapshot)
             // Si le pivot.prix est à 0 ou absent, on utilise le prix catalogue par sécurité
-            $prixApplique = (float)($analyse->pivot->prix ?? $analyse->prix);
+            $prixApplique = (float) ($analyse->pivot->prix ?? $analyse->prix);
 
             if ($analyse->parent_id && ! in_array($analyse->parent_id, $parentsTraites)) {
                 if ($analyse->parent) {

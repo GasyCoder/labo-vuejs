@@ -33,7 +33,8 @@ class PrescriptionController extends Controller
         $perPage = $request->integer('perPage', 10);
         $paymentFilter = $request->input('payment', '');
 
-        $allowedTabs = ['actives', 'valide', 'archive', 'deleted'];
+        // Validation stricte du tab
+        $allowedTabs = ['actives', 'valide', 'archive', 'deleted', 'autre_lab'];
         if (! in_array($tab, $allowedTabs, true)) {
             $tab = 'actives';
         }
@@ -48,6 +49,27 @@ class PrescriptionController extends Controller
             ->withCount('analyses')
             ->whereHas('patient', fn ($q) => $q->whereNull('deleted_at'));
 
+        // Filtrage strict par onglet (MUTUELLEMENT EXCLUSIF)
+        if ($tab === 'autre_lab') {
+            $prescriptionsQuery->where('labo_traitement', 'AUTRE');
+        } elseif ($tab === 'deleted') {
+            $prescriptionsQuery->onlyTrashed();
+        } else {
+            // Pour tous les autres onglets classiques (actives, valide, archive)
+            $prescriptionsQuery->where('labo_traitement', 'LOCAL');
+            
+            $statusMap = [
+                'actives' => ['EN_ATTENTE', 'EN_COURS', 'TERMINE', 'A_REFAIRE'],
+                'valide' => ['VALIDE'],
+                'archive' => ['ARCHIVE'],
+            ];
+
+            if (isset($statusMap[$tab])) {
+                $prescriptionsQuery->whereIn('status', $statusMap[$tab]);
+            }
+        }
+
+        // 2. Recherche (Encapsulée dans un groupe de parenthèses pour ne pas briser le filtre d'onglet)
         if ($search !== '') {
             $prescriptionsQuery->where(function ($query) use ($search): void {
                 $query->where('reference', 'like', "%{$search}%")
@@ -59,24 +81,16 @@ class PrescriptionController extends Controller
             });
         }
 
-        // Payment filter overrides tab/status filters (legacy behavior)
+        // 3. Filtre de paiement (Aussi encapsulé si nécessaire)
         if ($paymentFilter) {
-            match ($paymentFilter) {
-                'paye' => $prescriptionsQuery->whereHas('paiements', fn ($q) => $q->where('status', true)),
-                'non_paye' => $prescriptionsQuery->whereHas('paiements', fn ($q) => $q->where('status', false)),
-                'sans_paiement' => $prescriptionsQuery->doesntHave('paiements'),
-                default => null,
-            };
-        } elseif ($tab === 'deleted') {
-            $prescriptionsQuery->onlyTrashed();
-        } else {
-            $statusMap = [
-                'actives' => ['EN_ATTENTE', 'EN_COURS', 'TERMINE', 'A_REFAIRE'],
-                'valide' => ['VALIDE'],
-                'archive' => ['ARCHIVE'],
-            ];
-
-            $prescriptionsQuery->whereIn('status', $statusMap[$tab]);
+            $prescriptionsQuery->where(function ($query) use ($paymentFilter): void {
+                match ($paymentFilter) {
+                    'paye' => $query->whereHas('paiements', fn ($q) => $q->where('status', true)),
+                    'non_paye' => $query->whereHas('paiements', fn ($q) => $q->where('status', false)),
+                    'sans_paiement' => $query->doesntHave('paiements'),
+                    default => null,
+                };
+            });
         }
 
         $prescriptions = $prescriptionsQuery
@@ -88,6 +102,8 @@ class PrescriptionController extends Controller
                     'id' => $prescription->id,
                     'reference' => $prescription->reference,
                     'status' => $prescription->status,
+                    'labo_traitement' => $prescription->labo_traitement,
+                    'labo_autre_nom' => $prescription->labo_autre_nom,
                     'status_label' => match ($prescription->status) {
                         'EN_ATTENTE' => 'En attente',
                         'EN_COURS' => 'En cours',
@@ -101,15 +117,25 @@ class PrescriptionController extends Controller
                     'analyses' => $prescription->analyses->map(fn ($a) => [
                         'code' => $a->code,
                         'designation' => $a->designation,
+                        'prix' => $a->pivot->prix ?? $a->prix,
                     ]),
+                    'age' => $prescription->age,
+                    'unite_age' => $prescription->unite_age,
+                    'poids' => $prescription->poids,
+                    'renseignement_clinique' => $prescription->renseignement_clinique,
                     'created_at' => $prescription->created_at?->format('d/m/Y H:i'),
                     'created_at_relative' => $prescription->created_at?->diffForHumans(),
                     'deleted_at' => $prescription->deleted_at?->format('d/m/Y H:i'),
                     'notified_at' => $prescription->notified_at?->format('d/m/Y'),
                     'patient' => $prescription->patient ? [
+                        'id' => $prescription->patient->id,
+                        'nom' => $prescription->patient->nom,
+                        'prenom' => $prescription->patient->prenom,
                         'nom_complet' => trim(sprintf('%s %s', $prescription->patient->nom, $prescription->patient->prenom ?? '')),
                         'telephone' => $prescription->patient->telephone,
                         'email' => $prescription->patient->email,
+                        'adresse' => $prescription->patient->adresse,
+                        'civilite' => $prescription->patient->civilite,
                     ] : null,
                     'prescripteur' => $prescription->prescripteur ? [
                         'nom' => $prescription->prescripteur->nom,
@@ -121,12 +147,75 @@ class PrescriptionController extends Controller
                 ];
             });
 
-        $countEnAttente = Prescription::where('status', 'EN_ATTENTE')->count();
-        $countEnCours = Prescription::where('status', 'EN_COURS')->count();
-        $countTermine = Prescription::where('status', 'TERMINE')->count();
-        $countValide = Prescription::where('status', 'VALIDE')->count();
-        $countArchive = Prescription::where('status', 'ARCHIVE')->count();
-        $countDeleted = Prescription::onlyTrashed()->count();
+        $countEnAttente = Prescription::where('status', 'EN_ATTENTE')->where('labo_traitement', 'LOCAL')
+            ->when($paymentFilter, function ($q) use ($paymentFilter) {
+                match ($paymentFilter) {
+                    'paye' => $q->whereHas('paiements', fn ($p) => $p->where('status', true)),
+                    'non_paye' => $q->whereHas('paiements', fn ($p) => $p->where('status', false)),
+                    'sans_paiement' => $q->doesntHave('paiements'),
+                    default => null,
+                };
+            })->count();
+
+        $countEnCours = Prescription::where('status', 'EN_COURS')->where('labo_traitement', 'LOCAL')
+            ->when($paymentFilter, function ($q) use ($paymentFilter) {
+                match ($paymentFilter) {
+                    'paye' => $q->whereHas('paiements', fn ($p) => $p->where('status', true)),
+                    'non_paye' => $q->whereHas('paiements', fn ($p) => $p->where('status', false)),
+                    'sans_paiement' => $q->doesntHave('paiements'),
+                    default => null,
+                };
+            })->count();
+
+        $countTermine = Prescription::where('status', 'TERMINE')->where('labo_traitement', 'LOCAL')
+            ->when($paymentFilter, function ($q) use ($paymentFilter) {
+                match ($paymentFilter) {
+                    'paye' => $q->whereHas('paiements', fn ($p) => $p->where('status', true)),
+                    'non_paye' => $q->whereHas('paiements', fn ($p) => $p->where('status', false)),
+                    'sans_paiement' => $q->doesntHave('paiements'),
+                    default => null,
+                };
+            })->count();
+
+        $countValide = Prescription::where('status', 'VALIDE')->where('labo_traitement', 'LOCAL')
+            ->when($paymentFilter, function ($q) use ($paymentFilter) {
+                match ($paymentFilter) {
+                    'paye' => $q->whereHas('paiements', fn ($p) => $p->where('status', true)),
+                    'non_paye' => $q->whereHas('paiements', fn ($p) => $p->where('status', false)),
+                    'sans_paiement' => $q->doesntHave('paiements'),
+                    default => null,
+                };
+            })->count();
+
+        $countArchive = Prescription::where('status', 'ARCHIVE')->where('labo_traitement', 'LOCAL')
+            ->when($paymentFilter, function ($q) use ($paymentFilter) {
+                match ($paymentFilter) {
+                    'paye' => $q->whereHas('paiements', fn ($p) => $p->where('status', true)),
+                    'non_paye' => $q->whereHas('paiements', fn ($p) => $p->where('status', false)),
+                    'sans_paiement' => $q->doesntHave('paiements'),
+                    default => null,
+                };
+            })->count();
+
+        $countAutreLab = Prescription::where('labo_traitement', 'AUTRE')
+            ->when($paymentFilter, function ($q) use ($paymentFilter) {
+                match ($paymentFilter) {
+                    'paye' => $q->whereHas('paiements', fn ($p) => $p->where('status', true)),
+                    'non_paye' => $q->whereHas('paiements', fn ($p) => $p->where('status', false)),
+                    'sans_paiement' => $q->doesntHave('paiements'),
+                    default => null,
+                };
+            })->count();
+
+        $countDeleted = Prescription::onlyTrashed()
+            ->when($paymentFilter, function ($q) use ($paymentFilter) {
+                match ($paymentFilter) {
+                    'paye' => $q->whereHas('paiements', fn ($p) => $p->where('status', true)),
+                    'non_paye' => $q->whereHas('paiements', fn ($p) => $p->where('status', false)),
+                    'sans_paiement' => $q->doesntHave('paiements'),
+                    default => null,
+                };
+            })->count();
         $countPaye = Paiement::query()
             ->whereHas('prescription', fn ($q) => $q->whereNull('deleted_at'))
             ->where('status', true)
@@ -147,16 +236,27 @@ class PrescriptionController extends Controller
                 'payment' => $paymentFilter,
             ],
             'counts' => [
-                'actives' => Prescription::whereIn('status', ['EN_ATTENTE', 'EN_COURS', 'TERMINE', 'A_REFAIRE'])->count(),
+                'actives' => Prescription::whereIn('status', ['EN_ATTENTE', 'EN_COURS', 'TERMINE', 'A_REFAIRE'])
+                    ->where('labo_traitement', 'LOCAL')
+                    ->when($paymentFilter, function ($q) use ($paymentFilter) {
+                        match ($paymentFilter) {
+                            'paye' => $q->whereHas('paiements', fn ($p) => $p->where('status', true)),
+                            'non_paye' => $q->whereHas('paiements', fn ($p) => $p->where('status', false)),
+                            'sans_paiement' => $q->doesntHave('paiements'),
+                            default => null,
+                        };
+                    })->count(),
                 'countActives' => $countEnAttente + $countEnCours + $countTermine,
                 'valide' => $countValide,
                 'archive' => $countArchive,
+                'autre_lab' => $countAutreLab,
                 'deleted' => $countDeleted,
                 'countEnAttente' => $countEnAttente,
                 'countEnCours' => $countEnCours,
                 'countTermine' => $countTermine,
                 'countValide' => $countValide,
                 'countArchive' => $countArchive,
+                'countAutreLab' => $countAutreLab,
                 'countDeleted' => $countDeleted,
                 'countPaye' => $countPaye,
                 'countNonPaye' => $countNonPaye,
@@ -495,6 +595,8 @@ class PrescriptionController extends Controller
                 'renseignement_clinique' => $validated['renseignement_clinique'] ?? null,
                 'remise' => $remiseAmount,
                 'status' => Prescription::STATUS_EN_ATTENTE,
+                'labo_traitement' => $validated['labo_traitement'] ?? 'LOCAL',
+                'labo_autre_nom' => ($validated['labo_traitement'] ?? 'LOCAL') === 'AUTRE' ? ($validated['labo_autre_nom'] ?? null) : null,
             ]);
 
             // Synchroniser les analyses avec persistance du prix (Snapshot)
@@ -503,7 +605,7 @@ class PrescriptionController extends Controller
                 $analyse = $analyses->get($analyseId);
                 $syncData[$analyseId] = [
                     'prix' => $analyse ? $analyse->prix : 0,
-                    'status' => 'EN_ATTENTE'
+                    'status' => 'EN_ATTENTE',
                 ];
             }
             $prescription->analyses()->sync($syncData);
@@ -618,6 +720,8 @@ class PrescriptionController extends Controller
                 'poids' => $validated['poids'] ?? null,
                 'renseignement_clinique' => $validated['renseignement_clinique'] ?? null,
                 'remise' => $remiseAmount,
+                'labo_traitement' => $validated['labo_traitement'] ?? 'LOCAL',
+                'labo_autre_nom' => ($validated['labo_traitement'] ?? 'LOCAL') === 'AUTRE' ? ($validated['labo_autre_nom'] ?? null) : null,
             ]);
 
             // Synchroniser les analyses avec persistance du prix (Snapshot)
@@ -626,7 +730,7 @@ class PrescriptionController extends Controller
                 $analyse = $analyses->get($analyseId);
                 $syncData[$analyseId] = [
                     'prix' => $analyse ? $analyse->prix : 0,
-                    'status' => 'EN_ATTENTE'
+                    'status' => 'EN_ATTENTE',
                 ];
             }
             $prescription->analyses()->sync($syncData);
@@ -1001,6 +1105,17 @@ class PrescriptionController extends Controller
         return back()->with('success', 'Patient notifié (simulation).');
     }
 
+    public function pdfExterne(int $id)
+    {
+        $prescription = Prescription::with(['patient', 'prescripteur', 'analyses'])->findOrFail($id);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('prescriptions.pdf-externe', compact('prescription'))
+            ->setPaper('a4', 'portrait')
+            ->setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true]);
+
+        return $pdf->stream("prescription-externe-{$prescription->reference}.pdf");
+    }
+
     private function resolveOrCreatePatient(array $validated): Patient
     {
         $patientPayload = $validated['patient'] ?? [];
@@ -1020,7 +1135,7 @@ class PrescriptionController extends Controller
                     'date_naissance' => $dateNaissance,
                 ]);
             }
-            
+
             $patient->refresh();
 
             return $patient;

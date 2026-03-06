@@ -29,6 +29,8 @@ class StorePrescriptionRequest extends FormRequest
             'unite_age' => ['nullable', 'string', 'in:Ans,Mois,Jours'],
             'poids' => ['nullable', 'numeric', 'min:0', 'max:500'],
             'renseignement_clinique' => ['nullable', 'string', 'max:2000'],
+            'labo_traitement' => ['required', 'string', 'in:LOCAL,AUTRE'],
+            'labo_autre_nom' => ['required_if:labo_traitement,AUTRE', 'nullable', 'string', 'max:255'],
 
             'analyse_ids' => ['required', 'array', 'min:1'],
             'analyse_ids.*' => ['integer', 'distinct', 'exists:analyses,id'],

@@ -109,6 +109,7 @@ Route::middleware(['auth', 'role:secretaire,superadmin,admin'])->prefix('secreta
         Route::post('prescription/{id}/unarchive', 'unarchive')->name('prescription.unarchive');
         Route::post('prescription/{id}/toggle-payment', 'togglePayment')->name('prescription.togglePayment');
         Route::post('prescription/{id}/notify', 'notify')->name('prescription.notify');
+        Route::get('prescription/{id}/pdf-externe', 'pdfExterne')->name('prescription.pdf-externe');
     });
 
     Route::get('/prescription/{prescription}/facture', function (Prescription $prescription) {

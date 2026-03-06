@@ -24,6 +24,7 @@ class BiologisteController extends Controller
             'prescripteur:id,nom,prenom',
             'analyses:id,designation',
         ])
+            ->where('labo_traitement', 'LOCAL')
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($query) use ($search) {
                     $query->where('reference', 'like', '%'.$search.'%')
@@ -61,9 +62,9 @@ class BiologisteController extends Controller
         }
 
         $stats = [
-            'a_valider' => Prescription::where('status', 'TERMINE')->count(),
-            'valide' => Prescription::where('status', 'VALIDE')->count(),
-            'a_refaire' => Prescription::where('status', 'A_REFAIRE')->count(),
+            'a_valider' => Prescription::where('status', 'TERMINE')->where('labo_traitement', 'LOCAL')->count(),
+            'valide' => Prescription::where('status', 'VALIDE')->where('labo_traitement', 'LOCAL')->count(),
+            'a_refaire' => Prescription::where('status', 'A_REFAIRE')->where('labo_traitement', 'LOCAL')->count(),
         ];
 
         return Inertia::render('Biologiste/Index', [

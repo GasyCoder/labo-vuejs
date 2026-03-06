@@ -34,6 +34,8 @@ class JournalCaisseController extends Controller
                 'prescription' => $paiement->prescription ? [
                     'id' => $paiement->prescription->id,
                     'reference' => $paiement->prescription->reference,
+                    'labo_traitement' => $paiement->prescription->labo_traitement,
+                    'labo_autre_nom' => $paiement->prescription->labo_autre_nom,
                     'is_modified' => $this->isPrescriptionModified($paiement->prescription),
                     'updated_at_format' => $paiement->prescription->updated_at->format('d/m/Y H:i:s'),
                     'patient' => $paiement->prescription->patient ? [
