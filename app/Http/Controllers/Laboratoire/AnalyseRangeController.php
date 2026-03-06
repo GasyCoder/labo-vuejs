@@ -94,4 +94,21 @@ class AnalyseRangeController extends Controller
 
         return redirect()->back()->with('success', 'Intervalles de référence réinitialisés avec succès.');
     }
+
+    public function bulkDestroy(Request $request)
+    {
+        $data = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:analyses,id',
+        ]);
+
+        foreach ($data['ids'] as $id) {
+            $analyse = Analyse::find($id);
+            if ($analyse) {
+                $analyse->ranges()->delete();
+            }
+        }
+
+        return redirect()->back()->with('success', 'Sélection réinitialisée avec succès.');
+    }
 }

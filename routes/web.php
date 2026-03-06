@@ -256,6 +256,7 @@ Route::middleware(['auth', 'role:technicien,biologiste,superadmin,admin'])->pref
 
         Route::controller(\App\Http\Controllers\Laboratoire\AnalyseRangeController::class)->prefix('ranges')->name('ranges.')->group(function () {
             Route::get('/', 'index')->name('index');
+            Route::post('/bulk-delete', 'bulkDestroy')->name('bulk-destroy');
             Route::get('/{analyse}/edit', 'edit')->name('edit');
             Route::post('/{analyse}', 'store')->name('store');
             Route::delete('/{analyse}', 'destroy')->name('destroy');

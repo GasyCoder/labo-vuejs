@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
@@ -14,10 +14,24 @@ const props = defineProps({
 });
 
 const search = ref(props.filters.search);
+const selectedIds = ref([]);
 
 watch(search, debounce((value) => {
     router.get(route('laboratoire.analyses.ranges.index'), { search: value }, { preserveState: true, replace: true });
 }, 500));
+
+// Logic for selection
+const isAllSelected = computed(() => {
+    return props.analyses.data.length > 0 && selectedIds.value.length === props.analyses.data.length;
+});
+
+const toggleAll = () => {
+    if (isAllSelected.value) {
+        selectedIds.value = [];
+    } else {
+        selectedIds.value = props.analyses.data.map(a => a.id);
+    }
+};
 
 const resetRanges = (analyse) => {
     Swal.fire({
@@ -46,6 +60,47 @@ const resetRanges = (analyse) => {
                         position: 'top-end',
                         icon: 'success',
                         title: 'Réinitialisation réussie',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                }
+            });
+        }
+    });
+};
+
+const bulkReset = () => {
+    if (selectedIds.value.length === 0) return;
+
+    Swal.fire({
+        title: 'Action groupée',
+        text: `Voulez-vous vraiment réinitialiser les bornes pour les ${selectedIds.value.length} analyses sélectionnées ?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Oui, réinitialiser la sélection',
+        cancelButtonText: 'Annuler',
+        reverseButtons: true,
+        customClass: {
+            container: 'font-sans',
+            popup: 'rounded-2xl',
+            confirmButton: 'rounded-lg font-bold uppercase tracking-widest text-[10px] px-6 py-3',
+            cancelButton: 'rounded-lg font-bold uppercase tracking-widest text-[10px] px-6 py-3'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.post(route('laboratoire.analyses.ranges.bulk-destroy'), {
+                ids: selectedIds.value
+            }, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    selectedIds.value = [];
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Sélection réinitialisée',
                         showConfirmButton: false,
                         timer: 2000
                     });
@@ -103,17 +158,32 @@ const resetRanges = (analyse) => {
                 </div>
 
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
-                    <!-- Barre de recherche -->
-                    <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
-                        <div class="w-full md:w-1/3">
-                            <div class="relative group">
+                    <!-- Barre de recherche et actions groupées -->
+                    <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50/50 dark:bg-gray-800/50">
+                        <div class="w-full md:w-1/3 flex items-center gap-4">
+                            <div class="relative group flex-1">
                                 <em class="ni ni-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></em>
-                                <input v-model="search" type="text" placeholder="Rechercher par désignation ou code..." 
+                                <input v-model="search" type="text" placeholder="Rechercher..." 
                                     class="w-full rounded-lg border-slate-200 bg-white py-2 pl-10 text-xs font-bold focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900">
                             </div>
                         </div>
-                        <div class="hidden md:block">
-                            <p class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Catalogue Laboratoire v1.2</p>
+
+                        <!-- Actions groupées -->
+                        <div class="flex items-center gap-3">
+                            <Transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0 -translate-x-2" enter-to-class="opacity-100 translate-x-0">
+                                <div v-if="selectedIds.length > 0" class="flex items-center gap-3">
+                                    <span class="text-[10px] font-black uppercase text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+                                        {{ selectedIds.length }} sélectionné(s)
+                                    </span>
+                                    <button @click="bulkReset" 
+                                        class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-md transition-all hover:bg-red-700 active:scale-95 animate-in fade-in zoom-in duration-300">
+                                        <em class="ni ni-reload"></em> Reset la sélection
+                                    </button>
+                                </div>
+                            </Transition>
+                            <div class="hidden md:block">
+                                <p class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Catalogue Laboratoire v1.2</p>
+                            </div>
                         </div>
                     </div>
 
@@ -121,6 +191,10 @@ const resetRanges = (analyse) => {
                         <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                             <thead class="text-[10px] text-slate-400 uppercase bg-gray-50/50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-600 font-black tracking-widest">
                                 <tr>
+                                    <th scope="col" class="px-6 py-4 w-10">
+                                        <input type="checkbox" :checked="isAllSelected" @change="toggleAll"
+                                            class="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 dark:bg-slate-900 dark:border-slate-700 cursor-pointer">
+                                    </th>
                                     <th scope="col" class="px-6 py-4 w-24">Code</th>
                                     <th scope="col" class="px-6 py-4">Désignation</th>
                                     <th scope="col" class="px-6 py-4">Intervalles de référence</th>
@@ -129,7 +203,12 @@ const resetRanges = (analyse) => {
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                <tr v-for="analyse in analyses.data" :key="analyse.id" class="bg-white dark:bg-gray-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                                <tr v-for="analyse in analyses.data" :key="analyse.id" 
+                                    :class="['bg-white dark:bg-gray-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors', {'bg-blue-50/30 dark:bg-blue-900/10': selectedIds.includes(analyse.id)}]">
+                                    <td class="px-6 py-4">
+                                        <input type="checkbox" v-model="selectedIds" :value="analyse.id"
+                                            class="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 dark:bg-slate-900 dark:border-slate-700 cursor-pointer">
+                                    </td>
                                     <td class="px-6 py-4 font-mono text-[10px] font-black text-slate-400">
                                         {{ analyse.code }}
                                     </td>
@@ -156,7 +235,7 @@ const resetRanges = (analyse) => {
                                         </span>
                                         <span v-else class="text-slate-200">—</span>
                                     </td>
-                                    <td class="px-6 py-4 text-right space-x-2">
+                                    <td class="px-6 py-4 text-right">
                                         <div class="flex justify-end items-center gap-2">
                                             <Link :href="route('laboratoire.analyses.ranges.edit', analyse.id)" 
                                                 class="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-sm transition-all hover:bg-primary-700 active:scale-95">
@@ -164,14 +243,15 @@ const resetRanges = (analyse) => {
                                             </Link>
                                             
                                             <button v-if="analyse.ranges.length > 0" @click="resetRanges(analyse)"
-                                                class="inline-flex items-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-600 shadow-sm transition-all hover:bg-red-50 hover:text-red-600 active:scale-95 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-red-900/30 border border-slate-200 dark:border-slate-600">
+                                                class="inline-flex items-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-600 shadow-sm transition-all hover:bg-red-50 hover:text-red-600 active:scale-95 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-red-900/30 border border-slate-200 dark:border-slate-600"
+                                                title="Réinitialiser cette analyse">
                                                 <em class="ni ni-reload"></em> Reset
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr v-if="analyses.data.length === 0">
-                                    <td colspan="5" class="px-6 py-16 text-center text-slate-400 font-bold italic">
+                                    <td colspan="6" class="px-6 py-16 text-center text-slate-400 font-bold italic">
                                         <em class="ni ni-search text-3xl opacity-20 block mb-2"></em>
                                         Aucune analyse trouvée pour cette recherche.
                                     </td>
