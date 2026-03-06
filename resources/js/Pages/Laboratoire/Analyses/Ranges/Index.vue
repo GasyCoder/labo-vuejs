@@ -5,6 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import Pagination from '@/Components/Pagination.vue';
 import TextInput from '@/Components/TextInput.vue';
 import debounce from 'lodash/debounce';
+import Swal from 'sweetalert2';
 
 const props = defineProps({
     analyses: Object,
@@ -17,6 +18,42 @@ const search = ref(props.filters.search);
 watch(search, debounce((value) => {
     router.get(route('laboratoire.analyses.ranges.index'), { search: value }, { preserveState: true, replace: true });
 }, 500));
+
+const resetRanges = (analyse) => {
+    Swal.fire({
+        title: 'Réinitialiser les bornes ?',
+        text: `Voulez-vous vraiment supprimer toutes les plages de référence pour l'analyse "${analyse.designation}" ?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Oui, réinitialiser',
+        cancelButtonText: 'Annuler',
+        reverseButtons: true,
+        customClass: {
+            container: 'font-sans',
+            popup: 'rounded-2xl',
+            confirmButton: 'rounded-lg font-bold uppercase tracking-widest text-xs px-6 py-3',
+            cancelButton: 'rounded-lg font-bold uppercase tracking-widest text-xs px-6 py-3'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.delete(route('laboratoire.analyses.ranges.destroy', analyse.id), {
+                preserveScroll: true,
+                onSuccess: () => {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Réinitialisation réussie',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                }
+            });
+        }
+    });
+};
 </script>
 
 <template>
@@ -49,7 +86,7 @@ watch(search, debounce((value) => {
                             <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Configurées</p>
                             <h3 class="text-2xl font-black text-emerald-600 dark:text-emerald-400">{{ stats.configured }}</h3>
                         </div>
-                        <div class="h-10 w-10 bg-emerald-50 text-emerald-500 rounded-lg flex items-center justify-center dark:bg-emerald-900/30">
+                        <div class="h-10 w-10 bg-emerald-50 text-emerald-500 rounded-lg flex items-center justify-center dark:bg-blue-900/30">
                             <em class="ni ni-check-circle text-xl"></em>
                         </div>
                     </div>
@@ -119,11 +156,18 @@ watch(search, debounce((value) => {
                                         </span>
                                         <span v-else class="text-slate-200">—</span>
                                     </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <Link :href="route('laboratoire.analyses.ranges.edit', analyse.id)" 
-                                            class="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-sm transition-all hover:bg-primary-700 active:scale-95">
-                                            <em class="ni ni-edit"></em> Gérer
-                                        </Link>
+                                    <td class="px-6 py-4 text-right space-x-2">
+                                        <div class="flex justify-end items-center gap-2">
+                                            <Link :href="route('laboratoire.analyses.ranges.edit', analyse.id)" 
+                                                class="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-sm transition-all hover:bg-primary-700 active:scale-95">
+                                                <em class="ni ni-edit"></em> Gérer
+                                            </Link>
+                                            
+                                            <button v-if="analyse.ranges.length > 0" @click="resetRanges(analyse)"
+                                                class="inline-flex items-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-600 shadow-sm transition-all hover:bg-red-50 hover:text-red-600 active:scale-95 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-red-900/30 border border-slate-200 dark:border-slate-600">
+                                                <em class="ni ni-reload"></em> Reset
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr v-if="analyses.data.length === 0">

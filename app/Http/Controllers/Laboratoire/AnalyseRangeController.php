@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Laboratoire;
 
 use App\Http\Controllers\Controller;
 use App\Models\Analyse;
-use App\Models\AnalyseRange;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -25,7 +24,7 @@ class AnalyseRangeController extends Controller
             ->where('level', '!=', 'PARENT')
             ->when($request->search, function ($query, $search) {
                 $query->where('designation', 'like', "%{$search}%")
-                      ->orWhere('code', 'like', "%{$search}%");
+                    ->orWhere('code', 'like', "%{$search}%");
             })
             ->paginate(15)
             ->withQueryString();
@@ -40,13 +39,21 @@ class AnalyseRangeController extends Controller
     public function edit(Analyse $analyse): Response
     {
         $analyse->load('ranges', 'type', 'examen');
-        
+
         // On nettoie les valeurs décimales pour éviter les 4.000 inutiles dans l'interface
-        $analyse->ranges->each(function($range) {
-            if ($range->normal_min !== null) $range->normal_min = (float)$range->normal_min;
-            if ($range->normal_max !== null) $range->normal_max = (float)$range->normal_max;
-            if ($range->critical_min !== null) $range->critical_min = (float)$range->critical_min;
-            if ($range->critical_max !== null) $range->critical_max = (float)$range->critical_max;
+        $analyse->ranges->each(function ($range) {
+            if ($range->normal_min !== null) {
+                $range->normal_min = (float) $range->normal_min;
+            }
+            if ($range->normal_max !== null) {
+                $range->normal_max = (float) $range->normal_max;
+            }
+            if ($range->critical_min !== null) {
+                $range->critical_min = (float) $range->critical_min;
+            }
+            if ($range->critical_max !== null) {
+                $range->critical_max = (float) $range->critical_max;
+            }
         });
 
         return Inertia::render('Laboratoire/Analyses/Ranges/Edit', [
@@ -79,5 +86,12 @@ class AnalyseRangeController extends Controller
         }
 
         return redirect()->back()->with('success', 'Bornes mises à jour avec succès.');
+    }
+
+    public function destroy(Analyse $analyse)
+    {
+        $analyse->ranges()->delete();
+
+        return redirect()->back()->with('success', 'Intervalles de référence réinitialisés avec succès.');
     }
 }

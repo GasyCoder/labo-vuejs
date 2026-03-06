@@ -258,6 +258,7 @@ Route::middleware(['auth', 'role:technicien,biologiste,superadmin,admin'])->pref
             Route::get('/', 'index')->name('index');
             Route::get('/{analyse}/edit', 'edit')->name('edit');
             Route::post('/{analyse}', 'store')->name('store');
+            Route::delete('/{analyse}', 'destroy')->name('destroy');
         });
         Route::controller(PrelevementController::class)->group(function () {
             Route::get('prelevements', 'index')->name('prelevements');
