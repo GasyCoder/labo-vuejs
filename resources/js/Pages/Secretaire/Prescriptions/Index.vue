@@ -313,8 +313,35 @@ const handlePaymentToggle = (prescription) => {
 const totalCount = computed(() => {
     return Number(props.counts.countActives || props.counts.actives || 0)
         + Number(props.counts.countValide || props.counts.valide || 0)
+        + Number(props.counts.countAutreLab || props.counts.autre_lab || 0)
         + Number(props.counts.countDeleted || props.counts.deleted || 0);
 });
+
+const getTabCount = (tab) => {
+    // Si c'est l'onglet actif, la source de vérité absolue est le total de la pagination
+    if (form.tab === tab) {
+        return props.prescriptions.total;
+    }
+    
+    // Sinon on utilise les counts envoyés par le serveur
+    const map = {
+        actives: props.counts.countActives || props.counts.actives || 0,
+        valide: props.counts.countValide || props.counts.valide || 0,
+        autre_lab: props.counts.countAutreLab || props.counts.autre_lab || 0,
+        deleted: props.counts.countDeleted || props.counts.deleted || 0,
+    };
+    return map[tab] || 0;
+};
+
+// Debug logic
+watch(() => props.prescriptions.data, (newData) => {
+    console.log(`[Debug] Tab: ${form.tab} | Items: ${newData.length} | Total Pagination: ${props.prescriptions.total} | Server Count Autre: ${props.counts.countAutreLab}`);
+    newData.forEach(p => {
+        if (form.tab === 'autre_lab') {
+            console.log(` -> Prescription ${p.reference}: labo=${p.labo_traitement}, nom=${p.labo_autre_nom}`);
+        }
+    });
+}, { immediate: true });
 
 const paymentRate = computed(() => {
     const paid = Number(props.counts.countPaye || 0);
@@ -380,6 +407,35 @@ const canCreate = computed(() => perm.value.canCreate);
 const canAccessTrash = computed(() => perm.value.canAccessTrash);
 const canRestore = computed(() => perm.value.canRestore);
 const canForceDelete = computed(() => perm.value.canForceDelete);
+
+// Detail modal state
+const detail = reactive({
+    show: false,
+    prescription: null,
+});
+
+const openDetailModal = (prescription) => {
+    detail.prescription = prescription;
+    detail.show = true;
+};
+
+const closeDetailModal = () => {
+    detail.show = false;
+    setTimeout(() => {
+        detail.prescription = null;
+    }, 200);
+};
+
+const formatCurrency = (value) => {
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'MGA', maximumFractionDigits: 0 })
+        .format(value || 0)
+        .replace('MGA', 'Ar');
+};
+
+const printDetail = () => {
+    if (!detail.prescription) return;
+    window.open(route('secretaire.prescription.pdf-externe', detail.prescription.id), '_blank');
+};
 </script>
 
 <template>
@@ -458,7 +514,7 @@ const canForceDelete = computed(() => perm.value.canForceDelete);
                 </div>
             </div>
 
-            <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
                 <div class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-3 transition-all hover:shadow-md dark:border-slate-700 dark:bg-slate-800">
                     <div class="flex flex-col items-center gap-1 text-center">
                         <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center text-primary-500">
@@ -481,6 +537,19 @@ const canForceDelete = computed(() => perm.value.canForceDelete);
                         <p class="mt-1 text-xl font-bold leading-none text-slate-900 dark:text-white">{{ number(counts.countValide || counts.valide) }}</p>
                         <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Validees</p>
                     </div>
+                </div>
+
+                <div class="relative overflow-hidden rounded-xl border border-orange-200 bg-orange-50/30 p-3 transition-all hover:shadow-md dark:border-orange-900/40 dark:bg-orange-900/10">
+                    <div class="flex flex-col items-center gap-1 text-center">
+                        <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center text-orange-500">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18" />
+                            </svg>
+                        </div>
+                        <p class="mt-1 text-xl font-bold leading-none text-orange-700 dark:text-orange-400">{{ number(counts.countAutreLab || counts.autre_lab) }}</p>
+                        <p class="text-[11px] font-medium text-orange-600 dark:text-orange-300">Autre Lab</p>
+                    </div>
+                    <button @click="changeTab('autre_lab')" type="button" class="absolute inset-0 cursor-pointer focus:outline-none" title="Voir les dossiers Autre Lab"></button>
                 </div>
 
                 <div class="relative overflow-hidden rounded-xl bg-white p-3 transition-all hover:shadow-md dark:bg-slate-800" :class="form.payment === 'paye' ? 'border-emerald-400 ring-1 ring-emerald-400/50 dark:border-emerald-500' : 'border border-slate-200 dark:border-slate-700'">
@@ -509,11 +578,13 @@ const canForceDelete = computed(() => perm.value.canForceDelete);
                     <button @click="filterByPaymentStatus('non_paye')" type="button" class="absolute inset-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500/50" title="Filtrer les non payees"></button>
                 </div>
 
-                <div class="relative col-span-2 overflow-hidden rounded-xl border border-slate-200 bg-white p-3 transition-all hover:shadow-md sm:col-span-1 dark:border-slate-700 dark:bg-slate-800">
+                <div class="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-900 p-3 shadow-md">
                     <div class="flex flex-col items-center gap-1 text-center">
-                        <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center"></div>
-                        <p class="text-xl font-bold leading-none text-slate-900 dark:text-white">{{ number(totalCount) }}</p>
-                        <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Total</p>
+                        <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center text-primary-400">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
+                        </div>
+                        <p class="text-xl font-bold leading-none text-white">{{ number(totalCount) }}</p>
+                        <p class="text-[11px] font-medium text-slate-400 uppercase tracking-tight">Total Labo</p>
                     </div>
                 </div>
             </div>
@@ -616,7 +687,7 @@ const canForceDelete = computed(() => perm.value.canForceDelete);
                         <button type="button" class="relative px-4 py-3 text-sm font-medium transition-colors" :class="tabClass('actives')" @click="changeTab('actives')">
                             <span class="flex items-center gap-2">
                                 Actives
-                                <span class="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-xs font-semibold" :class="form.tab === 'actives' ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'">{{ number(counts.countActives || counts.actives) }}</span>
+                                <span class="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-xs font-semibold" :class="form.tab === 'actives' ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'">{{ number(getTabCount('actives')) }}</span>
                             </span>
                             <span v-if="form.tab === 'actives'" class="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-primary-600 dark:bg-primary-400"></span>
                         </button>
@@ -624,15 +695,23 @@ const canForceDelete = computed(() => perm.value.canForceDelete);
                         <button type="button" class="relative px-4 py-3 text-sm font-medium transition-colors" :class="tabClass('valide')" @click="changeTab('valide')">
                             <span class="flex items-center gap-2">
                                 Validees
-                                <span class="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-xs font-semibold" :class="form.tab === 'valide' ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'">{{ number(counts.countValide || counts.valide) }}</span>
+                                <span class="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-xs font-semibold" :class="form.tab === 'valide' ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'">{{ number(getTabCount('valide')) }}</span>
                             </span>
                             <span v-if="form.tab === 'valide'" class="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-primary-600 dark:bg-primary-400"></span>
+                        </button>
+
+                        <button type="button" class="relative px-4 py-3 text-sm font-medium transition-colors" :class="tabClass('autre_lab')" @click="changeTab('autre_lab')">
+                            <span class="flex items-center gap-2">
+                                Autre Lab
+                                <span class="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-xs font-semibold" :class="form.tab === 'autre_lab' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'">{{ number(getTabCount('autre_lab')) }}</span>
+                            </span>
+                            <span v-if="form.tab === 'autre_lab'" class="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-orange-600 dark:bg-orange-400"></span>
                         </button>
 
                         <button v-if="canAccessTrash" type="button" class="relative px-4 py-3 text-sm font-medium transition-colors" :class="tabClass('deleted')" @click="changeTab('deleted')">
                             <span class="flex items-center gap-2">
                                 Corbeille
-                                <span v-if="number(counts.countDeleted || counts.deleted) > 0" class="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-100 px-1.5 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-300">{{ number(counts.countDeleted || counts.deleted) }}</span>
+                                <span v-if="getTabCount('deleted') > 0" class="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-100 px-1.5 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-300">{{ number(getTabCount('deleted')) }}</span>
                             </span>
                             <span v-if="form.tab === 'deleted'" class="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-primary-600 dark:bg-primary-400"></span>
                         </button>
@@ -694,7 +773,14 @@ const canForceDelete = computed(() => perm.value.canForceDelete);
                                         class="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 dark:border-slate-600 dark:bg-slate-700"
                                     >
                                 </td>
-                                <td class="px-4 py-3.5"><span class="text-sm font-semibold text-slate-900 dark:text-white">{{ prescription.reference }}</span></td>
+                                <td class="px-4 py-3.5">
+                                    <div class="flex flex-col">
+                                        <span class="text-sm font-semibold text-slate-900 dark:text-white">{{ prescription.reference }}</span>
+                                        <span v-if="prescription.labo_traitement === 'AUTRE'" class="text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-tight">
+                                            {{ prescription.labo_autre_nom || 'Labo Externe' }}
+                                        </span>
+                                    </div>
+                                </td>
                                 <td class="px-4 py-3.5">
                                     <div class="flex items-center gap-2.5">
                                         <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600">
@@ -786,6 +872,19 @@ const canForceDelete = computed(() => perm.value.canForceDelete);
 
                                             <button v-if="perm.canAccessArchive" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-50 text-slate-500 hover:bg-slate-100 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-slate-600 transition-colors" title="Archiver" @click="openModal('archive', prescription.id)">
                                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
+                                            </button>
+                                        </template>
+
+                                        <!-- Actions for Autre Lab -->
+                                        <template v-if="form.tab === 'autre_lab'">
+                                            <button type="button" @click="openDetailModal(prescription)" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:hover:bg-orange-900/40 transition-colors" title="Voir détail">
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.644C3.323 8.19 7.225 5 12 5c4.775 0 8.677 3.19 9.964 6.678.045.129.045.259 0 .388C20.677 15.81 16.775 19 12 19c-4.775 0-8.677-3.19-9.964-6.678z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                            </button>
+                                            <Link v-if="perm.canEdit" :href="route('secretaire.prescription.edit', prescription.id)" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/40 transition-colors" title="Modifier">
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/></svg>
+                                            </Link>
+                                            <button v-if="perm.canDelete" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 transition-colors" title="Supprimer" @click="openModal('delete', prescription.id)">
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
                                             </button>
                                         </template>
 
@@ -1004,10 +1103,150 @@ const canForceDelete = computed(() => perm.value.canForceDelete);
                 </div>
             </div>
         </Teleport>
+        <!-- Detail Modal (Autre Lab) -->
+        <Teleport to="body">
+            <div v-if="detail.show" class="fixed inset-0 z-[60] overflow-y-auto">
+                <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" @click="closeDetailModal"></div>
+                <div class="flex min-h-full items-center justify-center p-4">
+                    <div class="relative w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-800" @click.stop>
+                        <!-- Modal Header -->
+                        <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-6 py-4 dark:border-slate-700 dark:bg-slate-900/50">
+                            <div class="flex items-center gap-3">
+                                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-900/30">
+                                    <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Détail Prescription Externe</h3>
+                                    <p class="text-xs font-medium text-slate-500">{{ detail.prescription?.reference }} — {{ detail.prescription?.labo_autre_nom || 'Laboratoire Externe' }}</p>
+                                </div>
+                            </div>
+                            <button type="button" class="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700" @click="closeDetailModal">
+                                <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+
+                        <!-- Modal Body (Printable area) -->
+                        <div id="printable-detail" class="p-6">
+                            <!-- Header for Print only -->
+                            <div class="hidden print:block mb-8 border-b-2 border-slate-900 pb-4">
+                                <h1 class="text-2xl font-black uppercase tracking-tighter">Fiche de Prescription Externe</h1>
+                                <div class="mt-2 flex justify-between text-sm font-bold">
+                                    <span>Réf: {{ detail.prescription?.reference }}</span>
+                                    <span>Date: {{ detail.prescription?.created_at }}</span>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Patient Info -->
+                                <div class="rounded-xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/30">
+                                    <h4 class="mb-3 text-[10px] font-black uppercase tracking-widest text-slate-400">Informations Patient</h4>
+                                    <div class="space-y-2">
+                                        <div class="flex justify-between">
+                                            <span class="text-xs text-slate-500">Nom Complet:</span>
+                                            <span class="text-sm font-bold text-slate-900 dark:text-white">{{ detail.prescription?.patient?.nom_complet }}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-xs text-slate-500">Âge / Sexe:</span>
+                                            <span class="text-sm font-bold text-slate-900 dark:text-white">{{ detail.prescription?.age }} {{ detail.prescription?.unite_age }} • {{ detail.prescription?.patient?.civilite }}</span>
+                                        </div>
+                                        <div v-if="detail.prescription?.patient?.telephone" class="flex justify-between">
+                                            <span class="text-xs text-slate-500">Téléphone:</span>
+                                            <span class="text-sm font-bold text-slate-900 dark:text-white">{{ detail.prescription?.patient?.telephone }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Medical Context -->
+                                <div class="rounded-xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/30">
+                                    <h4 class="mb-3 text-[10px] font-black uppercase tracking-widest text-slate-400">Contexte Médical</h4>
+                                    <div class="space-y-2">
+                                        <div class="flex justify-between">
+                                            <span class="text-xs text-slate-500">Prescripteur:</span>
+                                            <span class="text-sm font-bold text-slate-900 dark:text-white">{{ detail.prescription?.prescripteur?.nom }}</span>
+                                        </div>
+                                        <div v-if="detail.prescription?.poids" class="flex justify-between">
+                                            <span class="text-xs text-slate-500">Poids:</span>
+                                            <span class="text-sm font-bold text-slate-900 dark:text-white">{{ detail.prescription?.poids }} Kg</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-xs text-slate-500">Laboratoire:</span>
+                                            <span class="text-sm font-black text-orange-600 uppercase">{{ detail.prescription?.labo_autre_nom || 'Externe' }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Clinical Info -->
+                            <div v-if="detail.prescription?.renseignement_clinique" class="mt-6 rounded-xl border border-slate-100 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+                                <h4 class="mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400">Renseignements Cliniques</h4>
+                                <p class="text-sm text-slate-700 dark:text-slate-300 italic">"{{ detail.prescription.renseignement_clinique }}"</p>
+                            </div>
+
+                            <!-- Analysis Table -->
+                            <div class="mt-6 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+                                <table class="w-full text-left text-sm">
+                                    <thead class="bg-slate-50 dark:bg-slate-900/50">
+                                        <tr>
+                                            <th class="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500">Code</th>
+                                            <th class="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500">Désignation</th>
+                                            <th class="px-4 py-2 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Prix</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+                                        <tr v-for="analyse in detail.prescription?.analyses" :key="analyse.code">
+                                            <td class="px-4 py-3 font-mono text-xs font-bold text-primary-600">{{ analyse.code }}</td>
+                                            <td class="px-4 py-3 text-slate-700 dark:text-slate-200">{{ analyse.designation }}</td>
+                                            <td class="px-4 py-3 text-right font-black tabular-nums">{{ formatCurrency(analyse.prix) }}</td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot class="bg-slate-900 text-white dark:bg-black">
+                                        <tr>
+                                            <td colspan="2" class="px-4 py-3 text-right text-xs font-bold uppercase tracking-widest opacity-60">Total Prescription</td>
+                                            <td class="px-4 py-3 text-right text-base font-black tabular-nums text-primary-400">
+                                                {{ formatCurrency(detail.prescription?.analyses.reduce((t, a) => t + Number(a.prix), 0)) }}
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Modal Footer -->
+                        <div class="flex items-center justify-between border-t border-slate-100 bg-slate-50/50 px-6 py-4 dark:border-slate-700 dark:bg-slate-900/50">
+                            <button type="button" class="text-sm font-bold text-slate-500 hover:text-slate-700" @click="closeDetailModal">Fermer</button>
+                            <button type="button" @click="printDetail" class="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg transition-all hover:bg-primary-700 active:scale-95">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>
+                                Générer PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
     </AppLayout>
 </template>
 
 <style scoped>
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #printable-detail, #printable-detail * {
+        visibility: visible;
+    }
+    #printable-detail {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 0;
+        margin: 0;
+    }
+    /* Hide scrollbars and other UI elements during print */
+    .scrollbar-thin {
+        overflow: visible !important;
+    }
+}
 .animate-in {
     animation-duration: 0.3s;
     animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);

@@ -234,9 +234,19 @@
                                 </div>
                                 
                                 <!-- Dossier (now Preinscription) -->
-                                <div class="font-medium text-blue-600 dark:text-blue-400 flex items-center flex-wrap">
+                                <div class="font-medium text-blue-600 dark:text-blue-400 flex items-center flex-wrap gap-2">
                                     <span>{{ paiement.prescription?.reference || 'N/A' }}</span>
                                     
+                                    <!-- Badge Labo Traité -->
+                                    <span v-if="paiement.prescription?.labo_traitement === 'AUTRE'" class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400 border border-orange-200 dark:border-orange-800 uppercase tracking-tighter">
+                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-10V4m-5 10v.01M15 7h1m-1 4h1m-5 10v-3a1 1 0 00-1-1H9a1 1 0 00-1 1v3M15 21v-3a1 1 0 00-1-1h-2a1 1 0 00-1 1v3" /></svg>
+                                        {{ paiement.prescription?.labo_autre_nom || 'EXTERNE' }}
+                                    </span>
+                                    <span v-else class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 border border-blue-100 dark:border-blue-800 uppercase tracking-tighter">
+                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                                        LOCAL
+                                    </span>
+
                                     <!-- Badge "Modifié" si la prescription a été modifiée -->
                                     <span v-if="paiement.prescription?.is_modified" class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
                                         <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">

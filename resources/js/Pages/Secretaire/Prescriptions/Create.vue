@@ -367,26 +367,28 @@
                 </div>
 
                 <div class="space-y-4 p-5">
-                    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                        <div class="rounded-xl border border-slate-200/70 bg-white p-4 dark:border-slate-700/70 dark:bg-slate-800">
-                            <label class="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
-                                <em class="ni ni-user-md mr-1.5 text-cyan-600 dark:text-cyan-300"></em>
-                                Prescripteur <span class="text-red-500">*</span>
-                            </label>
-                            <div class="relative">
-                                <div class="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-3.5">
-                                    <em class="ni ni-user-md text-base text-slate-400 dark:text-slate-500"></em>
-                                </div>
-                                <Combobox
-                                    v-model="clinicalForm.prescripteur_id"
-                                    :options="prescripteurs"
-                                    label-key="nom_complet"
-                                    secondary-key="grade"
-                                    placeholder="Rechercher un prescripteur..."
-                                />
+                    <!-- Prescripteur en pleine largeur -->
+                    <div class="rounded-xl border border-slate-200/70 bg-white p-4 dark:border-slate-700/70 dark:bg-slate-800">
+                        <label class="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                            <em class="ni ni-user-md mr-1.5 text-cyan-600 dark:text-cyan-300"></em>
+                            Prescripteur <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <div class="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-3.5">
+                                <em class="ni ni-user-md text-base text-slate-400 dark:text-slate-500"></em>
                             </div>
+                            <Combobox
+                                v-model="clinicalForm.prescripteur_id"
+                                :options="prescripteurs"
+                                label-key="nom_complet"
+                                secondary-key="grade"
+                                placeholder="Rechercher un prescripteur..."
+                            />
                         </div>
+                    </div>
 
+                    <!-- 3 champs alignés en bas -->
+                    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
                         <div class="rounded-xl border border-slate-200/70 bg-white p-4 dark:border-slate-700/70 dark:bg-slate-800">
                             <label class="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
                                 <em class="ni ni-building mr-1.5 text-blue-600 dark:text-blue-300"></em>
@@ -406,31 +408,61 @@
                                     <em class="ni ni-chevron-down text-xs text-slate-400 dark:text-slate-500"></em>
                                 </div>
                             </div>
-                            <p class="mt-2 flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
-                                <em class="ni ni-info-circle"></em> Utile pour le tri et la prise en charge.
-                            </p>
                         </div>
 
                         <div class="rounded-xl border border-slate-200/70 bg-white p-4 dark:border-slate-700/70 dark:bg-slate-800">
-                            <div class="mb-2.5 flex items-center justify-between gap-3">
-                                <label class="block text-sm font-semibold text-slate-800 dark:text-slate-200">
-                                    <em class="ni ni-activity mr-1.5 text-orange-600 dark:text-orange-300"></em>
-                                    Poids
-                                </label>
-                                <span class="text-xs text-slate-500 dark:text-slate-400">kg</span>
+                            <label class="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                <em class="ni ni-building mr-1.5 text-indigo-600 dark:text-indigo-300"></em>
+                                Labo traiter <span class="text-red-500">*</span>
+                            </label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button 
+                                    type="button"
+                                    @click="clinicalForm.labo_traitement = 'LOCAL'"
+                                    class="flex items-center justify-center gap-2 rounded-xl border-2 px-3 py-2 text-sm font-bold transition-all"
+                                    :class="clinicalForm.labo_traitement === 'LOCAL' 
+                                        ? 'border-primary-600 bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400' 
+                                        : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200 dark:border-slate-700 dark:bg-slate-800/50'"
+                                >
+                                    <em class="ni ni-home"></em> Local
+                                </button>
+                                <button 
+                                    type="button"
+                                    @click="clinicalForm.labo_traitement = 'AUTRE'"
+                                    class="flex items-center justify-center gap-2 rounded-xl border-2 px-3 py-2 text-sm font-bold transition-all"
+                                    :class="clinicalForm.labo_traitement === 'AUTRE' 
+                                        ? 'border-orange-600 bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400' 
+                                        : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200 dark:border-slate-700 dark:bg-slate-800/50'"
+                                >
+                                    <em class="ni ni-external"></em> Autre
+                                </button>
                             </div>
+                            
+                            <div v-if="clinicalForm.labo_traitement === 'AUTRE'" class="relative mt-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                                    <em class="ni ni-edit text-base text-slate-400 dark:text-slate-500"></em>
+                                </div>
+                                <input 
+                                    v-model="clinicalForm.labo_autre_nom" 
+                                    type="text" 
+                                    placeholder="Nom du labo..." 
+                                    class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder-slate-400 transition focus:border-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-500"
+                                    required
+                                >
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl border border-slate-200/70 bg-white p-4 dark:border-slate-700/70 dark:bg-slate-800">
+                            <label class="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                <em class="ni ni-activity mr-1.5 text-orange-600 dark:text-orange-300"></em>
+                                Poids (Kg)
+                            </label>
                             <div class="relative">
                                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
                                     <em class="ni ni-activity text-base text-slate-400 dark:text-slate-500"></em>
                                 </div>
-                                <input v-model.number="clinicalForm.poids" type="number" min="0" step="0.1" placeholder="Ex: 65.5" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-12 text-sm text-slate-900 placeholder-slate-400 transition focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-500">
-                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5">
-                                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">kg</span>
-                                </div>
+                                <input v-model.number="clinicalForm.poids" type="number" min="0" step="0.1" placeholder="Ex: 65.5" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 transition hover:border-slate-300 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:hover:border-slate-500">
                             </div>
-                            <p class="mt-2 flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
-                                <em class="ni ni-info-circle"></em> Optionnel - utile pour le calcul des doses.
-                            </p>
                         </div>
                     </div>
 
@@ -1018,6 +1050,8 @@ const clinicalForm = ref({
     unite_age: 'Ans',
     poids: '',
     renseignement_clinique: '',
+    labo_traitement: 'LOCAL',
+    labo_autre_nom: '',
 });
 
 const paymentForm = ref({
@@ -1135,6 +1169,10 @@ const civiliteOptionLabel = (civilite) => {
 
 const civiliteOptionHint = (civilite) => {
     const normalized = String(civilite || '').toLowerCase();
+
+    if (normalized.includes('monsieur') || normalized.includes('homme')) {
+        return 'Homme';
+    }
 
     if (normalized.includes('monsieur') || normalized.includes('homme')) {
         return 'Homme';
@@ -1263,6 +1301,8 @@ const resetWorkflow = () => {
         unite_age: 'Ans',
         poids: '',
         renseignement_clinique: '',
+        labo_traitement: 'LOCAL',
+        labo_autre_nom: '',
     };
 
     paymentForm.value = {
@@ -1464,6 +1504,8 @@ const submitPrescription = () => {
         payment_method: paymentForm.value.payment_method,
         remise: Math.max(0, Number(paymentForm.value.remise || 0)),
         paiement_statut: !!paymentForm.value.paiement_statut,
+        labo_traitement: clinicalForm.value.labo_traitement,
+        labo_autre_nom: clinicalForm.value.labo_traitement === 'AUTRE' ? clinicalForm.value.labo_autre_nom : null,
     };
 
     router.post(route('secretaire.prescription.store'), payload, {
