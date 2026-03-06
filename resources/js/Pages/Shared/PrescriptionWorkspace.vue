@@ -147,6 +147,10 @@ const setFormValue = (analyseId, field, value) => {
     }
 };
 
+const confirmSave = (analyseId) => {
+    autoSave(analyseId, true);
+};
+
 // Auto-Save
 const saveTimers = {};
 const debouncedSave = (analyseId) => {
@@ -240,7 +244,7 @@ const addConclusionNote = async (analyseId) => {
             notesState[analyseId].push(result.note);
             noteDrafts[analyseId] = '';
             showAddNote[analyseId] = false;
-            openNotes[analyseId] = true;
+            openNotes[analyseId] = false; // Fermer la section pour gagner de l'espace
         }
     } catch (e) { console.error('Erreur add note', e); }
 };
@@ -556,6 +560,7 @@ const statusBadge = (status) => {
                                             :startEditNote="startEditNote"
                                             :updateConclusionNote="updateConclusionNote"
                                             :deleteConclusionNote="deleteConclusionNote"
+                                            @confirm-save="confirmSave"
                                         />
                                     </template>
                                 </div>

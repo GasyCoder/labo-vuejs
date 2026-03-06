@@ -99,70 +99,50 @@ class Analyse extends Model
 
         if ($patient && $patient->civilite) {
             $civilite = strtolower(trim($patient->civilite));
-            
-            if (in_array($civilite, ['monsieur', 'mr', 'm.', 'homme'])) {
-                $context = 'HOMME';
-            } elseif (in_array($civilite, ['madame', 'mme', 'mme.', 'femme'])) {
-                $context = 'FEMME';
-            } elseif (str_contains($civilite, 'garçon') || str_contains($civilite, 'garcon')) {
-                $context = 'ENFANT_GARCON';
-            } elseif (str_contains($civilite, 'fille')) {
-                $context = 'ENFANT_FILLE';
-            }
+            if (in_array($civilite, ['monsieur', 'mr', 'm.', 'homme'])) { $context = 'HOMME'; }
+            elseif (in_array($civilite, ['madame', 'mme', 'mme.', 'femme'])) { $context = 'FEMME'; }
+            elseif (str_contains($civilite, 'garçon') || str_contains($civilite, 'garcon')) { $context = 'ENFANT_GARCON'; }
+            elseif (str_contains($civilite, 'fille')) { $context = 'ENFANT_FILLE'; }
         }
 
-        // Si aucun contexte détecté, on ne peut pas valider précisément les bornes
-        if (! $context) {
-            return ['status' => 'OK'];
-        }
+        if (! $context) return ['status' => 'OK'];
 
         $range = $this->ranges()->where('context', $context)->first();
+        if (! $range) return ['status' => 'OK'];
 
-        if (! $range) {
-            return ['status' => 'OK'];
+        // 1. EXTRACTION DES SEUILS
+        $nMin = $range->normal_min !== null ? (float)$range->normal_min : null;
+        $nMax = $range->normal_max !== null ? (float)$range->normal_max : null;
+        $cMin = $range->critical_min !== null ? (float)$range->critical_min : null;
+        $cMax = $range->critical_max !== null ? (float)$range->critical_max : null;
+
+        // 2. PRIORITÉ ABSOLUE : CAS NORMAL (Inclusif)
+        // Si la valeur est dans la norme, on arrête tout : c'est OK.
+        $isAboveNormalMin = ($nMin === null || $numValue >= $nMin);
+        $isBelowNormalMax = ($nMax === null || $numValue <= $nMax);
+
+        if ($isAboveNormalMin && $isBelowNormalMax) {
+            return ['status' => 'OK', 'message' => 'Valeur normale'];
         }
 
-        // Vérification des bornes critiques (BLOCK)
-        if ($range->critical_min !== null && $numValue < (float)$range->critical_min) {
+        // 3. CAS CRITIQUE / IMPOSSIBLE
+        // On ne vérifie le critique QUE si on n'est pas dans la norme.
+        if (($cMin !== null && $numValue < $cMin) || ($cMax !== null && $numValue > $cMax)) {
             return [
                 'status' => 'BLOCK',
-                'message' => "VALEUR IMPOSSIBLE (Trop basse)",
-                'expected' => "min: {$range->critical_min}",
-                'entered' => $value,
-                'unite' => $this->unite
-            ];
-        }
-        if ($range->critical_max !== null && $numValue > (float)$range->critical_max) {
-            return [
-                'status' => 'BLOCK',
-                'message' => "VALEUR IMPOSSIBLE (Trop élevée)",
-                'expected' => "max: {$range->critical_max}",
-                'entered' => $value,
-                'unite' => $this->unite
+                'message' => "VALEUR BIOLOGIQUEMENT INCOHÉRENTE",
+                'expected' => "Limites vitales: " . ($cMin ?? '—') . " à " . ($cMax ?? '—'),
+                'entered' => $value
             ];
         }
 
-        // Vérification des bornes normales (WARNING)
-        if ($range->normal_min !== null && $numValue < (float)$range->normal_min) {
-            return [
-                'status' => 'WARNING',
-                'message' => "RÉSULTAT TROP BAS",
-                'expected' => "min: {$range->normal_min}",
-                'entered' => $value,
-                'unite' => $this->unite
-            ];
-        }
-        if ($range->normal_max !== null && $numValue > (float)$range->normal_max) {
-            return [
-                'status' => 'WARNING',
-                'message' => "RÉSULTAT TROP ÉLEVÉ",
-                'expected' => "max: {$range->normal_max}",
-                'entered' => $value,
-                'unite' => $this->unite
-            ];
-        }
-
-        return ['status' => 'OK'];
+        // 4. CAS HORS NORME MAIS ACCEPTABLE (WARNING)
+        return [
+            'status' => 'WARNING',
+            'message' => "VALEUR HORS PLAGE NORMALE",
+            'expected' => "Plage normale: " . ($nMin ?? '—') . " à " . ($nMax ?? '—'),
+            'entered' => $value
+        ];
     }
 
     // Scopes utiles
@@ -338,7 +318,19 @@ class Analyse extends Model
 
         if (! $context) return null;
 
-        return $this->ranges()->where('context', $context)->first();
+        $range = $this->ranges()->where('context', $context)->first();
+        
+        if ($range) {
+            // On convertit en float pour nettoyer les 4.000 en 4
+            return [
+                'normal_min' => $range->normal_min !== null ? (float)$range->normal_min : null,
+                'normal_max' => $range->normal_max !== null ? (float)$range->normal_max : null,
+                'critical_min' => $range->critical_min !== null ? (float)$range->critical_min : null,
+                'critical_max' => $range->critical_max !== null ? (float)$range->critical_max : null,
+            ];
+        }
+
+        return null;
     }
 
     /**

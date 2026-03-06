@@ -40,9 +40,27 @@ class ResultatController extends Controller
                 ]);
             }
 
-            // Détection automatique intelligente de l'interprétation
-            // Si le statut est OK -> NORMAL, sinon -> PATHOLOGIQUE
-            $interpretation = ($validation['status'] === 'OK') ? 'NORMAL' : 'PATHOLOGIQUE';
+            // Détection automatique intelligente
+            $suggested = ($validation['status'] === 'OK') ? 'NORMAL' : 'PATHOLOGIQUE';
+            
+            // On récupère l'ancien résultat pour savoir si l'utilisateur a fait un choix manuel
+            $oldResultat = Resultat::where('prescription_id', $request->prescription_id)
+                ->where('analyse_id', $request->analyse_id)
+                ->first();
+
+            if (! $oldResultat) {
+                // Nouveau résultat : on suit la suggestion automatique
+                $interpretation = $suggested;
+            } else {
+                // Résultat existant :
+                // Si l'interprétation envoyée est différente de celle en DB, c'est un clic manuel
+                if ($request->interpretation !== $oldResultat->interpretation) {
+                    $interpretation = $request->interpretation;
+                } else {
+                    // Sinon, on met à jour automatiquement selon la (nouvelle) valeur
+                    $interpretation = $suggested;
+                }
+            }
 
             // UPSERT : Solution atomique MySQL
             Resultat::upsert([

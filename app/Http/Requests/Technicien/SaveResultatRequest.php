@@ -41,6 +41,7 @@ class SaveResultatRequest extends FormRequest
             'valeur' => 'nullable',
             'resultats' => 'nullable',
             'interpretation' => 'nullable|string|in:NORMAL,PATHOLOGIQUE',
+            'confirmed' => 'nullable|boolean',
         ];
     }
 

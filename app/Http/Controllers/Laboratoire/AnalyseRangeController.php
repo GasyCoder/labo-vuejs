@@ -39,8 +39,18 @@ class AnalyseRangeController extends Controller
 
     public function edit(Analyse $analyse): Response
     {
+        $analyse->load('ranges', 'type', 'examen');
+        
+        // On nettoie les valeurs décimales pour éviter les 4.000 inutiles dans l'interface
+        $analyse->ranges->each(function($range) {
+            if ($range->normal_min !== null) $range->normal_min = (float)$range->normal_min;
+            if ($range->normal_max !== null) $range->normal_max = (float)$range->normal_max;
+            if ($range->critical_min !== null) $range->critical_min = (float)$range->critical_min;
+            if ($range->critical_max !== null) $range->critical_max = (float)$range->critical_max;
+        });
+
         return Inertia::render('Laboratoire/Analyses/Ranges/Edit', [
-            'analyse' => $analyse->load('ranges', 'type', 'examen'),
+            'analyse' => $analyse,
             'contexts' => ['HOMME', 'FEMME', 'ENFANT_GARCON', 'ENFANT_FILLE'],
         ]);
     }
