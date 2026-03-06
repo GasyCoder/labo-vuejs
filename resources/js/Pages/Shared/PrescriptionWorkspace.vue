@@ -511,7 +511,7 @@ const statusBadge = (status) => {
                 <main ref="mainPanelRef" class="flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-900/50 flex flex-col relative" :class="{'hidden md:flex': !selectedParentId}">
                     <!-- Selected analyse form -->
                     <template v-if="selectedParent">
-                        <div class="flex-1 p-4 lg:p-8 max-w-5xl mx-auto w-full relative">
+                        <div class="flex-1 p-4 lg:p-8 max-w-[1600px] mx-auto w-full relative">
                             <!-- Form Header -->
                             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 mb-6 overflow-hidden">
                                 <div class="bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-200 dark:border-slate-700 p-5 lg:p-6">
