@@ -99,6 +99,25 @@ class PermissionMap
             'description' => 'Mettre en corbeille ou supprimer définitivement des prescripteurs',
         ],
 
+        // ── Secrétariat ────────────────────────────────────────
+        'etiquettes.voir' => [
+            'label' => 'Voir les étiquettes',
+            'module' => 'Secrétariat',
+            'description' => 'Accéder au module de gestion et impression des étiquettes',
+        ],
+
+        // ── Caisse ───────────────────────────────────────────
+        'journal.caisse.voir' => [
+            'label' => 'Voir le journal de caisse',
+            'module' => 'Caisse',
+            'description' => 'Consulter les encaissements et recettes journalières',
+        ],
+        'journal.decaissement.voir' => [
+            'label' => 'Voir le journal de décaissement',
+            'module' => 'Caisse',
+            'description' => 'Consulter les sorties de caisse et remboursements',
+        ],
+
         // ── Laboratoire ────────────────────────────────────────
         'laboratoire.gerer' => [
             'label' => 'Gérer le laboratoire',

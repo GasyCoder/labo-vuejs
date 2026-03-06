@@ -98,7 +98,7 @@
                                 </Link>
                             </li>
 
-                            <li
+                            <li v-if="hasPermission('journal.caisse.voir')"
                                 :class="['nk-menu-item py-0 group/item', { 'active': route().current('secretaire.journal-caisse') }]">
                                 <Link :href="route('secretaire.journal-caisse')"
                                     class="nk-menu-link flex relative items-center align-middle py-2 ps-5 pe-8 font-heading font-bold tracking-snug group">
@@ -113,7 +113,7 @@
                                 </Link>
                             </li>
 
-                            <li v-if="$page.props.auth.user.type === 'superadmin' || !!$page.props.enabledFeatures?.journal_decaissement"
+                            <li v-if="hasPermission('journal.decaissement.voir') && ($page.props.auth.user.type === 'superadmin' || !!$page.props.enabledFeatures?.journal_decaissement)"
                                 :class="['nk-menu-item py-0 group/item', { 'active': route().current('secretaire.journal-decaissement') }]">
                                 <Link :href="route('secretaire.journal-decaissement')"
                                     class="nk-menu-link flex relative items-center align-middle py-2 ps-5 pe-8 font-heading font-bold tracking-snug group">
@@ -128,7 +128,7 @@
                                 </Link>
                             </li>
 
-                            <li
+                            <li v-if="hasPermission('etiquettes.voir')"
                                 :class="['nk-menu-item py-0 group/item', { 'active': route().current('secretaire.etiquettes') }]">
                                 <Link :href="route('secretaire.etiquettes')"
                                     class="nk-menu-link flex relative items-center align-middle py-2 ps-5 pe-8 font-heading font-bold tracking-snug group">
