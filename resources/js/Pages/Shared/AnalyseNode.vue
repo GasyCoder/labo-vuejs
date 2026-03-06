@@ -61,8 +61,17 @@ const hasNoInterpretation = computed(() => {
                     <h2 class="text-base font-bold text-slate-900 dark:text-slate-100" :class="{ 'font-black underline decoration-blue-500/20': node.is_bold }">
                         {{ node.designation }}
                     </h2>
-                    <span v-if="saveStatus[node.id]" class="text-[9px] px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-bold uppercase tracking-tight text-slate-500">
-                        {{ saveStatus[node.id] === 'saving' ? 'Enregistrement...' : 'Sauvegardé' }}
+                    <span v-if="saveStatus[node.id]" 
+                        :class="[
+                            'text-xs px-3 py-1 rounded-full border font-bold uppercase tracking-tight transition-colors flex items-center gap-1.5',
+                            saveStatus[node.id] === 'saving' 
+                                ? 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500' 
+                                : 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 shadow-sm'
+                        ]">
+                        <em v-if="saveStatus[node.id] === 'saving'" class="ni ni-loader animate-spin text-[10px]"></em>
+                        <span v-else class="ni ni-check-circle-fill"></span>
+                        {{ saveStatus[node.id] === 'saving' ? 'Envoi en cours...' : 'Sauvegardé' }}
+                        <span v-if="saveStatus[node.id] !== 'saving' && savedAt[node.id]" class="font-black underline ml-0.5">à {{ savedAt[node.id] }}</span>
                     </span>
                 </div>
             </div>
