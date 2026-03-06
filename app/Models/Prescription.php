@@ -38,6 +38,8 @@ class Prescription extends Model
         'poids',
         'renseignement_clinique',
         'remise',
+        'remise_type',
+        'remise_valeur',
         'conclusion_generale',
         'status',
         'technicien_id',
@@ -52,9 +54,84 @@ class Prescription extends Model
     protected $casts = [
         'poids' => 'decimal:2',
         'remise' => 'decimal:2',
+        'remise_valeur' => 'decimal:2',
         'updated_at' => 'datetime',
         'notified_at' => 'datetime',
     ];
+
+    protected $appends = ['totals_summary', 'status_label', 'progres_analyses', 'is_modified'];
+
+    /**
+     * CENTRALIZED CALCULATION ENGINE
+     * Source of truth for all screens and PDF
+     */
+    public function calculateTotals(): array
+    {
+        // 1. Subtotal Analyses
+        $subtotalAnalyses = (float) $this->getMontantAnalysesCalcule();
+
+        // 2. Subtotal Prelevements
+        $subtotalPrelevements = (float) $this->getMontantPrelevementsCalcule();
+
+        // 3. Urgency Fees
+        $urgenceFee = 0.0;
+        if ($this->patient_type === 'URGENCE-JOUR') {
+            $urgenceFee = (float) Setting::getTarifUrgenceJour();
+        } elseif ($this->patient_type === 'URGENCE-NUIT') {
+            $urgenceFee = (float) Setting::getTarifUrgenceNuit();
+        }
+
+        // 4. Total Brut
+        $totalBrut = $subtotalAnalyses + $subtotalPrelevements + $urgenceFee;
+
+        // 5. Discount
+        $remiseAmount = 0.0;
+        $remisePercent = 0.0;
+
+        // Si on a les nouveaux champs remise_type/valeur, on les utilise
+        // Sinon on fallback sur le champ 'remise' actuel (qui semble stocker le montant calculé)
+        if ($this->remise_type === 'PERCENT') {
+            $remisePercent = (float) $this->remise_valeur;
+            $remiseAmount = ($subtotalAnalyses + $subtotalPrelevements) * ($remisePercent / 100);
+        } elseif ($this->remise_type === 'AMOUNT') {
+            $remiseAmount = (float) $this->remise_valeur;
+            $servicesTotal = $subtotalAnalyses + $subtotalPrelevements;
+            $remisePercent = $servicesTotal > 0 ? ($remiseAmount / $servicesTotal) * 100 : 0;
+        } else {
+            // Legacy / fallback: 'remise' field stores the calculated amount
+            $remiseAmount = (float) $this->remise;
+            $servicesTotal = $subtotalAnalyses + $subtotalPrelevements;
+            $remisePercent = $servicesTotal > 0 ? ($remiseAmount / $servicesTotal) * 100 : 0;
+        }
+
+        // 6. Net to Pay
+        $netAPayer = max(0, $totalBrut - $remiseAmount);
+
+        // 7. Payments
+        $montantPaye = (float) $this->paiements->sum('montant');
+        $resteAPayer = max(0, $netAPayer - $montantPaye);
+
+        return [
+            'subtotal_analyses' => $subtotalAnalyses,
+            'subtotal_prelevements' => $subtotalPrelevements,
+            'urgence_fee' => $urgenceFee,
+            'total_brut' => $totalBrut,
+            'remise_percent' => $remisePercent,
+            'remise_amount' => $remiseAmount,
+            'net_a_payer' => $netAPayer,
+            'montant_paye' => $montantPaye,
+            'reste_a_payer' => $resteAPayer,
+            'is_fully_paid' => $montantPaye >= ($netAPayer - 0.01),
+        ];
+    }
+
+    /**
+     * Accessor for consistency in API/Inertia
+     */
+    public function getTotalsSummaryAttribute(): array
+    {
+        return $this->calculateTotals();
+    }
 
     /**
      * Vérifier si la prescription a été modifiée

@@ -19,6 +19,8 @@ class Prescripteur extends Model
         'is_active',
         'is_commissionned',
         'notes',
+        'commission_quota',
+        'commission_pourcentage',
     ];
 
     protected $casts = [

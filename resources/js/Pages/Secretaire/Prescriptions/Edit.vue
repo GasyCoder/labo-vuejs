@@ -395,10 +395,28 @@
                                     </select>
                                 </div>
                                 <div class="space-y-1.5">
-                                    <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Remise (%)</label>
+                                    <label class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Remise</label>
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <button 
+                                            type="button"
+                                            @click="form.remise_type = 'PERCENT'"
+                                            class="flex-1 py-1 text-[9px] font-bold uppercase rounded-lg border-2 transition-all"
+                                            :class="form.remise_type === 'PERCENT' ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-slate-100 text-slate-400'"
+                                        >
+                                            %
+                                        </button>
+                                        <button 
+                                            type="button"
+                                            @click="form.remise_type = 'AMOUNT'"
+                                            class="flex-1 py-1 text-[9px] font-bold uppercase rounded-lg border-2 transition-all"
+                                            :class="form.remise_type === 'AMOUNT' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-100 text-slate-400'"
+                                        >
+                                            Ar
+                                        </button>
+                                    </div>
                                     <div class="relative">
-                                        <input v-model.number="form.remise" type="number" min="0" max="100" class="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 pr-10 text-sm font-bold focus:border-red-500 focus:ring-red-500 dark:border-slate-700 dark:bg-slate-900">
-                                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</span>
+                                        <input v-model.number="form.remise" type="number" min="0" :max="form.remise_type === 'PERCENT' ? 100 : undefined" class="w-full rounded-xl border-slate-200 bg-slate-50 py-2.5 pr-10 text-sm font-bold focus:border-red-500 focus:ring-red-500 dark:border-slate-700 dark:bg-slate-900">
+                                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">{{ form.remise_type === 'PERCENT' ? '%' : 'Ar' }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -588,21 +606,27 @@
 
                         <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-5 dark:border-slate-700 dark:bg-slate-800/50">
                             <div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex justify-between">
-                                <span>Résumé</span>
-                                <span class="text-primary-600">{{ formatCurrency(totalDue) }}</span>
+                                <span>Résumé Final (Base de données)</span>
+                                <span class="text-primary-600">{{ formatCurrency(prescription.totals_summary?.net_a_payer) }}</span>
                             </div>
                             <div class="space-y-2.5">
                                 <div class="flex justify-between text-xs font-bold">
                                     <span class="text-slate-500">Total Brut</span>
-                                    <span class="text-slate-900 dark:text-slate-100">{{ formatCurrency(analysesSubtotal + prelevementsSubtotal) }}</span>
+                                    <span class="text-slate-900 dark:text-slate-100">{{ formatCurrency(prescription.totals_summary?.total_brut) }}</span>
                                 </div>
-                                <div v-if="remiseAmount > 0" class="flex justify-between text-xs font-bold text-red-500">
+                                <div v-if="prescription.totals_summary?.remise_amount > 0" class="flex justify-between text-xs font-bold text-red-500">
                                     <span>Remise</span>
-                                    <span>-{{ formatCurrency(remiseAmount) }}</span>
+                                    <span>-{{ formatCurrency(prescription.totals_summary?.remise_amount) }}</span>
                                 </div>
                                 <div class="pt-3 border-t border-slate-200 dark:border-slate-700 flex items-end justify-between">
                                     <span class="text-[10px] font-black uppercase text-slate-400">Net à payer</span>
-                                    <span class="text-base font-black text-primary-600 leading-none">{{ formatCurrency(totalDue) }}</span>
+                                    <span class="text-base font-black text-primary-600 leading-none">{{ formatCurrency(prescription.totals_summary?.net_a_payer) }}</span>
+                                </div>
+                                <div class="flex justify-between text-[10px] font-bold mt-2">
+                                    <span class="text-slate-400">Statut Paiement</span>
+                                    <span :class="prescription.totals_summary?.is_fully_paid ? 'text-emerald-500' : 'text-amber-500'">
+                                        {{ prescription.totals_summary?.is_fully_paid ? 'Réglé' : 'Non soldé' }}
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -703,7 +727,8 @@ const form = useForm({
         quantite: p.pivot?.quantite || 1 
     })) || [],
     payment_method: props.prescription.paiements?.[0]?.payment_method?.code || props.paymentMethods[0]?.code || '',
-    remise: props.prescription.remise || 0,
+    remise: props.prescription.remise_valeur || props.prescription.remise || 0,
+    remise_type: props.prescription.remise_type || 'PERCENT',
     paiement_statut: !!props.prescription.paiements?.[0]?.status,
 });
 
@@ -724,6 +749,7 @@ onMounted(() => {
             code: a.code,
             designation: a.designation,
             prix: a.prix,
+            prix_effectif: a.pivot?.prix || a.prix,
             parent_id: a.parent_id,
             parent: a.parent,
             level: a.level
@@ -786,10 +812,14 @@ const urgencyFee = computed(() => {
 });
 
 const remiseAmount = computed(() => {
-    const percent = Math.max(0, Number(form.remise || 0));
+    const val = Math.max(0, Number(form.remise || 0));
     const servicesTotal = analysesSubtotal.value + prelevementsSubtotal.value;
 
-    return servicesTotal * (percent / 100);
+    if (form.remise_type === 'PERCENT') {
+        return servicesTotal * (val / 100);
+    } else {
+        return val;
+    }
 });
 
 const totalDue = computed(() => {
@@ -1052,6 +1082,7 @@ const submitPrescription = () => {
 
     form.analyse_ids = selectedAnalyses.value.map(a => a.id);
     form.prelevements = selectedPrelevements.value.map(p => ({ id: p.id, quantite: p.quantite }));
+    form.remise_type = form.remise_type || 'PERCENT';
 
     form.put(route('secretaire.prescription.update', props.prescription.id), {
         preserveScroll: true,

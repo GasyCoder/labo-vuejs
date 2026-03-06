@@ -275,6 +275,59 @@ class DashboardService
     }
 
     /**
+     * Get statistics for prescribers with status 'Partenaires'
+     */
+    public function getPartnerStats($startDate = null, $endDate = null)
+    {
+        $startDate = $startDate ? Carbon::parse($startDate)->startOfDay() : Carbon::now()->startOfMonth();
+        $endDate = $endDate ? Carbon::parse($endDate)->endOfDay() : Carbon::now()->endOfDay();
+
+        $partners = \App\Models\Prescripteur::where('status', 'Partenaires')
+            ->with(['prescriptions' => function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('created_at', [$startDate, $endDate])
+                    ->with(['patient', 'paiements', 'analyses']);
+            }])
+            ->get();
+
+        return $partners->map(function ($partner) {
+            $prescriptions = $partner->prescriptions;
+
+            $totalAmount = $prescriptions->sum(function ($p) {
+                return $p->getMontantAnalysesCalcule();
+            });
+
+            $totalPaid = $prescriptions->sum(function ($p) {
+                return $p->paiements->sum('montant');
+            });
+
+            return [
+                'id' => $partner->id,
+                'nom_complet' => $partner->nom_complet,
+                'nb_prescriptions' => $prescriptions->count(),
+                'montant_total' => $totalAmount,
+                'montant_paye' => $totalPaid,
+                'reste_a_payer' => max(0, $totalAmount - $totalPaid),
+                'details' => $prescriptions->map(function ($p) {
+                    return [
+                        'id' => $p->id,
+                        'reference' => $p->reference,
+                        'date' => $p->created_at->format('d/m/Y'),
+                        'patient' => $p->patient ? $p->patient->nom_complet : 'Inconnu',
+                        'analyses_detail' => $p->analyses->map(function ($a) {
+                            return [
+                                'designation' => $a->designation,
+                                'prix' => $a->pivot->prix_unitaire ?? $a->tarif, // Utilise le prix au moment de l'examen ou le tarif actuel
+                            ];
+                        }),
+                        'montant' => $p->getMontantAnalysesCalcule(), // Montant total des analyses pour ce dossier
+                        'paye' => $p->paiements->sum('montant'),
+                    ];
+                }),
+            ];
+        });
+    }
+
+    /**
      * Biologist: Pathology Ratio
      */
     public function getPathologyRatio()

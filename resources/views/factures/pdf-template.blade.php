@@ -211,35 +211,17 @@
 
         $paiement = $prescription->paiements->first();
         
-        // SOURCE DE VÉRITÉ : On utilise le montant enregistré en base pour la caisse
-        $totalFinalReel = $paiement ? (float)$paiement->montant : (float)$prescription->montant_total;
+        $totals = $prescription->totals_summary;
         
+        $total = $totals['net_a_payer'];
+        $montantPaye = $totals['montant_paye'];
+        $solde = $totals['reste_a_payer'];
+        $sousTotal = $totals['subtotal_analyses'] + $totals['subtotal_prelevements'];
+        $remise = $totals['remise_amount'];
+        $fraisUrgence = $totals['urgence_fee'];
+
         $paiementEffectue = $paiement && (bool) $paiement->status; 
-        $montantPaye = $paiementEffectue ? $totalFinalReel : 0;
-        
-        // Calcul des détails pour affichage cohérent
-        $totalAnalyses = (float)$prescription->getMontantAnalysesCalcule();
-        $totalPrelevements = (float)$prescription->getMontantPrelevementsCalcule();
-        $remise = (float)($prescription->remise ?? 0);
-        
-        // Calcul des frais d'urgence
-        $fraisUrgence = 0;
-        if ($prescription->patient_type === 'URGENCE-NUIT') {
-            $fraisUrgence = (float)\App\Models\Setting::getTarifUrgenceNuit();
-        } elseif ($prescription->patient_type === 'URGENCE-JOUR') {
-            $fraisUrgence = (float)\App\Models\Setting::getTarifUrgenceJour();
-        }
 
-        $sousTotal = $totalAnalyses + $totalPrelevements;
-        $totalAffiche = max(0, $sousTotal - $remise + $fraisUrgence);
-        
-        // En cas de petite différence de calcul, on ajuste le sous-total pour que ça tombe pile sur le total de la caisse
-        if (abs($totalAffiche - $totalFinalReel) > 0.01) {
-             $totalAffiche = $totalFinalReel;
-        }
-
-        $total = $totalAffiche;
-        $solde = $paiementEffectue ? max(0, $total - $montantPaye) : $total;
 
         // ✅ FONCTIONS COMPLÈTES POUR CONVERSION EN LETTRES
         if (!function_exists("nombreEnLettres")) { function nombreEnLettres($nombre)

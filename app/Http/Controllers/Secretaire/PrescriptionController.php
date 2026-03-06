@@ -57,7 +57,7 @@ class PrescriptionController extends Controller
         } else {
             // Pour tous les autres onglets classiques (actives, valide, archive)
             $prescriptionsQuery->where('labo_traitement', 'LOCAL');
-            
+
             $statusMap = [
                 'actives' => ['EN_ATTENTE', 'EN_COURS', 'TERMINE', 'A_REFAIRE'],
                 'valide' => ['VALIDE'],
@@ -561,29 +561,13 @@ class PrescriptionController extends Controller
                 ->get()
                 ->keyBy('id');
 
-            $analysesTotal = $this->calculateAnalysesSubtotal($analyses, $selectedAnalyseIds);
-            $prelevementsTotal = $this->calculatePrelevementsTotal($prelevements, $selectedPrelevements);
-            $servicesTotal = $analysesTotal + $prelevementsTotal;
-
-            $remisePercent = (float) ($validated['remise'] ?? 0);
-            $remiseAmount = $servicesTotal * ($remisePercent / 100);
-
-            $urgenceFee = 0.0;
-            if (($validated['patient_type'] ?? 'EXTERNE') === 'URGENCE-JOUR') {
-                $urgenceFee = (float) Setting::getTarifUrgenceJour();
-            }
-            if (($validated['patient_type'] ?? 'EXTERNE') === 'URGENCE-NUIT') {
-                $urgenceFee = (float) Setting::getTarifUrgenceNuit();
-            }
-
-            $total = max(0, ($servicesTotal - $remiseAmount) + $urgenceFee);
-
             $ageData = $this->calculateAgeData(
                 $patient->date_naissance,
                 $validated['age'] ?? null,
                 $validated['unite_age'] ?? null,
             );
 
+            // 1. Create prescription first with minimal data to have an object for calculations
             $prescription = Prescription::query()->create([
                 'patient_id' => $patient->id,
                 'prescripteur_id' => (int) $validated['prescripteur_id'],
@@ -593,39 +577,25 @@ class PrescriptionController extends Controller
                 'unite_age' => $ageData['unite_age'],
                 'poids' => $validated['poids'] ?? null,
                 'renseignement_clinique' => $validated['renseignement_clinique'] ?? null,
-                'remise' => $remiseAmount,
+                'remise_type' => $validated['remise_type'] ?? 'PERCENT',
+                'remise_valeur' => (float) ($validated['remise'] ?? 0),
                 'status' => Prescription::STATUS_EN_ATTENTE,
                 'labo_traitement' => $validated['labo_traitement'] ?? 'LOCAL',
                 'labo_autre_nom' => ($validated['labo_traitement'] ?? 'LOCAL') === 'AUTRE' ? ($validated['labo_autre_nom'] ?? null) : null,
             ]);
 
-            // Synchroniser les analyses avec persistance du prix (Snapshot)
+            // 2. Snapshot analyses prices (CRITICAL for subtotal consistency)
             $syncData = [];
             foreach ($selectedAnalyseIds as $analyseId) {
                 $analyse = $analyses->get($analyseId);
                 $syncData[$analyseId] = [
-                    'prix' => $analyse ? $analyse->prix : 0,
+                    'prix' => $analyse ? (float) $analyse->prix : 0.0,
                     'status' => 'EN_ATTENTE',
                 ];
             }
             $prescription->analyses()->sync($syncData);
 
-            $paymentMethod = PaymentMethod::query()
-                ->where('code', $validated['payment_method'])
-                ->where('is_active', true)
-                ->firstOrFail();
-
-            $isPaid = (bool) ($validated['paiement_statut'] ?? true);
-
-            Paiement::query()->create([
-                'prescription_id' => $prescription->id,
-                'montant' => $total,
-                'payment_method_id' => $paymentMethod->id,
-                'recu_par' => Auth::id(),
-                'status' => $isPaid,
-                'date_paiement' => $isPaid ? now() : null,
-            ]);
-
+            // 3. Attach prelevements (tubes)
             $tubeCounter = 1;
             foreach ($selectedPrelevements as $item) {
                 $prelevement = $prelevements->get($item['id']);
@@ -640,10 +610,39 @@ class PrescriptionController extends Controller
                         'prelevement_id' => $prelevement->id,
                         'code_barre' => $prescription->reference.'-T'.str_pad((string) $tubeCounter, 2, '0', STR_PAD_LEFT),
                     ]);
-
                     $tubeCounter++;
                 }
             }
+
+            // 4. NOW Calculate totals from the model itself (Single Source of Truth)
+            // Reload relations to be sure
+            $prescription->load(['analyses', 'tubes', 'paiements']);
+            $totals = $prescription->calculateTotals();
+
+            // 5. Update the legacy 'remise' field with calculated amount
+            $prescription->update(['remise' => $totals['remise_amount']]);
+
+            // 6. Handle Payment
+            $paymentMethod = PaymentMethod::query()
+                ->where('code', $validated['payment_method'])
+                ->where('is_active', true)
+                ->firstOrFail();
+
+            $isPaid = (bool) ($validated['paiement_statut'] ?? true);
+
+            Paiement::query()->create([
+                'prescription_id' => $prescription->id,
+                'montant' => $totals['net_a_payer'],
+                'payment_method_id' => $paymentMethod->id,
+                'recu_par' => Auth::id(),
+                'status' => $isPaid,
+                'date_paiement' => $isPaid ? now() : null,
+            ]);
+
+            Log::info('Prescription Created', [
+                'ref' => $prescription->reference,
+                'totals' => $totals,
+            ]);
 
             return $prescription;
         });
@@ -688,29 +687,13 @@ class PrescriptionController extends Controller
                 ->get()
                 ->keyBy('id');
 
-            $analysesTotal = $this->calculateAnalysesSubtotal($analyses, $selectedAnalyseIds);
-            $prelevementsTotal = $this->calculatePrelevementsTotal($prelevements, $selectedPrelevements);
-            $servicesTotal = $analysesTotal + $prelevementsTotal;
-
-            $remisePercent = (float) ($validated['remise'] ?? 0);
-            $remiseAmount = $servicesTotal * ($remisePercent / 100);
-
-            $urgenceFee = 0.0;
-            if (($validated['patient_type'] ?? 'EXTERNE') === 'URGENCE-JOUR') {
-                $urgenceFee = (float) Setting::getTarifUrgenceJour();
-            }
-            if (($validated['patient_type'] ?? 'EXTERNE') === 'URGENCE-NUIT') {
-                $urgenceFee = (float) Setting::getTarifUrgenceNuit();
-            }
-
-            $total = max(0, ($servicesTotal - $remiseAmount) + $urgenceFee);
-
             $ageData = $this->calculateAgeData(
                 $patient->date_naissance,
                 $validated['age'] ?? null,
                 $validated['unite_age'] ?? null,
             );
 
+            // 1. Update basic info
             $prescription->update([
                 'patient_id' => $patient->id,
                 'prescripteur_id' => (int) $validated['prescripteur_id'],
@@ -719,27 +702,30 @@ class PrescriptionController extends Controller
                 'unite_age' => $ageData['unite_age'],
                 'poids' => $validated['poids'] ?? null,
                 'renseignement_clinique' => $validated['renseignement_clinique'] ?? null,
-                'remise' => $remiseAmount,
+                'remise_type' => $validated['remise_type'] ?? 'PERCENT',
+                'remise_valeur' => (float) ($validated['remise'] ?? 0),
                 'labo_traitement' => $validated['labo_traitement'] ?? 'LOCAL',
                 'labo_autre_nom' => ($validated['labo_traitement'] ?? 'LOCAL') === 'AUTRE' ? ($validated['labo_autre_nom'] ?? null) : null,
             ]);
 
-            // Synchroniser les analyses avec persistance du prix (Snapshot)
+            // 2. Snapshot analyses prices (Sync pivot)
             $syncData = [];
             foreach ($selectedAnalyseIds as $analyseId) {
                 $analyse = $analyses->get($analyseId);
+
+                // Keep existing price if already in pivot, otherwise take catalog price
+                $existing = $prescription->analyses()->where('analyse_id', $analyseId)->first();
+                $snapshotPrice = $existing ? (float) $existing->pivot->prix : ($analyse ? (float) $analyse->prix : 0.0);
+
                 $syncData[$analyseId] = [
-                    'prix' => $analyse ? $analyse->prix : 0,
-                    'status' => 'EN_ATTENTE',
+                    'prix' => $snapshotPrice,
+                    'status' => $existing ? $existing->pivot->status : 'EN_ATTENTE',
                 ];
             }
             $prescription->analyses()->sync($syncData);
 
             // Gérer les résultats
-            // Supprimer les résultats pour les analyses qui ne sont plus présentes
             $prescription->resultats()->whereNotIn('analyse_id', $selectedAnalyseIds)->delete();
-
-            // S'assurer que les résultats existent pour toutes les analyses sélectionnées
             foreach ($selectedAnalyseIds as $analyseId) {
                 $prescription->resultats()->firstOrCreate(
                     ['analyse_id' => $analyseId],
@@ -747,34 +733,7 @@ class PrescriptionController extends Controller
                 );
             }
 
-            // Mettre à jour le paiement
-            $paymentMethod = PaymentMethod::query()
-                ->where('code', $validated['payment_method'])
-                ->where('is_active', true)
-                ->firstOrFail();
-
-            $isPaid = (bool) ($validated['paiement_statut'] ?? true);
-
-            $paiement = $prescription->paiements()->first();
-            if ($paiement) {
-                $paiement->update([
-                    'montant' => $total,
-                    'payment_method_id' => $paymentMethod->id,
-                    'status' => $isPaid,
-                    'date_paiement' => $isPaid ? ($paiement->date_paiement ?? now()) : null,
-                ]);
-            } else {
-                Paiement::query()->create([
-                    'prescription_id' => $prescription->id,
-                    'montant' => $total,
-                    'payment_method_id' => $paymentMethod->id,
-                    'recu_par' => Auth::id(),
-                    'status' => $isPaid,
-                    'date_paiement' => $isPaid ? now() : null,
-                ]);
-            }
-
-            // Mettre à jour les tubes: Recréer si en EN_ATTENTE
+            // 3. Update tubes (if still pending)
             if ($prescription->status === Prescription::STATUS_EN_ATTENTE) {
                 $prescription->tubes()->forceDelete();
                 $tubeCounter = 1;
@@ -791,11 +750,49 @@ class PrescriptionController extends Controller
                             'prelevement_id' => $prelevement->id,
                             'code_barre' => $prescription->reference.'-T'.str_pad((string) $tubeCounter, 2, '0', STR_PAD_LEFT),
                         ]);
-
                         $tubeCounter++;
                     }
                 }
             }
+
+            // 4. NOW Calculate totals from model
+            $prescription->load(['analyses', 'tubes', 'paiements']);
+            $totals = $prescription->calculateTotals();
+
+            // 5. Update legacy remise amount
+            $prescription->update(['remise' => $totals['remise_amount']]);
+
+            // 6. Update Payment
+            $paymentMethod = PaymentMethod::query()
+                ->where('code', $validated['payment_method'])
+                ->where('is_active', true)
+                ->firstOrFail();
+
+            $isPaid = (bool) ($validated['paiement_statut'] ?? true);
+
+            $paiement = $prescription->paiements()->first();
+            if ($paiement) {
+                $paiement->update([
+                    'montant' => $totals['net_a_payer'],
+                    'payment_method_id' => $paymentMethod->id,
+                    'status' => $isPaid,
+                    'date_paiement' => $isPaid ? ($paiement->date_paiement ?? now()) : null,
+                ]);
+            } else {
+                Paiement::query()->create([
+                    'prescription_id' => $prescription->id,
+                    'montant' => $totals['net_a_payer'],
+                    'payment_method_id' => $paymentMethod->id,
+                    'recu_par' => Auth::id(),
+                    'status' => $isPaid,
+                    'date_paiement' => $isPaid ? now() : null,
+                ]);
+            }
+
+            Log::info('Prescription Updated', [
+                'ref' => $prescription->reference,
+                'totals' => $totals,
+            ]);
         });
 
         return redirect()

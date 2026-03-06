@@ -952,15 +952,33 @@
                         <div class="rounded-xl border border-slate-200/70 bg-white p-4 dark:border-slate-700/70 dark:bg-slate-800">
                             <label class="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
                                 <em class="ni ni-percent mr-1.5 text-orange-600 dark:text-orange-300"></em>
-                                Remise (%)
+                                Remise
                             </label>
+                            <div class="flex items-center gap-2 mb-2">
+                                <button 
+                                    type="button"
+                                    @click="paymentForm.remise_type = 'PERCENT'"
+                                    class="flex-1 py-1 text-[10px] font-bold uppercase rounded-lg border-2 transition-all"
+                                    :class="paymentForm.remise_type === 'PERCENT' ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-slate-100 text-slate-400'"
+                                >
+                                    Pourcentage (%)
+                                </button>
+                                <button 
+                                    type="button"
+                                    @click="paymentForm.remise_type = 'AMOUNT'"
+                                    class="flex-1 py-1 text-[10px] font-bold uppercase rounded-lg border-2 transition-all"
+                                    :class="paymentForm.remise_type === 'AMOUNT' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-100 text-slate-400'"
+                                >
+                                    Montant (Ar)
+                                </button>
+                            </div>
                             <div class="relative">
                                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
-                                    <em class="ni ni-percent text-base text-slate-400 dark:text-slate-500"></em>
+                                    <em class="ni" :class="paymentForm.remise_type === 'PERCENT' ? 'ni-percent' : 'ni-coin-alt'" text-base text-slate-400 dark:text-slate-500></em>
                                 </div>
-                                <input v-model.number="paymentForm.remise" type="number" min="0" max="100" placeholder="0" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-12 text-sm text-slate-900 placeholder-slate-400 transition focus:border-red-500 focus:outline-none focus:ring-4 focus:ring-red-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-500">
+                                <input v-model.number="paymentForm.remise" type="number" min="0" :max="paymentForm.remise_type === 'PERCENT' ? 100 : undefined" placeholder="0" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-12 text-sm text-slate-900 placeholder-slate-400 transition focus:border-red-500 focus:outline-none focus:ring-4 focus:ring-red-600/15 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-500">
                                 <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5">
-                                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">%</span>
+                                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ paymentForm.remise_type === 'PERCENT' ? '%' : 'Ar' }}</span>
                                 </div>
                             </div>
                         </div>
@@ -1057,6 +1075,7 @@ const clinicalForm = ref({
 const paymentForm = ref({
     payment_method: props.paymentMethods[0]?.code || '',
     remise: 0,
+    remise_type: 'PERCENT',
     paiement_statut: true,
 });
 
@@ -1099,10 +1118,14 @@ const urgencyFee = computed(() => {
 });
 
 const remiseAmount = computed(() => {
-    const percent = Math.max(0, Number(paymentForm.value.remise || 0));
+    const val = Math.max(0, Number(paymentForm.value.remise || 0));
     const servicesTotal = analysesSubtotal.value + prelevementsSubtotal.value;
 
-    return servicesTotal * (percent / 100);
+    if (paymentForm.value.remise_type === 'PERCENT') {
+        return servicesTotal * (val / 100);
+    } else {
+        return val;
+    }
 });
 
 const totalDue = computed(() => {
@@ -1503,6 +1526,7 @@ const submitPrescription = () => {
         })),
         payment_method: paymentForm.value.payment_method,
         remise: Math.max(0, Number(paymentForm.value.remise || 0)),
+        remise_type: paymentForm.value.remise_type,
         paiement_statut: !!paymentForm.value.paiement_statut,
         labo_traitement: clinicalForm.value.labo_traitement,
         labo_autre_nom: clinicalForm.value.labo_traitement === 'AUTRE' ? clinicalForm.value.labo_autre_nom : null,

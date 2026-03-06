@@ -91,6 +91,7 @@ class DashboardController extends Controller
             $roleData = [
                 'prescriptions_a_encaisser' => Prescription::whereDoesntHave('paiements')->where('status', '!=', 'ARCHIVE')->count(),
                 'patients_jour' => Patient::whereDate('created_at', Carbon::today())->count(),
+                'partnerStats' => $this->dashboardService->getPartnerStats($dateFrom, $dateTo),
                 'dernieres_prescriptions' => Prescription::with(['patient', 'paiements'])->latest()->limit(5)->get()->map(function ($p) {
                     return [
                         'id' => $p->id,
@@ -147,6 +148,39 @@ class DashboardController extends Controller
             'roleData' => $roleData,
             'strategicData' => $strategicData,
             'filters' => $request->only(['search', 'date_from', 'date_to', 'period']),
+        ]);
+    }
+
+    public function exportPartnerStats(Request $request)
+    {
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+
+        $stats = $this->dashboardService->getPartnerStats($dateFrom, $dateTo);
+
+        $filename = 'recapitulatif-partenaires-'.now()->format('Y-m-d').'.csv';
+
+        return response()->streamDownload(function () use ($stats) {
+            $file = fopen('php://output', 'w');
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
+            fputcsv($file, ['Partenaire', 'Date', 'Référence', 'Patient', 'Montant Total', 'Montant Payé', 'Solde'], ';');
+
+            foreach ($stats as $partner) {
+                foreach ($partner['details'] as $detail) {
+                    fputcsv($file, [
+                        $partner['nom_complet'],
+                        $detail['date'],
+                        $detail['reference'],
+                        $detail['patient'],
+                        $detail['montant'],
+                        $detail['paye'],
+                        $detail['montant'] - $detail['paye'],
+                    ], ';');
+                }
+            }
+            fclose($file);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=utf-8',
         ]);
     }
 

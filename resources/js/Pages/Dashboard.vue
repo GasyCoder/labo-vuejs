@@ -13,15 +13,15 @@
                 </p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <!-- Filtre de Période (Admin) -->
-                <div v-if="isAdmin" class="flex items-center gap-2 bg-white dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+                <!-- Filtre de Période (Admin & Secrétaire) -->
+                <div v-if="isAdmin || userType === 'secretaire'" class="flex items-center gap-2 bg-white dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
                     <select v-model="periodForm.period" @change="handlePeriodChange" class="text-xs border-none bg-white dark:bg-slate-800 focus:ring-0 text-slate-600 dark:text-slate-300 font-medium">
-                        <option value="today" class="bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">Aujourd'hui</option>
-                        <option value="7_days" class="bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">7 derniers jours</option>
-                        <option value="30_days" class="bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">30 derniers jours</option>
-                        <option value="this_month" class="bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">Ce mois</option>
-                        <option value="last_month" class="bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">Mois précédent</option>
-                        <option value="custom" class="bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">Personnalisé</option>
+                        <option value="today">Aujourd'hui</option>
+                        <option value="7_days">7 derniers jours</option>
+                        <option value="30_days">30 derniers jours</option>
+                        <option value="this_month">Ce mois</option>
+                        <option value="last_month">Mois précédent</option>
+                        <option value="custom">Personnalisé</option>
                     </select>
                     
                     <template v-if="periodForm.period === 'custom'">
@@ -211,6 +211,95 @@
                                     <span :class="p.is_paid ? 'text-emerald-500' : 'text-amber-500'">{{ p.is_paid ? 'Payé' : 'Impayé' }}</span>
                                 </td>
                                 <td class="px-2 py-3 text-right font-bold">{{ formatN(p.montant_total) }} Ar</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Section Récapitulatif Partenaires (Pour Secrétaire) -->
+            <div class="bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700 mb-6 overflow-hidden">
+                <header class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-700/20">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-lg bg-pink-500 flex items-center justify-center mr-3 shadow-pink-200 shadow-lg">
+                            <em class="ni ni-users text-white"></em>
+                        </div>
+                        <h2 class="font-semibold text-slate-800 dark:text-slate-100">Récapitulatif Partenaires Business</h2>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <a :href="route('admin.dashboard.export-partenaires', periodForm)" class="inline-flex items-center px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors">
+                            <em class="ni ni-file-xls mr-1.5"></em>
+                            Exporter Excel
+                        </a>
+                    </div>
+                </header>
+                <div class="overflow-x-auto">
+                    <table class="table-auto w-full dark:text-slate-300">
+                        <thead class="text-xs uppercase text-slate-400 bg-slate-50 dark:bg-slate-700/20">
+                            <tr>
+                                <th class="px-4 py-3 text-left">Partenaire</th>
+                                <th class="px-4 py-3 text-center">Prescriptions</th>
+                                <th class="px-4 py-3 text-right">Total Dossier</th>
+                                <th class="px-4 py-3 text-right">Payé</th>
+                                <th class="px-4 py-3 text-right">Reste</th>
+                                <th class="px-4 py-3 text-center">Détails</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm divide-y divide-slate-100 dark:divide-slate-700">
+                            <template v-for="partner in roleData.partnerStats" :key="partner.id">
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/10 transition-colors">
+                                    <td class="px-4 py-3 font-bold text-slate-800 dark:text-slate-100">{{ partner.nom_complet }}</td>
+                                    <td class="px-4 py-3 text-center">{{ partner.nb_prescriptions }}</td>
+                                    <td class="px-4 py-3 text-right font-semibold">{{ formatN(partner.montant_total) }} Ar</td>
+                                    <td class="px-4 py-3 text-right text-emerald-600">{{ formatN(partner.montant_paye) }} Ar</td>
+                                    <td class="px-4 py-3 text-right text-rose-500 font-bold">{{ formatN(partner.reste_a_payer) }} Ar</td>
+                                    <td class="px-4 py-3 text-center">
+                                        <button @click="togglePartnerDetails(partner.id)" class="text-indigo-500 hover:text-indigo-700 font-medium p-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all">
+                                            <em :class="['ni', expandedPartners.includes(partner.id) ? 'ni-chevron-up' : 'ni-chevron-down']"></em>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <!-- Détails par patient pour ce partenaire -->
+                                <tr v-if="expandedPartners.includes(partner.id)" class="bg-slate-50/50 dark:bg-slate-900/20">
+                                    <td colspan="6" class="px-8 py-4">
+                                        <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 overflow-hidden">
+                                            <table class="w-full text-xs">
+                                                <thead class="bg-slate-100 dark:bg-slate-700/50 text-slate-500">
+                                                    <tr>
+                                                        <th class="px-3 py-2 text-left">Date</th>
+                                                        <th class="px-3 py-2 text-left">Réf.</th>
+                                                        <th class="px-3 py-2 text-left">Patient</th>
+                                                        <th class="px-3 py-2 text-left w-1/3">Détail Analyses</th>
+                                                        <th class="px-3 py-2 text-right">Montant</th>
+                                                        <th class="px-3 py-2 text-right">Payé</th>
+                                                        <th class="px-3 py-2 text-right">Solde</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+                                                    <tr v-for="detail in partner.details" :key="detail.id" class="hover:bg-slate-50 dark:hover:bg-slate-700/30 align-top">
+                                                        <td class="px-3 py-2 text-[10px]">{{ detail.date }}</td>
+                                                        <td class="px-3 py-2 font-mono font-bold text-indigo-500 text-[10px]">{{ detail.reference }}</td>
+                                                        <td class="px-3 py-2 uppercase font-semibold text-slate-700 dark:text-slate-300 text-[10px]">{{ detail.patient }}</td>
+                                                        <td class="px-3 py-2">
+                                                            <div class="flex flex-col gap-1">
+                                                                <div v-for="(ana, aIdx) in detail.analyses_detail" :key="aIdx" class="flex justify-between items-center text-[9px] bg-slate-50 dark:bg-slate-900/40 px-1 py-0.5 rounded">
+                                                                    <span class="text-slate-600 dark:text-slate-400 font-medium">{{ ana.designation }}</span>
+                                                                    <span class="font-bold text-slate-500 ml-2">{{ formatN(ana.prix) }}</span>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td class="px-3 py-2 text-right font-bold text-[10px]">{{ formatN(detail.montant) }}</td>
+                                                        <td class="px-3 py-2 text-right text-emerald-600 text-[10px]">{{ formatN(detail.paye) }}</td>
+                                                        <td class="px-3 py-2 text-right font-black text-[10px]" :class="detail.montant - detail.paye > 0 ? 'text-rose-500' : 'text-slate-400'">{{ formatN(detail.montant - detail.paye) }}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                            <tr v-if="!roleData.partnerStats || roleData.partnerStats.length === 0">
+                                <td colspan="6" class="px-4 py-8 text-center text-slate-400 italic">Aucun partenaire trouvé sur cette période</td>
                             </tr>
                         </tbody>
                     </table>
@@ -413,6 +502,16 @@ const periodForm = ref({
     date_from: props.filters?.date_from || '',
     date_to: props.filters?.date_to || '',
 });
+
+// Partenaires
+const expandedPartners = ref([]);
+const togglePartnerDetails = (id) => {
+    if (expandedPartners.value.includes(id)) {
+        expandedPartners.value = expandedPartners.value.filter(pId => pId !== id);
+    } else {
+        expandedPartners.value.push(id);
+    }
+};
 
 const handlePeriodChange = () => {
     if (periodForm.value.period !== 'custom') {
