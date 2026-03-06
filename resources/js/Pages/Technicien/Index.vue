@@ -2,6 +2,8 @@
 import { ref, computed, watch } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 const props = defineProps({
     prescriptions: Object,
@@ -72,6 +74,22 @@ const formatDate = (dateStr) => {
     if (!dateStr) return '';
     const d = new Date(dateStr);
     return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+
+const formatTimeAgo = (dateStr) => {
+    if (!dateStr) return '';
+    try {
+        let distance = formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale: fr });
+        let result = distance
+            .replace('environ ', '')
+            .replace(' minutes', ' min')
+            .replace(' minute', ' min');
+        
+        // Force la première lettre en majuscule et le reste en minuscule
+        return result.charAt(0).toUpperCase() + result.slice(1).toLowerCase();
+    } catch (e) {
+        return '';
+    }
 };
 
 const truncate = (str, len = 18) => {
@@ -410,7 +428,10 @@ const submitRedoAnalysis = () => {
 
                                 <!-- Date -->
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900 dark:text-white">
+                                    <div class="text-sm font-bold text-blue-700 dark:text-blue-400">
+                                        {{ formatTimeAgo(form.tab === 'termine' ? prescription.updated_at : prescription.created_at) }}
+                                    </div>
+                                    <div class="text-xs font-semibold text-gray-700 dark:text-gray-300 mt-1">
                                         {{ formatDate(form.tab === 'termine' ? prescription.updated_at : prescription.created_at) }}
                                     </div>
                                 </td>
