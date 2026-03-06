@@ -170,7 +170,11 @@
                                                     ? 'bg-gradient-to-br from-purple-400 to-purple-600 dark:from-purple-500 dark:to-purple-700' 
                                                     : prescripteur.status === 'Biologiste'
                                                         ? 'bg-gradient-to-br from-teal-400 to-teal-600 dark:from-teal-500 dark:to-teal-700'
-                                                        : 'bg-gradient-to-br from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700',
+                                                        : prescripteur.status === 'Infirmier'
+                                                            ? 'bg-gradient-to-br from-orange-400 to-orange-600 dark:from-orange-500 dark:to-orange-700'
+                                                            : prescripteur.status === 'Partenaires'
+                                                                ? 'bg-gradient-to-br from-pink-400 to-pink-600 dark:from-pink-500 dark:to-pink-700'
+                                                                : 'bg-gradient-to-br from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700',
                                                 'w-10 h-10 rounded-full flex items-center justify-center shadow-lg'
                                             ]">
                                                 <span class="text-white font-bold text-sm">
@@ -196,7 +200,11 @@
                                                     ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300'
                                                     : prescripteur.status === 'Biologiste'
                                                         ? 'bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-300'
-                                                        : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300',
+                                                        : prescripteur.status === 'Infirmier'
+                                                            ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300'
+                                                            : prescripteur.status === 'Partenaires'
+                                                                ? 'bg-pink-100 dark:bg-pink-900/30 text-pink-800 dark:text-pink-300'
+                                                                : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300',
                                                 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium'
                                             ]">
                                                 <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

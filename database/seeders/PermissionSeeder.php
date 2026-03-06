@@ -53,6 +53,8 @@ class PermissionSeeder extends Seeder
             'analyses.voir',
             'analyses.effectuer',
             'analyses.conclusion',
+            'analyses.listes.voir',
+            'analyses.prelevements.voir',
             'laboratoire.gerer',
             'archives.acceder',
         ]);
@@ -62,6 +64,8 @@ class PermissionSeeder extends Seeder
             'dashboard.voir',
             'analyses.voir',
             'analyses.valider',
+            'analyses.listes.voir',
+            'analyses.prelevements.voir',
             'laboratoire.gerer',
             'archives.acceder',
         ]);

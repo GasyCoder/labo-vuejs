@@ -197,6 +197,8 @@ class Prescripteur extends Model
             'Medecin' => 'Médecin',
             'Professeur' => 'Professeur',
             'Biologiste' => 'Biologiste',
+            'Infirmier' => 'Infirmier',
+            'Partenaires' => 'Partenaires',
         ];
     }
 }

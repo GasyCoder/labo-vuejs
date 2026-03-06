@@ -105,6 +105,16 @@ class PermissionMap
             'module' => 'Laboratoire',
             'description' => 'Administrer les examens, types d\'analyses et prélèvements',
         ],
+        'analyses.listes.voir' => [
+            'label' => 'Voir la liste des analyses',
+            'module' => 'Laboratoire',
+            'description' => 'Consulter le catalogue complet des analyses disponibles',
+        ],
+        'analyses.prelevements.voir' => [
+            'label' => 'Voir les prélèvements',
+            'module' => 'Laboratoire',
+            'description' => 'Consulter les types de prélèvements et récipients associés',
+        ],
 
         // ── Administration ─────────────────────────────────────
         'utilisateurs.gerer' => [

@@ -254,7 +254,7 @@
                     <hr class="my-4 border-0 border-t border-gray-300 dark:border-gray-800">
                     
                     <!-- Section Laboratoire -->
-                    <template v-if="$page.props.auth.user && ($page.props.auth.user.isAdmin || hasPermission('laboratoire.gerer'))">
+                    <template v-if="$page.props.auth.user && ($page.props.auth.user.isAdmin || hasAnyPermission(['laboratoire.gerer', 'analyses.listes.voir', 'analyses.prelevements.voir']))">
                         <li
                             class="relative first:pt-1 pt-6 pb-1 px-4 before:absolute before:h-px before:w-full before:start-0 before:top-1/2 before:bg-gray-200 dark:before:bg-gray-900 first:before:hidden before:opacity-0 group-[&.is-compact:not(.has-hover)]/sidebar:before:opacity-100">
                             <h6
@@ -279,7 +279,7 @@
                             </a>
 
                             <ul class="nk-menu-sub mb-1 hidden group-[&.is-compact:not(.has-hover)]/sidebar:!hidden" :style="{ display: route().current('laboratoire.analyses.*') ? 'block' : '' }">
-                                <li
+                                <li v-if="hasPermission('laboratoire.gerer')"
                                     :class="['nk-menu-item py-px sub has-sub group/sub1', { 'active': route().current('laboratoire.analyses.examens') }]">
                                     <Link :href="route('laboratoire.analyses.examens')"
                                         class="nk-menu-link flex relative items-center align-middle py-1 pe-8 ps-[calc(theme(spacing.5)+theme(spacing.8))] font-normal leading-5 text-xs tracking-normal normalcase">
@@ -287,7 +287,7 @@
                                             class="text-slate-600 dark:text-slate-500 group-[.active]/sub1:text-primary-500 hover:text-primary-500 whitespace-nowrap flex-grow inline-block">Examens</span>
                                     </Link>
                                 </li>
-                                <li
+                                <li v-if="hasPermission('laboratoire.gerer')"
                                     :class="['nk-menu-item py-px sub has-sub group/sub1', { 'active': route().current('laboratoire.analyses.types') }]">
                                     <Link :href="route('laboratoire.analyses.types')"
                                         class="nk-menu-link flex relative items-center align-middle py-1 pe-8 ps-[calc(theme(spacing.5)+theme(spacing.8))] font-normal leading-5 text-xs tracking-normal normal-case">
@@ -296,7 +296,7 @@
                                             d'analyses</span>
                                     </Link>
                                 </li>
-                                <li
+                                <li v-if="hasAnyPermission(['laboratoire.gerer', 'analyses.listes.voir'])"
                                     :class="['nk-menu-item py-px sub has-sub group/sub1', { 'active': route().current('laboratoire.analyses.listes') }]">
                                     <Link :href="route('laboratoire.analyses.listes')"
                                         class="nk-menu-link flex relative items-center align-middle py-1 pe-8 ps-[calc(theme(spacing.5)+theme(spacing.8))] font-normal leading-5 text-xs tracking-normal normal-case">
@@ -305,7 +305,7 @@
                                             Analyses</span>
                                     </Link>
                                 </li>
-                                <li
+                                <li v-if="hasPermission('laboratoire.gerer')"
                                     :class="['nk-menu-item py-px sub has-sub group/sub1', { 'active': route().current('laboratoire.analyses.ranges.*') }]">
                                     <Link :href="route('laboratoire.analyses.ranges.index')"
                                         class="nk-menu-link flex relative items-center align-middle py-1 pe-8 ps-[calc(theme(spacing.5)+theme(spacing.8))] font-normal leading-5 text-xs tracking-normal normal-case">
@@ -314,7 +314,7 @@
                                             de référence</span>
                                     </Link>
                                 </li>
-                                <li
+                                <li v-if="hasAnyPermission(['laboratoire.gerer', 'analyses.prelevements.voir'])"
                                     :class="['nk-menu-item py-px sub has-sub group/sub1', { 'active': route().current('laboratoire.analyses.prelevements') }]">
                                     <Link :href="route('laboratoire.analyses.prelevements')"
                                         class="nk-menu-link flex relative items-center align-middle py-1 pe-8 ps-[calc(theme(spacing.5)+theme(spacing.8))] font-normal leading-5 text-xs tracking-normal normal-case">
@@ -326,7 +326,7 @@
                         </li>
 
                         <!-- Menu Microbiologie -->
-                        <li
+                        <li v-if="hasPermission('laboratoire.gerer')"
                             :class="['nk-menu-item py-0 has-sub group/item', { 'active': route().current('laboratoire.microbiologie.*') }]">
                             <a href="#"
                                 class="nk-menu-link sub nk-menu-toggle flex relative items-center align-middle py-2 ps-5 pe-8 font-heading font-bold tracking-snug group">
