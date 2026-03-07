@@ -19,9 +19,10 @@ class TechnicienController extends Controller
         if ($user->hasRole('biologiste') && ! $user->hasPermissionTo('analyses.effectuer')) {
             abort(403, 'Vous n\'avez pas la permission d\'effectuer des analyses.');
         }
-
         $tab = $request->input('tab', 'en_attente');
         $search = $request->input('search', '');
+        $dateStart = $request->input('date_start');
+        $dateEnd = $request->input('date_end');
 
         $baseQuery = Prescription::with(['patient:id,nom,prenom', 'prescripteur:id,nom,prenom', 'analyses:id,code,designation', 'secretaire:id,name', 'technicien:id,name'])
             ->withCount('analyses')
@@ -34,14 +35,15 @@ class TechnicienController extends Controller
                                 ->orWhere('prenom', 'like', '%'.$search.'%');
                         })
                         ->orWhereHas('prescripteur', function ($sq) use ($search) {
-                            $sq->where('nom', 'like', '%'.$search.'%')
-                                ->orWhere('prenom', 'like', '%'.$search.'%');
-                        })
-                        ->orWhereHas('analyses', function ($sq) use ($search) {
-                            $sq->where('code', 'like', '%'.$search.'%')
-                                ->orWhere('designation', 'like', '%'.$search.'%');
+                            $sq->where('nom', 'like', '%'.$search.'%');
                         });
                 });
+            })
+            ->when($dateStart, function ($q) use ($dateStart) {
+                $q->whereDate('created_at', '>=', $dateStart);
+            })
+            ->when($dateEnd, function ($q) use ($dateEnd) {
+                $q->whereDate('created_at', '<=', $dateEnd);
             })
             ->orderBy('created_at', 'desc');
 
@@ -82,6 +84,8 @@ class TechnicienController extends Controller
             'filters' => [
                 'tab' => $tab,
                 'search' => $search,
+                'date_start' => $dateStart,
+                'date_end' => $dateEnd,
             ],
         ]);
     }

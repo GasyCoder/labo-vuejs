@@ -548,19 +548,20 @@ class Prescription extends Model
 
     public function genererReferenceUnique()
     {
-        $annee = date('Y');
+        $annee4 = date('Y');
+        $annee2 = date('y');
 
         $compteur = static::withTrashed()
-            ->whereRaw('YEAR(created_at) = ?', [$annee])
+            ->whereRaw('YEAR(created_at) = ?', [$annee4])
             ->count() + 1;
 
         $numero = str_pad($compteur, 5, '0', STR_PAD_LEFT);
-        $reference = "PRE-{$annee}-{$numero}";
+        $reference = "PRE-{$annee2}-{$numero}";
 
         while (static::withTrashed()->where('reference', $reference)->exists()) {
             $compteur++;
             $numero = str_pad($compteur, 5, '0', STR_PAD_LEFT);
-            $reference = "PRE-{$annee}-{$numero}";
+            $reference = "PRE-{$annee2}-{$numero}";
         }
 
         return $reference;
@@ -568,14 +569,15 @@ class Prescription extends Model
 
     public static function getNextReference()
     {
-        $annee = date('Y');
+        $annee4 = date('Y');
+        $annee2 = date('y');
         $compteur = static::withTrashed()
-            ->whereRaw('YEAR(created_at) = ?', [$annee])
+            ->whereRaw('YEAR(created_at) = ?', [$annee4])
             ->count() + 1;
 
         $numero = str_pad($compteur, 5, '0', STR_PAD_LEFT);
 
-        return "PRE-{$annee}-{$numero}";
+        return "PRE-{$annee2}-{$numero}";
     }
 
     public function antibiogrammes()

@@ -376,7 +376,7 @@ class Tube extends Model
      */
     public static function validerFormatCodeBarre($codeBarre)
     {
-        // Format : REFERENCE-TXX (ex: PRE-2025-001-T01)
+        // Format : REFERENCE-TXX (ex: PRE-26-00001-T01)
         return preg_match('/^.+-T\d{2}$/', $codeBarre);
     }
 

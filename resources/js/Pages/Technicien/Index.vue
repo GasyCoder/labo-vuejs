@@ -14,16 +14,28 @@ const props = defineProps({
 const form = useForm({
     tab: props.filters.tab || 'en_attente',
     search: props.filters.search || '',
+    date_start: props.filters.date_start || '',
+    date_end: props.filters.date_end || '',
 });
+
+// View mode state (list or grid)
+const viewMode = ref(localStorage.getItem('technicien_view_mode') || 'list');
+
+const toggleViewMode = (mode) => {
+    viewMode.value = mode;
+    localStorage.setItem('technicien_view_mode', mode);
+};
 
 // Debounced search
 let searchTimeout = null;
-const updateSearch = (value) => {
+const updateSearch = () => {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
         router.get(route('technicien.index'), {
             tab: form.tab,
-            search: value,
+            search: form.search,
+            date_start: form.date_start,
+            date_end: form.date_end,
         }, {
             preserveState: true,
             preserveScroll: true,
@@ -32,12 +44,16 @@ const updateSearch = (value) => {
 };
 
 watch(() => form.search, updateSearch);
+watch(() => form.date_start, updateSearch);
+watch(() => form.date_end, updateSearch);
 
 const changeTab = (tab) => {
     form.tab = tab;
     router.get(route('technicien.index'), {
         tab: tab,
         search: form.search,
+        date_start: form.date_start,
+        date_end: form.date_end,
     }, {
         preserveState: true,
         preserveScroll: false,
@@ -63,6 +79,26 @@ const tabClass = (tab) => {
         },
     };
     return colors[tab] || colors.en_attente;
+};
+
+const statusClass = (status) => {
+    switch (status) {
+        case 'EN_ATTENTE':
+        case 'en_attente':
+            return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800';
+        case 'EN_COURS':
+            return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 border-blue-200 dark:border-blue-800';
+        case 'TERMINE':
+        case 'termine':
+            return 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300 border-teal-200 dark:border-teal-800';
+        case 'A_REFAIRE':
+        case 'a_refaire':
+            return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 border-red-200 dark:border-red-800';
+        case 'VALIDE':
+            return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800';
+        default:
+            return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600';
+    }
 };
 
 const getInitials = (patient) => {
@@ -137,10 +173,10 @@ const submitRedoAnalysis = () => {
     <Head title="Gestion des Analyses" />
 
     <AppLayout>
-        <div class="container mx-auto px-2 sm:px-6 lg:px-8 py-8">
+        <div class="w-full px-2 sm:px-4 py-8">
 
             <!-- Header -->
-            <div class="mb-8">
+            <div class="mb-8 px-2">
                 <div class="flex items-center justify-between">
                     <div>
                         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
@@ -158,60 +194,56 @@ const submitRedoAnalysis = () => {
             </div>
 
             <!-- Stats Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
                 <!-- Toutes (EN_ATTENTE + EN_COURS) -->
-                <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-5 text-white shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
+                <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 transition-all group"
                      @click="changeTab('en_attente')">
                     <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-blue-100 text-xs font-medium uppercase tracking-wider">Toutes</p>
-                            <p class="text-3xl font-bold mt-1">{{ stats.toutes || 0 }}</p>
-                            <p class="text-blue-200 text-xs mt-1">{{ stats.en_attente || 0 }} en attente · {{ stats.en_cours || 0 }} en cours</p>
+                        <div class="flex flex-col">
+                            <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">À traiter</p>
+                            <div class="flex items-baseline gap-2">
+                                <p class="text-2xl font-black text-slate-900 dark:text-white leading-none">{{ stats.toutes || 0 }}</p>
+                                <span class="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded uppercase">{{ stats.en_cours || 0 }} en cours</span>
+                            </div>
                         </div>
-                        <div class="p-3 bg-white/20 rounded-lg">
-                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
-                            </svg>
+                        <div class="h-10 w-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         </div>
                     </div>
                 </div>
 
                 <!-- Terminé -->
-                <div class="bg-gradient-to-r from-teal-500 to-teal-600 rounded-xl p-5 text-white shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
+                <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer hover:border-teal-500 dark:hover:border-teal-400 transition-all group"
                      @click="changeTab('termine')">
                     <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-teal-100 text-xs font-medium uppercase tracking-wider">Terminé</p>
-                            <p class="text-3xl font-bold mt-1">{{ stats.termine || 0 }}</p>
+                        <div class="flex flex-col">
+                            <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Terminé</p>
+                            <p class="text-2xl font-black text-slate-900 dark:text-white leading-none">{{ stats.termine || 0 }}</p>
                         </div>
-                        <div class="p-3 bg-white/20 rounded-lg">
-                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                            </svg>
+                        <div class="h-10 w-10 rounded-lg bg-teal-50 dark:bg-teal-900/20 flex items-center justify-center text-teal-600 dark:text-teal-400 group-hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         </div>
                     </div>
                 </div>
 
                 <!-- À refaire -->
-                <div class="bg-gradient-to-r from-red-500 to-red-600 rounded-xl p-5 text-white shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
+                <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer hover:border-red-500 dark:hover:border-red-400 transition-all group"
                      @click="changeTab('a_refaire')">
                     <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-red-100 text-xs font-medium uppercase tracking-wider">À refaire</p>
-                            <p class="text-3xl font-bold mt-1">{{ stats.a_refaire || 0 }}</p>
+                        <div class="flex flex-col">
+                            <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">À refaire</p>
+                            <p class="text-2xl font-black text-slate-900 dark:text-white leading-none">{{ stats.a_refaire || 0 }}</p>
                         </div>
-                        <div class="p-3 bg-white/20 rounded-lg">
-                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                            </svg>
+                        <div class="h-10 w-10 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center text-red-600 dark:text-red-400 group-hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Search -->
-            <div class="mb-6">
-                <div>
+            <!-- Search & View Mode -->
+            <div class="mb-6 flex flex-col sm:flex-row gap-4">
+                <div class="flex-1 px-2">
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -222,34 +254,85 @@ const submitRedoAnalysis = () => {
                             type="text"
                             v-model="form.search"
                             placeholder="Rechercher par référence, patient, prescripteur..."
-                            class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700"
+                            class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white dark:bg-gray-700 shadow-sm"
+                        >
+                    </div>
+                </div>
+
+                <!-- View Mode Toggle -->
+                <div class="flex items-center bg-gray-100 dark:bg-gray-700/50 p-1 rounded-xl border border-gray-200 dark:border-gray-600 h-[50px] mr-2">
+                    <button 
+                        @click="toggleViewMode('list')"
+                        class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-black transition-all uppercase tracking-tighter"
+                        :class="viewMode === 'list' 
+                            ? 'bg-white dark:bg-gray-600 text-primary-600 dark:text-primary-400 shadow-sm' 
+                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                        <span class="hidden md:inline">Liste</span>
+                    </button>
+                    <button 
+                        @click="toggleViewMode('grid')"
+                        class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-black transition-all uppercase tracking-tighter"
+                        :class="viewMode === 'grid' 
+                            ? 'bg-white dark:bg-gray-600 text-primary-600 dark:text-primary-400 shadow-sm' 
+                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2z"/></svg>
+                        <span class="hidden md:inline">Grilles</span>
+                    </button>
+                </div>
+
+                <!-- Date Filters -->
+                <div class="flex items-center gap-2">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <em class="ni ni-calendar-alt text-slate-400 text-xs"></em>
+                        </div>
+                        <input 
+                            type="date" 
+                            v-model="form.date_start"
+                            class="pl-9 pr-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-xs font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 shadow-sm h-[50px]"
+                            title="Date de début"
+                        >
+                    </div>
+                    <span class="text-slate-400 font-black">/</span>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <em class="ni ni-calendar-alt text-slate-400 text-xs"></em>
+                        </div>
+                        <input 
+                            type="date" 
+                            v-model="form.date_end"
+                            class="pl-9 pr-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-xs font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 shadow-sm h-[50px]"
+                            title="Date de fin"
                         >
                     </div>
                 </div>
             </div>
 
-            <!-- Tabs + Table -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <!-- Tabs Container -->
+            <div class="bg-white dark:bg-gray-800 sm:rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
                 <!-- Tab Navigation -->
                 <div class="border-b border-gray-200 dark:border-gray-700">
-                    <nav class="-mb-px flex">
+                    <nav class="-mb-px flex overflow-x-auto">
                         <button
                             @click="changeTab('en_attente')"
-                            class="py-4 px-6 text-sm font-medium border-b-2 transition-colors"
+                            class="py-4 px-6 text-sm font-bold border-b-2 transition-colors flex-shrink-0"
                             :class="form.tab === 'en_attente'
                                 ? tabClass('en_attente').active
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'"
                         >
                             <div class="flex items-center gap-2">
                                 <div class="w-2 h-2 rounded-full" :class="tabClass('en_attente').dot"></div>
-                                Toutes
-                                <span class="text-xs px-2 py-0.5 rounded-full" :class="tabClass('en_attente').badge">{{ stats.toutes || 0 }}</span>
+                                À traiter
+                                <span class="text-[10px] px-2 py-0.5 rounded-full font-black" :class="tabClass('en_attente').badge">{{ stats.toutes || 0 }}</span>
                             </div>
                         </button>
 
                         <button
                             @click="changeTab('termine')"
-                            class="py-4 px-6 text-sm font-medium border-b-2 transition-colors"
+                            class="py-4 px-6 text-sm font-bold border-b-2 transition-colors flex-shrink-0"
                             :class="form.tab === 'termine'
                                 ? tabClass('termine').active
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'"
@@ -257,13 +340,13 @@ const submitRedoAnalysis = () => {
                             <div class="flex items-center gap-2">
                                 <div class="w-2 h-2 rounded-full" :class="tabClass('termine').dot"></div>
                                 Terminé
-                                <span class="text-xs px-2 py-0.5 rounded-full" :class="tabClass('termine').badge">{{ stats.termine || 0 }}</span>
+                                <span class="text-[10px] px-2 py-0.5 rounded-full font-black" :class="tabClass('termine').badge">{{ stats.termine || 0 }}</span>
                             </div>
                         </button>
 
                         <button
                             @click="changeTab('a_refaire')"
-                            class="py-4 px-6 text-sm font-medium border-b-2 transition-colors"
+                            class="py-4 px-6 text-sm font-bold border-b-2 transition-colors flex-shrink-0"
                             :class="form.tab === 'a_refaire'
                                 ? tabClass('a_refaire').active
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'"
@@ -271,113 +354,81 @@ const submitRedoAnalysis = () => {
                             <div class="flex items-center gap-2">
                                 <div class="w-2 h-2 rounded-full" :class="tabClass('a_refaire').dot"></div>
                                 À refaire
-                                <span class="text-xs px-2 py-0.5 rounded-full" :class="tabClass('a_refaire').badge">{{ stats.a_refaire || 0 }}</span>
+                                <span class="text-[10px] px-2 py-0.5 rounded-full font-black" :class="tabClass('a_refaire').badge">{{ stats.a_refaire || 0 }}</span>
                             </div>
                         </button>
                     </nav>
                 </div>
 
-                <!-- Table -->
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <!-- List View (Table) -->
+                <div v-if="viewMode === 'list'" class="w-full overflow-x-auto">
+                    <table class="w-full divide-y divide-gray-200 dark:divide-gray-700 table-auto">
                         <thead :class="{
                             'bg-blue-50 dark:bg-blue-900/20': form.tab === 'en_attente',
                             'bg-teal-50 dark:bg-teal-900/20': form.tab === 'termine',
                             'bg-red-50 dark:bg-red-900/20': form.tab === 'a_refaire',
                         }">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                                <th class="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider"
                                     :class="{
                                         'text-blue-700 dark:text-blue-300': form.tab === 'en_attente',
                                         'text-teal-700 dark:text-teal-300': form.tab === 'termine',
                                         'text-red-700 dark:text-red-300': form.tab === 'a_refaire',
-                                    }">Référence</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                                    :class="{
-                                        'text-blue-700 dark:text-blue-300': form.tab === 'en_attente',
-                                        'text-teal-700 dark:text-teal-300': form.tab === 'termine',
-                                        'text-red-700 dark:text-red-300': form.tab === 'a_refaire',
-                                    }">Saisi par</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                                    :class="{
-                                        'text-blue-700 dark:text-blue-300': form.tab === 'en_attente',
-                                        'text-teal-700 dark:text-teal-300': form.tab === 'termine',
-                                        'text-red-700 dark:text-red-300': form.tab === 'a_refaire',
-                                    }">Traité par</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                                    :class="{
-                                        'text-blue-700 dark:text-blue-300': form.tab === 'en_attente',
-                                        'text-teal-700 dark:text-teal-300': form.tab === 'termine',
-                                        'text-red-700 dark:text-red-300': form.tab === 'a_refaire',
-                                    }">Patient</th>
-                                <th v-if="form.tab !== 'a_refaire'" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                                    :class="{
-                                        'text-blue-700 dark:text-blue-300': form.tab === 'en_attente',
-                                        'text-teal-700 dark:text-teal-300': form.tab === 'termine',
-                                        'text-red-700 dark:text-red-300': form.tab === 'a_refaire',
-                                    }">Prescripteur</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                                    :class="{
-                                        'text-blue-700 dark:text-blue-300': form.tab === 'en_attente',
-                                        'text-teal-700 dark:text-teal-300': form.tab === 'termine',
-                                        'text-red-700 dark:text-red-300': form.tab === 'a_refaire',
-                                    }">Analyses</th>
-                                <th v-if="form.tab === 'en_attente'" class="px-6 py-3 text-left text-xs font-medium text-blue-700 dark:text-blue-300 uppercase tracking-wider">Statut</th>
-                                <th v-if="form.tab === 'a_refaire'" class="px-6 py-3 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase tracking-wider">Raison</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                                    :class="{
-                                        'text-blue-700 dark:text-blue-300': form.tab === 'en_attente',
-                                        'text-teal-700 dark:text-teal-300': form.tab === 'termine',
-                                        'text-red-700 dark:text-red-300': form.tab === 'a_refaire',
-                                    }">Date</th>
-                                <th v-if="form.tab !== 'termine'" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                                    :class="{
-                                        'text-blue-700 dark:text-blue-300': form.tab === 'en_attente',
-                                        'text-red-700 dark:text-red-300': form.tab === 'a_refaire',
-                                    }">Actions</th>
+                                    }">Réf.</th>
+                                <th class="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Personnel</th>
+                                <th class="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Patient & Prescripteur</th>
+                                <th class="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Analyses</th>
+                                <th v-if="form.tab === 'en_attente'" class="px-4 py-4 text-left text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wider">Statut</th>
+                                <th v-if="form.tab === 'a_refaire'" class="px-4 py-4 text-left text-xs font-bold text-red-700 dark:text-red-300 uppercase tracking-wider">Raison</th>
+                                <th class="px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Date</th>
+                                <th v-if="form.tab !== 'termine'" class="px-4 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-500">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             <tr v-for="prescription in prescriptions.data" :key="prescription.id"
-                                class="transition-colors"
+                                class="transition-colors group"
                                 :class="{
                                     'hover:bg-blue-50 dark:hover:bg-blue-900/10': form.tab === 'en_attente',
                                     'hover:bg-teal-50 dark:hover:bg-teal-900/10': form.tab === 'termine',
                                     'hover:bg-red-50 dark:hover:bg-red-900/10': form.tab === 'a_refaire',
                                 }">
                                 <!-- Référence -->
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-xs font-semibold text-gray-900 dark:text-white">
+                                <td class="px-4 py-5">
+                                    <div class="text-sm font-black text-gray-900 dark:text-white leading-tight">
                                         {{ prescription.reference }}
                                     </div>
                                 </td>
 
-                                <!-- Saisi par -->
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div v-if="prescription.secretaire" class="flex items-center gap-2">
-                                        <div class="flex h-6 w-6 items-center justify-center rounded-md bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400">
-                                            <em class="icon ni ni-user-alt text-base"></em>
+                                <!-- Personnel / Traçabilité -->
+                                <td class="px-4 py-5">
+                                    <div class="flex flex-col gap-2">
+                                        <!-- Saisie -->
+                                        <div class="flex items-center gap-2" :title="'Saisi par : ' + (prescription.secretaire?.name || 'Système')">
+                                            <div class="h-5 w-5 flex-shrink-0 rounded bg-blue-50 text-blue-600 dark:bg-blue-900/30 flex items-center justify-center border border-blue-100 dark:border-blue-800 shadow-sm">
+                                                <em class="icon ni ni-user-alt text-xs"></em>
+                                            </div>
+                                            <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate max-w-[110px]">{{ prescription.secretaire?.name || 'Système' }}</span>
                                         </div>
-                                        <span class="text-sm font-bold text-slate-700 dark:text-slate-200">{{ prescription.secretaire.name }}</span>
+                                        <!-- Traitement -->
+                                        <div v-if="prescription.technicien" class="flex items-center gap-2" :title="'Traité par : ' + prescription.technicien.name">
+                                            <div class="h-5 w-5 flex-shrink-0 rounded bg-teal-50 text-teal-600 dark:bg-teal-900/30 flex items-center justify-center border border-teal-100 dark:border-teal-800 shadow-sm">
+                                                <em class="icon ni ni-account-setting-fill text-xs"></em>
+                                            </div>
+                                            <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate max-w-[110px]">{{ prescription.technicien.name }}</span>
+                                        </div>
+                                        <div v-else class="flex items-center gap-2 opacity-40">
+                                            <div class="h-5 w-5 flex-shrink-0 rounded border border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center text-slate-400">
+                                                <em class="ni ni-flask text-xs"></em>
+                                            </div>
+                                            <span class="text-[10px] font-medium text-slate-400 italic">À traiter</span>
+                                        </div>
                                     </div>
-                                    <span v-else class="text-xs italic text-slate-400">Système</span>
                                 </td>
 
-                                <!-- Traité par -->
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div v-if="prescription.technicien" class="flex items-center gap-2">
-                                        <div class="flex h-6 w-6 items-center justify-center rounded-md bg-teal-50 text-teal-600 dark:bg-teal-900/20 dark:text-teal-400">
-                                            <em class="icon ni ni-account-setting-fill text-base"></em>
-                                        </div>
-                                        <span class="text-sm font-bold text-slate-700 dark:text-slate-200">{{ prescription.technicien.name }}</span>
-                                    </div>
-                                    <span v-else class="text-xs italic text-slate-400">—</span>
-                                </td>
-
-                                <!-- Patient -->
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center">
-                                        <div class="w-8 h-8 rounded-full flex items-center justify-center font-medium text-sm mr-3"
+                                <!-- Patient & Prescripteur -->
+                                <td class="px-4 py-5">
+                                    <div class="flex items-center min-w-0">
+                                        <div class="w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center font-black text-xs mr-3 shadow-sm"
                                             :class="{
                                                 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300': form.tab === 'en_attente',
                                                 'bg-teal-100 dark:bg-teal-900 text-teal-600 dark:text-teal-300': form.tab === 'termine',
@@ -385,120 +436,97 @@ const submitRedoAnalysis = () => {
                                             }">
                                             {{ getInitials(prescription.patient) }}
                                         </div>
-                                        <div>
-                                            <div class="text-sm font-medium text-gray-900 dark:text-white">
-                                                {{ truncate((prescription.patient?.nom || 'N/A') + ' ' + (prescription.patient?.prenom || '')) }}
+                                        <div class="min-w-0 flex flex-col">
+                                            <div class="text-sm font-bold text-gray-900 dark:text-white truncate max-w-[150px]">
+                                                {{ (prescription.patient?.nom || 'N/A') + ' ' + (prescription.patient?.prenom || '') }}
                                             </div>
-                                            <div v-if="prescription.age && prescription.unite_age" class="text-xs text-gray-500 dark:text-gray-400">
-                                                {{ prescription.age }} {{ prescription.unite_age }}
+                                            <div class="text-[11px] text-gray-500 font-medium flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
+                                                <span v-if="prescription.age" class="bg-slate-100 dark:bg-slate-700 px-1 rounded text-[9px] uppercase">{{ prescription.age }} {{ prescription.unite_age }}</span>
+                                                <span class="flex items-center gap-1 text-slate-400">
+                                                    <em class="ni ni-user text-[10px]"></em>
+                                                    {{ prescription.prescripteur?.nom || 'Sans prescripteur' }}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
                                 </td>
 
-                                <!-- Prescripteur -->
-                                <td v-if="form.tab !== 'a_refaire'" class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900 dark:text-white">
-                                        {{ truncate((prescription.prescripteur?.nom || 'N/A') + ' ' + (prescription.prescripteur?.prenom || '')) }}
-                                    </div>
-                                </td>
-
                                 <!-- Analyses codes -->
-                                <td class="px-6 py-4">
-                                    <div class="flex flex-wrap items-center gap-1.5 max-w-[250px]">
-                                        <!-- Total Count Badge -->
-                                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-[11px] font-black border border-blue-200 dark:border-blue-800 shadow-sm mr-1" title="Total des analyses">
+                                <td class="px-4 py-5">
+                                    <div class="flex items-center gap-2">
+                                        <span class="inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 text-[11px] font-black border border-indigo-100 dark:border-indigo-800 shadow-sm" title="Total des analyses">
                                             {{ prescription.analyses_count }}
                                         </span>
-
-                                        <template v-if="prescription.analyses?.length">
-                                            <span v-for="(analyse, aIdx) in prescription.analyses.slice(0, 3)" :key="aIdx" 
-                                                class="inline-flex items-center rounded-md bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-700 dark:bg-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 whitespace-nowrap"
-                                                :title="analyse.designation">
+                                        <div class="flex flex-wrap gap-1 max-w-[150px]">
+                                            <span v-for="(analyse, aIdx) in prescription.analyses.slice(0, 2)" :key="aIdx" 
+                                                class="text-[10px] font-black px-2 py-0.5 rounded bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 uppercase shadow-xs">
                                                 {{ analyse.code }}
                                             </span>
-                                            
-                                            <div v-if="prescription.analyses.length > 3" class="relative group/tooltip">
-                                                <span class="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-100 dark:border-blue-800 cursor-help">
-                                                    +{{ prescription.analyses.length - 3 }}
-                                                </span>
-                                                <!-- Custom Tooltip -->
-                                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 hidden group-hover/tooltip:block z-[100] w-max max-w-[300px] p-2 bg-slate-900 text-white text-[10px] rounded-lg shadow-2xl border border-slate-700 animate-in fade-in zoom-in duration-200 mb-2">
-                                                    <div class="flex flex-col gap-1.5">
-                                                        <div v-for="(allAnalyse, aIdxAll) in prescription.analyses" :key="aIdxAll" class="flex items-start gap-2 border-b border-slate-800 pb-1 last:border-0 last:pb-0">
-                                                            <span class="font-bold text-blue-400 min-w-[40px]">{{ allAnalyse.code }}</span>
-                                                            <span class="text-slate-300">{{ allAnalyse.designation }}</span>
-                                                        </div>
-                                                    </div>
-                                                    <!-- Arrow -->
-                                                    <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900"></div>
-                                                </div>
-                                            </div>
-                                        </template>
-                                        <span v-else class="text-xs italic text-slate-400">Aucune</span>
+                                            <span v-if="prescription.analyses.length > 2" class="text-[10px] font-bold text-slate-400 self-center">+{{ prescription.analyses.length - 2 }}</span>
+                                        </div>
                                     </div>
                                 </td>
 
                                 <!-- Status (en_attente tab only) -->
-                                <td v-if="form.tab === 'en_attente'" class="px-6 py-4 whitespace-nowrap">
+                                <td v-if="form.tab === 'en_attente'" class="px-4 py-5">
                                     <span v-if="prescription.status === 'EN_ATTENTE'"
-                                        class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300">
-                                        <span class="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span>
-                                        En attente
+                                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800">
+                                        <span class="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse"></span>
+                                        Attente
                                     </span>
                                     <span v-else-if="prescription.status === 'EN_COURS'"
-                                        class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                                         <span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
-                                        En cours
+                                        Saisie
                                     </span>
                                 </td>
 
                                 <!-- Raison (a_refaire tab only) -->
-                                <td v-if="form.tab === 'a_refaire'" class="px-6 py-4">
-                                    <div class="text-sm text-red-600 dark:text-red-400">
-                                        {{ prescription.commentaire_biologiste || 'Résultats à vérifier' }}
+                                <td v-if="form.tab === 'a_refaire'" class="px-4 py-5">
+                                    <div class="text-[11px] font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-2 rounded-lg border border-red-100 dark:border-red-800/50 max-w-[180px] line-clamp-2">
+                                        {{ prescription.commentaire_biologiste || 'À vérifier' }}
                                     </div>
                                 </td>
 
                                 <!-- Date -->
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-bold text-blue-700 dark:text-blue-400">
-                                        {{ formatTimeAgo(form.tab === 'termine' ? prescription.updated_at : prescription.created_at) }}
-                                    </div>
-                                    <div class="text-xs font-semibold text-gray-700 dark:text-gray-300 mt-1">
-                                        {{ formatDate(form.tab === 'termine' ? prescription.updated_at : prescription.created_at) }}
+                                <td class="px-4 py-5">
+                                    <div class="flex flex-col">
+                                        <span class="text-xs font-black text-blue-700 dark:text-blue-400 leading-tight">{{ formatTimeAgo(form.tab === 'termine' ? prescription.updated_at : prescription.created_at) }}</span>
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">{{ formatDate(form.tab === 'termine' ? prescription.updated_at : prescription.created_at) }}</span>
                                     </div>
                                 </td>
 
                                 <!-- Actions -->
-                                <td v-if="form.tab !== 'termine'" class="px-6 py-4 whitespace-nowrap">
-                                    <!-- En attente Tab actions -->
-                                    <template v-if="form.tab === 'en_attente'">
-                                        <button v-if="prescription.status === 'EN_ATTENTE'"
-                                            @click="startAnalysis(prescription.id)"
-                                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
-                                            🔬 <span>Traiter</span>
-                                        </button>
-                                        <button v-else-if="prescription.status === 'EN_COURS'"
-                                            @click="continueAnalysis(prescription.id)"
-                                            class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
-                                            ▶️ <span>Continuer</span>
-                                        </button>
-                                    </template>
+                                <td v-if="form.tab !== 'termine'" class="px-4 py-5 text-right">
+                                    <div class="flex justify-end">
+                                        <!-- En attente Tab actions -->
+                                        <template v-if="form.tab === 'en_attente'">
+                                            <button v-if="prescription.status === 'EN_ATTENTE'"
+                                                @click="startAnalysis(prescription.id)"
+                                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md hover:shadow-lg active:scale-95 flex items-center gap-2">
+                                                🔬 <span>Traiter</span>
+                                            </button>
+                                            <button v-else-if="prescription.status === 'EN_COURS'"
+                                                @click="continueAnalysis(prescription.id)"
+                                                class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md hover:shadow-lg active:scale-95 flex items-center gap-2">
+                                                ▶️ <span>Continuer</span>
+                                            </button>
+                                        </template>
 
-                                    <!-- A refaire Tab actions -->
-                                    <template v-if="form.tab === 'a_refaire'">
-                                        <button @click="redoAnalysis(prescription.id)"
-                                            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                            Recommencer
-                                        </button>
-                                    </template>
+                                        <!-- A refaire Tab actions -->
+                                        <template v-if="form.tab === 'a_refaire'">
+                                            <button @click="redoAnalysis(prescription.id)"
+                                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg active:scale-95 transition-all">
+                                                Recommencer
+                                            </button>
+                                        </template>
+                                    </div>
                                 </td>
                             </tr>
 
                             <!-- Empty state -->
                             <tr v-if="!prescriptions.data || prescriptions.data.length === 0">
-                                <td :colspan="['termine', 'a_refaire'].includes(form.tab) ? 6 : 7" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                                <td :colspan="['termine', 'a_refaire'].includes(form.tab) ? 4 : 5" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                                     <div class="flex flex-col items-center">
                                         <svg class="w-12 h-12 mb-3 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -513,25 +541,139 @@ const submitRedoAnalysis = () => {
                     </table>
                 </div>
 
+                <!-- Grid View (Cards) -->
+                <div v-else class="p-4 sm:p-6 bg-slate-50/50 dark:bg-gray-900/50">
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+                        <div v-for="prescription in prescriptions.data" :key="`grid-${prescription.id}`" 
+                            class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col group h-full">
+                            
+                            <!-- Card Header -->
+                            <div class="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-slate-50/30 dark:bg-gray-800/50">
+                                <div class="flex flex-col">
+                                    <span class="text-sm font-black text-gray-900 dark:text-white leading-tight">{{ prescription.reference }}</span>
+                                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">{{ formatTimeAgo(form.tab === 'termine' ? prescription.updated_at : prescription.created_at) }}</span>
+                                </div>
+                                <span class="inline-flex rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest shadow-sm border border-transparent" :class="statusClass(prescription.status || form.tab)">
+                                    {{ prescription.status_label || (form.tab === 'termine' ? 'Terminé' : (form.tab === 'a_refaire' ? 'À refaire' : 'Attente')) }}
+                                </span>
+                            </div>
+
+                            <!-- Card Body -->
+                            <div class="p-5 flex-1 space-y-5">
+                                <!-- Patient & Prescripteur -->
+                                <div class="flex items-center gap-3">
+                                    <div class="w-11 h-11 rounded-2xl flex-shrink-0 flex items-center justify-center font-black text-xs shadow-sm border border-transparent"
+                                        :class="{
+                                            'bg-blue-100 text-blue-600': form.tab === 'en_attente',
+                                            'bg-teal-100 text-teal-600': form.tab === 'termine',
+                                            'bg-red-100 text-red-600': form.tab === 'a_refaire',
+                                        }">
+                                        {{ getInitials(prescription.patient) }}
+                                    </div>
+                                    <div class="min-w-0 flex flex-col">
+                                        <p class="text-sm font-black text-gray-900 dark:text-white truncate">
+                                            {{ (prescription.patient?.nom || 'N/A') + ' ' + (prescription.patient?.prenom || '') }}
+                                        </p>
+                                        <p class="text-[11px] text-slate-500 font-medium truncate flex items-center gap-1">
+                                            <em class="ni ni-user text-[10px] text-slate-400"></em>
+                                            {{ prescription.prescripteur?.nom || 'Sans prescripteur' }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Traçabilité Badge -->
+                                <div class="grid grid-cols-2 gap-2 p-2.5 bg-slate-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-700">
+                                    <div class="flex flex-col gap-0.5">
+                                        <span class="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Saisie</span>
+                                        <div class="flex items-center gap-1 text-blue-600">
+                                            <em class="icon ni ni-user-alt text-[10px]"></em>
+                                            <span class="text-[10px] font-black truncate">{{ prescription.secretaire?.name || 'Système' }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col gap-0.5 border-l border-gray-200 dark:border-gray-700 pl-2.5">
+                                        <span class="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Traité par</span>
+                                        <div class="flex items-center gap-1" :class="prescription.technicien ? 'text-teal-600' : 'text-slate-300'">
+                                            <em class="icon ni ni-account-setting-fill text-[10px]"></em>
+                                            <span class="text-[10px] font-black truncate">{{ prescription.technicien?.name || '—' }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Analyses Tags -->
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 text-[10px] font-black border border-indigo-100 dark:border-indigo-800 shadow-sm mr-0.5">
+                                        {{ prescription.analyses_count }}
+                                    </span>
+                                    <span v-for="(analyse, aIdx) in prescription.analyses.slice(0, 6)" :key="aIdx" 
+                                        class="text-[9px] font-black px-2 py-0.5 rounded bg-white dark:bg-slate-700 text-slate-500 border border-slate-200 dark:border-slate-600 uppercase shadow-xs">
+                                        {{ analyse.code }}
+                                    </span>
+                                    <span v-if="prescription.analyses.length > 6" class="text-[10px] font-bold text-slate-400 self-center">+{{ prescription.analyses.length - 6 }}</span>
+                                </div>
+
+                                <!-- Reject Reason -->
+                                <div v-if="form.tab === 'a_refaire'" class="p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl">
+                                    <p class="text-[11px] font-bold text-red-600 dark:text-red-400 leading-relaxed">
+                                        <span class="uppercase tracking-wider text-[9px] block mb-1 opacity-70">Motif du renvoi:</span>
+                                        {{ prescription.commentaire_biologiste || 'À vérifier par le technicien' }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Card Footer: Actions -->
+                            <div v-if="form.tab !== 'termine'" class="p-5 pt-0">
+                                <template v-if="form.tab === 'en_attente'">
+                                    <button v-if="prescription.status === 'EN_ATTENTE'"
+                                        @click="startAnalysis(prescription.id)"
+                                        class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-xs font-black transition-all shadow-md hover:shadow-lg active:scale-95 flex items-center justify-center gap-2 uppercase tracking-widest">
+                                        🔬 TRAITER
+                                    </button>
+                                    <button v-else-if="prescription.status === 'EN_COURS'"
+                                        @click="continueAnalysis(prescription.id)"
+                                        class="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-xl text-xs font-black transition-all shadow-md hover:shadow-lg active:scale-95 flex items-center justify-center gap-2 uppercase tracking-widest">
+                                        ▶️ CONTINUER
+                                    </button>
+                                </template>
+                                <button v-if="form.tab === 'a_refaire'"
+                                    @click="redoAnalysis(prescription.id)"
+                                    class="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl text-xs font-black shadow-md hover:shadow-lg active:scale-95 transition-all uppercase tracking-widest">
+                                    Recommencer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Grid Empty State -->
+                    <div v-if="!prescriptions.data || prescriptions.data.length === 0" class="flex flex-col items-center py-20 text-center">
+                        <div class="w-20 h-20 bg-slate-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                            <svg class="w-10 h-10 text-slate-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Aucun dossier</h3>
+                        <p class="text-sm text-slate-500 max-w-xs mx-auto">Il n'y a actuellement aucune prescription à afficher dans cette catégorie.</p>
+                    </div>
+                </div>
+
                 <!-- Pagination -->
-                <div v-if="prescriptions.links && prescriptions.links.length > 3" class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-                    <nav class="flex items-center justify-between">
-                        <p class="text-sm text-gray-500 dark:text-gray-400">
-                            Affichage de {{ prescriptions.from }} à {{ prescriptions.to }} sur {{ prescriptions.total }} résultats
+                <div v-if="prescriptions.links && prescriptions.links.length > 3" class="px-6 py-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                    <nav class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                            Affichage {{ prescriptions.from }} - {{ prescriptions.to }} / {{ prescriptions.total }}
                         </p>
-                        <div class="flex gap-1">
-                            <template v-for="link in prescriptions.links" :key="link.label">
+                        <div class="flex gap-1.5">
+                            <template v-for="(link, k) in prescriptions.links" :key="k">
                                 <Link
                                     v-if="link.url"
                                     :href="link.url"
-                                    class="px-3 py-1.5 text-sm rounded-lg transition-colors"
+                                    class="px-3.5 py-2 text-xs font-black rounded-xl transition-all border shadow-sm uppercase tracking-tighter"
                                     :class="link.active
-                                        ? 'bg-primary-600 text-white'
-                                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
+                                        ? 'bg-primary-600 text-white border-primary-600'
+                                        : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'"
                                     v-html="link.label"
                                     preserve-state
                                 />
-                                <span v-else class="px-3 py-1.5 text-sm text-gray-400 dark:text-gray-500" v-html="link.label" />
+                                <span v-else class="px-3.5 py-2 text-xs font-black text-gray-300 dark:text-gray-600 border border-transparent uppercase tracking-tighter" v-html="link.label" />
                             </template>
                         </div>
                     </nav>
