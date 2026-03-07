@@ -72,6 +72,12 @@
 
                                 <!-- Menu Items -->
                                 <ul class="py-3">
+                                    <li>
+                                        <Link :href="route('profile.edit')" class="relative px-7 py-2.5 flex items-center rounded-[inherit] text-sm leading-5 font-medium text-slate-600 dark:text-slate-400 hover:text-primary-600 hover:dark:text-primary-600 transition-all duration-300">
+                                            <em class="text-lg leading-none w-7 ni ni-user-alt"></em>
+                                            <span>Profil</span>
+                                        </Link>
+                                    </li>
                                     <!-- Only show if user has parametres.gerer permission or is admin -->
                                     <li v-if="$page.props.auth.user?.isAdmin || $page.props.auth.user?.permissions?.includes('parametres.gerer')">
                                         <Link :href="route('admin.settings')" class="relative px-7 py-2.5 flex items-center rounded-[inherit] text-sm leading-5 font-medium text-slate-600 dark:text-slate-400 hover:text-primary-600 hover:dark:text-primary-600 transition-all duration-300">

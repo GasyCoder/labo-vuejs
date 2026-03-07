@@ -15,8 +15,17 @@
                     </header>
 
                     <form @submit.prevent="updateProfile" class="space-y-4">
+                        <!-- Rôle (Lecture seule) -->
                         <div>
-                            <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom</label>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rôle / Type de compte</label>
+                            <div class="px-4 py-2.5 h-11 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-gray-800 rounded-md text-slate-500 dark:text-slate-400 text-sm flex items-center font-bold">
+                                {{ userTypeLabel }}
+                            </div>
+                            <p class="mt-1 text-xs text-slate-500 italic">Le rôle est défini par l'administrateur et ne peut pas être modifié ici.</p>
+                        </div>
+
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom Complet</label>
                             <input
                                 id="name"
                                 v-model="profileForm.name"
@@ -26,6 +35,21 @@
                                 autocomplete="name"
                             />
                             <div v-if="profileForm.errors.name" class="mt-2 text-sm text-red-600">{{ profileForm.errors.name }}</div>
+                            <p class="mt-1 text-xs text-slate-500">Votre nom tel qu'il apparaîtra sur les documents et signatures.</p>
+                        </div>
+
+                        <div>
+                            <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom d'utilisateur (Login)</label>
+                            <input
+                                id="username"
+                                v-model="profileForm.username"
+                                type="text"
+                                class="block w-full box-border text-sm leading-4.5 px-4 py-2.5 h-11 text-slate-700 dark:text-white placeholder-slate-300 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 outline-none focus:border-primary-500 focus:dark:border-primary-600 rounded-md transition-all"
+                                required
+                                autocomplete="username"
+                            />
+                            <div v-if="profileForm.errors.username" class="mt-2 text-sm text-red-600">{{ profileForm.errors.username }}</div>
+                            <p class="mt-1 text-xs text-slate-500">Utilisé pour vous connecter et pour la traçabilité de vos actions.</p>
                         </div>
 
                         <div>
@@ -65,9 +89,6 @@
                             >
                                 Enregistrer
                             </button>
-                            <Transition enter-from-class="opacity-0" leave-to-class="opacity-0" class="transition ease-in-out">
-                                <p v-if="profileForm.recentlySuccessful" class="text-sm text-gray-600 dark:text-gray-400">Enregistré.</p>
-                            </Transition>
                         </div>
                     </form>
                 </div>
@@ -208,9 +229,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head, useForm, usePage, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import Swal from 'sweetalert2';
 
 const props = defineProps({
     mustVerifyEmail: Boolean,
@@ -221,9 +243,52 @@ const user = usePage().props.auth.user;
 const showDeleteModal = ref(false);
 const verificationSent = ref(false);
 
+const flash = computed(() => usePage().props.flash);
+
+watch(() => flash.value?.success, (message) => {
+    if (message) {
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: message,
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+        });
+    }
+}, { immediate: true });
+
+watch(() => flash.value?.error, (message) => {
+    if (message) {
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'error',
+            title: message,
+            showConfirmButton: false,
+            timer: 4000,
+            timerProgressBar: true,
+        });
+    }
+}, { immediate: true });
+
+const userTypeLabel = computed(() => {
+    const type = user.type;
+    switch (type) {
+        case 'superadmin': return 'Super Admin';
+        case 'admin': return 'Administrateur';
+        case 'secretaire': return 'Secrétaire';
+        case 'technicien': return 'Technicien';
+        case 'biologiste': return 'Biologiste';
+        default: return 'Utilisateur';
+    }
+});
+
 // Profile form
 const profileForm = useForm({
     name: user.name,
+    username: user.username,
     email: user.email,
 });
 

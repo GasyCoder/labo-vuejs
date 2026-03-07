@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\ApiSettingController;
 use App\Http\Controllers\Admin\ClientFeatureController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LogController;
+use App\Http\Controllers\Admin\PartnerRecapController;
 use App\Http\Controllers\Admin\PdfBrandingController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\PrescriptionExportController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\Laboratoire\ExamenController;
 use App\Http\Controllers\Laboratoire\PrelevementController;
 use App\Http\Controllers\Laboratoire\TypeController;
 use App\Http\Controllers\PrescriptionWorkspaceController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ResultatController;
 use App\Http\Controllers\RoleWorklistController;
 use App\Http\Controllers\Secretaire\NotificationController;
@@ -82,6 +84,11 @@ Route::middleware(['auth', 'role.redirect'])->group(function () {
     Route::get('/archives', [ArchivesController::class, 'index'])->name('archives');
     Route::post('/archives/{prescription}/unarchive', [ArchivesController::class, 'unarchive'])->name('archives.unarchive');
     Route::delete('/archives/{prescription}', [ArchivesController::class, 'permanentDelete'])->name('archives.destroy');
+
+    // Mon Profil
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
 // ============================================
@@ -226,6 +233,7 @@ Route::middleware(['auth', 'role:biologiste,superadmin,admin'])->prefix('biologi
     // Validation actions
     Route::post('/prescription/{id}/validate', [BiologisteController::class, 'validatePrescription'])->name('prescription.validate');
     Route::post('/prescription/{id}/reject', [BiologisteController::class, 'rejectPrescription'])->name('prescription.reject');
+    Route::post('/prescription/{id}/update-comment', [BiologisteController::class, 'updateComment'])->name('prescription.update-comment');
 });
 
 // ============================================
