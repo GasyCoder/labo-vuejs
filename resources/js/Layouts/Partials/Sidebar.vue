@@ -528,6 +528,7 @@ const baseUrl = '/';
 const auth = computed(() => page.props.auth);
 
 const hasPermission = (permission) => {
+    if (page.props.auth.user?.isAdmin) return true;
     return page.props.auth.user?.permissions?.includes(permission);
 };
 

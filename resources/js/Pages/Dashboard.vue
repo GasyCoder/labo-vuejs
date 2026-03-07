@@ -492,6 +492,7 @@ const userType = computed(() => page.props.auth.user.type);
 const isAdmin = computed(() => ['superadmin', 'admin'].includes(userType.value));
 
 const hasPermission = (permission) => {
+    if (page.props.auth.user?.isAdmin) return true;
     return page.props.auth.user?.permissions?.includes(permission);
 };
 
