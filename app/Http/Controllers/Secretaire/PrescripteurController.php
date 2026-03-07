@@ -15,7 +15,8 @@ class PrescripteurController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search', '');
-        $statutFilter = $request->input('statutFilter', '');
+        $statutFilter = $request->input('statutFilter', ''); // Actif / Inactif
+        $typeFilter = $request->input('typeFilter', ''); // Role (Medecin, Professeur, etc.)
         $sortField = $request->input('sortField', 'nom');
         $sortDirection = $request->input('sortDirection', 'asc');
         $perPage = $request->input('perPage', 10);
@@ -41,6 +42,9 @@ class PrescripteurController extends Controller
                 } elseif ($statutFilter === 'inactif') {
                     $query->where('is_active', false);
                 }
+            })
+            ->when($typeFilter, function ($query) use ($typeFilter) {
+                $query->where('status', $typeFilter);
             })
             ->orderBy($sortField, $sortDirection)
             ->paginate($perPage)
@@ -80,6 +84,7 @@ class PrescripteurController extends Controller
             'filters' => [
                 'search' => $search,
                 'statutFilter' => $statutFilter,
+                'typeFilter' => $typeFilter,
                 'sortField' => $sortField,
                 'sortDirection' => $sortDirection,
                 'perPage' => $perPage,

@@ -62,13 +62,24 @@
                     </div>
                 </div>
 
-                <!-- Filtre statut -->
+                <!-- Filtre statut (Actif/Inactif) -->
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Statut</label>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Statut (Activité)</label>
                     <select v-model="form.statutFilter" @change="updateFilters" class="w-full py-3 px-4 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 transition-all">
-                        <option value="">Tous</option>
+                        <option value="">Tous les statuts</option>
                         <option value="actif">Actif</option>
                         <option value="inactif">Inactif</option>
+                    </select>
+                </div>
+
+                <!-- Filtre Type / Rôle -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Type / Rôle</label>
+                    <select v-model="form.typeFilter" @change="updateFilters" class="w-full py-3 px-4 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 transition-all">
+                        <option value="">Tous les rôles</option>
+                        <option v-for="(label, value) in statusOptions" :key="value" :value="value">
+                            {{ label }}
+                        </option>
                     </select>
                 </div>
             </div>
@@ -405,6 +416,7 @@ const canDeletePrescripteurs = computed(() => {
 const form = ref({
     search: props.filters.search || '',
     statutFilter: props.filters.statutFilter || '',
+    typeFilter: props.filters.typeFilter || '',
     sortField: props.filters.sortField || 'nom',
     sortDirection: props.filters.sortDirection || 'asc',
     perPage: props.filters.perPage || 10,
@@ -443,6 +455,7 @@ const debouncedUpdateFilters = debounce(updateFilters, 300);
 const resetFilters = () => {
     form.value.search = '';
     form.value.statutFilter = '';
+    form.value.typeFilter = '';
     form.value.sortField = 'nom';
     form.value.sortDirection = 'asc';
     updateFilters();
