@@ -123,6 +123,46 @@ const bulkReset = () => {
 
         <div class="py-6">
             <div class="px-4 sm:px-6 lg:px-8 w-full space-y-6">
+                <!-- Header avec Titre et Description -->
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-2">
+                    <div>
+                        <h1 class="text-3xl font-heading font-black text-slate-900 dark:text-white uppercase tracking-tight">Configuration des Normes</h1>
+                        <p class="text-slate-500 dark:text-slate-400 mt-2 font-medium">Paramétrez les seuils de normalité et les alertes critiques pour chaque analyse du catalogue.</p>
+                    </div>
+                </div>
+
+                <!-- Guide utilisateur / Avantages -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow-md group">
+                        <div class="h-12 w-12 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110">
+                            <em class="ni ni-info-fill text-blue-600 text-2xl"></em>
+                        </div>
+                        <h4 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-2">Précision Diagnostique</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                            Définissez des bornes précises par contexte (Homme, Femme, Enfant) pour garantir une interprétation exacte des résultats biologiques.
+                        </p>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow-md group">
+                        <div class="h-12 w-12 bg-amber-50 dark:bg-amber-900/20 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110">
+                            <em class="ni ni-alert-fill text-amber-500 text-2xl"></em>
+                        </div>
+                        <h4 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-2">Alertes Automatiques</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                            Le système identifie automatiquement les résultats anormaux (orange) ou critiques (rouge) lors de la saisie technique.
+                        </p>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow-md group">
+                        <div class="h-12 w-12 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110">
+                            <em class="ni ni-check-circle text-emerald-500 text-2xl"></em>
+                        </div>
+                        <h4 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-2">Sécurité Biologique</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                            Les limites critiques bloquent la validation automatique, imposant une revue humaine pour les dossiers présentant un risque vital.
+                        </p>
+                    </div>
+                </div>
                 
                 <!-- Dashboard / Compteurs -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">

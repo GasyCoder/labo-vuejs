@@ -45,6 +45,8 @@ class PermissionSeeder extends Seeder
             'corbeille.voir',
             'corbeille.restaurer',
             'archives.acceder',
+            'analyses.listes.voir',
+            'laboratoire.gerer',
         ]);
 
         $technicien = Role::firstOrCreate(['name' => 'technicien', 'guard_name' => 'web']);

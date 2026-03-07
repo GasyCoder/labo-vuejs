@@ -236,7 +236,7 @@ Route::middleware(['auth'])->prefix('laboratoire')->name('laboratoire.')->group(
     Route::prefix('analyses')->name('analyses.')->group(function () {
 
         // Examens : nécessite laboratoire.gerer ou rôle admin/tech/bio
-        Route::controller(ExamenController::class)->middleware(['role_or_permission:technicien|biologiste|superadmin|admin|laboratoire.gerer'])->group(function () {
+        Route::controller(ExamenController::class)->middleware(['role_or_permission:secretaire|technicien|biologiste|superadmin|admin|laboratoire.gerer'])->group(function () {
             Route::get('examens', 'index')->name('examens');
             Route::post('examens', 'store')->name('examens.store');
             Route::put('examens/{examen}', 'update')->name('examens.update');
@@ -244,7 +244,7 @@ Route::middleware(['auth'])->prefix('laboratoire')->name('laboratoire.')->group(
         });
 
         // Types : nécessite laboratoire.gerer ou rôle admin/tech/bio
-        Route::controller(TypeController::class)->middleware(['role_or_permission:technicien|biologiste|superadmin|admin|laboratoire.gerer'])->group(function () {
+        Route::controller(TypeController::class)->middleware(['role_or_permission:secretaire|technicien|biologiste|superadmin|admin|laboratoire.gerer'])->group(function () {
             Route::get('types', 'index')->name('types');
             Route::post('types', 'store')->name('types.store');
             Route::put('types/{type}', 'update')->name('types.update');
@@ -255,9 +255,9 @@ Route::middleware(['auth'])->prefix('laboratoire')->name('laboratoire.')->group(
         // Listes Analyses : Accessible par analyses.listes.voir OU laboratoire.gerer OU rôles
         Route::controller(AnalyseController::class)->group(function () {
             Route::get('listes', 'index')->name('listes')
-                ->middleware(['role_or_permission:technicien|biologiste|superadmin|admin|laboratoire.gerer|analyses.listes.voir']);
+                ->middleware(['role_or_permission:secretaire|technicien|biologiste|superadmin|admin|laboratoire.gerer|analyses.listes.voir']);
 
-            Route::middleware(['role_or_permission:technicien|biologiste|superadmin|admin|laboratoire.gerer'])->group(function () {
+            Route::middleware(['role_or_permission:secretaire|technicien|biologiste|superadmin|admin|laboratoire.gerer'])->group(function () {
                 Route::post('listes', 'store')->name('listes.store');
                 Route::put('listes/{analyse}', 'update')->name('listes.update');
                 Route::post('listes/{analyse}/toggle', 'toggleStatus')->name('listes.toggle');
@@ -266,7 +266,7 @@ Route::middleware(['auth'])->prefix('laboratoire')->name('laboratoire.')->group(
         });
 
         // Intervalles : nécessite laboratoire.gerer ou rôle admin/tech/bio
-        Route::controller(\App\Http\Controllers\Laboratoire\AnalyseRangeController::class)->prefix('ranges')->name('ranges.')->middleware(['role_or_permission:technicien|biologiste|superadmin|admin|laboratoire.gerer'])->group(function () {
+        Route::controller(\App\Http\Controllers\Laboratoire\AnalyseRangeController::class)->prefix('ranges')->name('ranges.')->middleware(['role_or_permission:secretaire|technicien|biologiste|superadmin|admin|laboratoire.gerer'])->group(function () {
             Route::get('/', 'index')->name('index');
             Route::post('/bulk-delete', 'bulkDestroy')->name('bulk-destroy');
             Route::get('/{analyse}/edit', 'edit')->name('edit');
@@ -277,9 +277,9 @@ Route::middleware(['auth'])->prefix('laboratoire')->name('laboratoire.')->group(
         // Prélèvements : Accessible par analyses.prelevements.voir OU laboratoire.gerer OU rôles
         Route::controller(PrelevementController::class)->group(function () {
             Route::get('prelevements', 'index')->name('prelevements')
-                ->middleware(['role_or_permission:technicien|biologiste|superadmin|admin|laboratoire.gerer|analyses.prelevements.voir']);
+                ->middleware(['role_or_permission:secretaire|technicien|biologiste|superadmin|admin|laboratoire.gerer|analyses.prelevements.voir']);
 
-            Route::middleware(['role_or_permission:technicien|biologiste|superadmin|admin|laboratoire.gerer'])->group(function () {
+            Route::middleware(['role_or_permission:secretaire|technicien|biologiste|superadmin|admin|laboratoire.gerer'])->group(function () {
                 Route::post('prelevements', 'store')->name('prelevements.store');
                 Route::put('prelevements/{prelevement}', 'update')->name('prelevements.update');
                 Route::post('prelevements/{prelevement}/toggle', 'toggleStatus')->name('prelevements.toggle');
@@ -289,7 +289,7 @@ Route::middleware(['auth'])->prefix('laboratoire')->name('laboratoire.')->group(
     });
 
     // Section Microbiologie : Strictement réservé
-    Route::prefix('microbiologie')->name('microbiologie.')->middleware(['role_or_permission:technicien|biologiste|superadmin|admin|laboratoire.gerer'])->group(function () {
+    Route::prefix('microbiologie')->name('microbiologie.')->middleware(['role_or_permission:secretaire|technicien|biologiste|superadmin|admin|laboratoire.gerer'])->group(function () {
         Route::controller(BacterieFamilleController::class)->group(function () {
             Route::get('familles-bacteries', 'index')->name('familles-bacteries');
             Route::post('familles-bacteries', 'store')->name('familles-bacteries.store');
