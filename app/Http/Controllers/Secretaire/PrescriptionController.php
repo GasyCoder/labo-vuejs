@@ -43,6 +43,9 @@ class PrescriptionController extends Controller
             ->with([
                 'patient:id,nom,prenom,telephone,email',
                 'prescripteur:id,nom',
+                'secretaire:id,name',
+                'technicien:id,name',
+                'validator:id,name',
                 'paiements:id,prescription_id,status,date_paiement',
                 'analyses:id,code,designation',
             ])
@@ -139,6 +142,15 @@ class PrescriptionController extends Controller
                     ] : null,
                     'prescripteur' => $prescription->prescripteur ? [
                         'nom' => $prescription->prescripteur->nom,
+                    ] : null,
+                    'secretaire' => $prescription->secretaire ? [
+                        'name' => $prescription->secretaire->name,
+                    ] : null,
+                    'technicien' => $prescription->technicien ? [
+                        'name' => $prescription->technicien->name,
+                    ] : null,
+                    'validator' => $prescription->validator ? [
+                        'name' => $prescription->validator->name,
                     ] : null,
                     'paiement' => $prescription->paiements->first() ? [
                         'status' => (bool) $prescription->paiements->first()->status,

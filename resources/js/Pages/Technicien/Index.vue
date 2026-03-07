@@ -137,7 +137,7 @@ const submitRedoAnalysis = () => {
     <Head title="Gestion des Analyses" />
 
     <AppLayout>
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="container mx-auto px-2 sm:px-6 lg:px-8 py-8">
 
             <!-- Header -->
             <div class="mb-8">
@@ -297,8 +297,20 @@ const submitRedoAnalysis = () => {
                                         'text-blue-700 dark:text-blue-300': form.tab === 'en_attente',
                                         'text-teal-700 dark:text-teal-300': form.tab === 'termine',
                                         'text-red-700 dark:text-red-300': form.tab === 'a_refaire',
-                                    }">Patient</th>
+                                    }">Saisi par</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                                    :class="{
+                                        'text-blue-700 dark:text-blue-300': form.tab === 'en_attente',
+                                        'text-teal-700 dark:text-teal-300': form.tab === 'termine',
+                                        'text-red-700 dark:text-red-300': form.tab === 'a_refaire',
+                                    }">Traité par</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                                    :class="{
+                                        'text-blue-700 dark:text-blue-300': form.tab === 'en_attente',
+                                        'text-teal-700 dark:text-teal-300': form.tab === 'termine',
+                                        'text-red-700 dark:text-red-300': form.tab === 'a_refaire',
+                                    }">Patient</th>
+                                <th v-if="form.tab !== 'a_refaire'" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
                                     :class="{
                                         'text-blue-700 dark:text-blue-300': form.tab === 'en_attente',
                                         'text-teal-700 dark:text-teal-300': form.tab === 'termine',
@@ -335,9 +347,31 @@ const submitRedoAnalysis = () => {
                                 }">
                                 <!-- Référence -->
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-semibold text-gray-900 dark:text-white">
+                                    <div class="text-xs font-semibold text-gray-900 dark:text-white">
                                         {{ prescription.reference }}
                                     </div>
+                                </td>
+
+                                <!-- Saisi par -->
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div v-if="prescription.secretaire" class="flex items-center gap-2">
+                                        <div class="flex h-6 w-6 items-center justify-center rounded-md bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400">
+                                            <em class="icon ni ni-user-alt text-base"></em>
+                                        </div>
+                                        <span class="text-sm font-bold text-slate-700 dark:text-slate-200">{{ prescription.secretaire.name }}</span>
+                                    </div>
+                                    <span v-else class="text-xs italic text-slate-400">Système</span>
+                                </td>
+
+                                <!-- Traité par -->
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div v-if="prescription.technicien" class="flex items-center gap-2">
+                                        <div class="flex h-6 w-6 items-center justify-center rounded-md bg-teal-50 text-teal-600 dark:bg-teal-900/20 dark:text-teal-400">
+                                            <em class="icon ni ni-account-setting-fill text-base"></em>
+                                        </div>
+                                        <span class="text-sm font-bold text-slate-700 dark:text-slate-200">{{ prescription.technicien.name }}</span>
+                                    </div>
+                                    <span v-else class="text-xs italic text-slate-400">—</span>
                                 </td>
 
                                 <!-- Patient -->
@@ -363,7 +397,7 @@ const submitRedoAnalysis = () => {
                                 </td>
 
                                 <!-- Prescripteur -->
-                                <td class="px-6 py-4 whitespace-nowrap">
+                                <td v-if="form.tab !== 'a_refaire'" class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900 dark:text-white">
                                         {{ truncate((prescription.prescripteur?.nom || 'N/A') + ' ' + (prescription.prescripteur?.prenom || '')) }}
                                     </div>
@@ -464,7 +498,7 @@ const submitRedoAnalysis = () => {
 
                             <!-- Empty state -->
                             <tr v-if="!prescriptions.data || prescriptions.data.length === 0">
-                                <td :colspan="form.tab === 'termine' ? 6 : 7" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                                <td :colspan="['termine', 'a_refaire'].includes(form.tab) ? 6 : 7" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                                     <div class="flex flex-col items-center">
                                         <svg class="w-12 h-12 mb-3 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />

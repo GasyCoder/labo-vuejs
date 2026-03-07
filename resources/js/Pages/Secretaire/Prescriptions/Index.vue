@@ -744,8 +744,8 @@ const printDetail = () => {
                 <div class="hidden lg:block">
                     <table class="w-full">
                         <thead>
-                            <tr class="border-b border-slate-100 dark:border-slate-700">
-                                <th class="w-10 px-4 py-3">
+                            <tr class="border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
+                                <th class="w-10 px-4 py-4">
                                     <input 
                                         type="checkbox" 
                                         :checked="isAllSelected"
@@ -753,19 +753,19 @@ const printDetail = () => {
                                         class="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 dark:border-slate-600 dark:bg-slate-700"
                                     >
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Reference</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Patient</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Prescripteur</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Analyses</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Statut</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Paiement</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date</th>
-                                <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Actions</th>
+                                <th class="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Dossier & Date</th>
+                                <th class="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Patient & Prescripteur</th>
+                                <th class="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Analyses</th>
+                                <th class="px-4 py-4 text-left text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Personnel</th>
+                                <th class="px-4 py-4 text-center text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Paiement</th>
+                                <th class="px-4 py-4 text-center text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Statut</th>
+                                <th class="px-4 py-4 text-right text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-50 dark:divide-slate-700/50">
                             <tr v-for="(prescription, idx) in prescriptions.data" :key="prescription.id" class="group transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-700/20" :class="{'bg-primary-50/30 dark:bg-primary-900/10': selectedIds.includes(prescription.id)}">
-                                <td class="px-4 py-3.5">
+                                <!-- 1. Checkbox -->
+                                <td class="px-4 py-4 text-center">
                                     <input 
                                         type="checkbox" 
                                         :checked="selectedIds.includes(prescription.id)"
@@ -773,82 +773,104 @@ const printDetail = () => {
                                         class="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 dark:border-slate-600 dark:bg-slate-700"
                                     >
                                 </td>
-                                <td class="px-4 py-3.5">
+
+                                <!-- 2. Dossier / Date -->
+                                <td class="px-4 py-4">
                                     <div class="flex flex-col">
-                                        <span class="text-sm font-semibold text-slate-900 dark:text-white">{{ prescription.reference }}</span>
-                                        <span v-if="prescription.labo_traitement === 'AUTRE'" class="text-[10px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-tight">
-                                            {{ prescription.labo_autre_nom || 'Labo Externe' }}
-                                        </span>
-                                    </div>
-                                </td>
-                                <td class="px-4 py-3.5">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600">
-                                            <span class="text-xs font-semibold text-white">{{ initials(prescription) }}</span>
-                                        </div>
-                                        <div class="min-w-0">
-                                            <p class="max-w-[150px] truncate text-sm font-medium text-slate-900 dark:text-white">{{ prescription.patient?.nom_complet || 'N/A' }}</p>
-                                            <p class="text-xs text-slate-400 dark:text-slate-500">{{ prescription.patient?.telephone || '-' }}</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-4 py-3.5"><span class="text-sm text-slate-600 dark:text-slate-300">{{ truncate(prescription.prescripteur?.nom || 'N/A', 20) }}</span></td>
-                                <td class="px-4 py-3.5">
-                                    <div class="flex flex-wrap items-center gap-1.5 max-w-[250px]">
-                                        <!-- Total Count Badge -->
-                                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300 text-[11px] font-black border border-primary-200 dark:border-primary-800 shadow-sm mr-1" title="Total des analyses">
-                                            {{ prescription.analyses_count }}
-                                        </span>
-
-                                        <span v-for="(analyse, idx) in prescription.analyses.slice(0, 3)" :key="idx" 
-                                            class="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-100/50 dark:border-blue-800/50 whitespace-nowrap"
-                                            :title="analyse.designation">
-                                            {{ analyse.code }}
-                                        </span>
-                                        
-                                        <div v-if="prescription.analyses.length > 3" class="relative group/tooltip">
-                                            <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-400 cursor-help">
-                                                +{{ prescription.analyses.length - 3 }}
+                                        <span class="text-sm font-black text-slate-900 dark:text-white leading-tight">{{ prescription.reference }}</span>
+                                        <span class="text-[10px] text-slate-400 font-bold uppercase mt-0.5 tracking-tighter">{{ prescription.created_at }}</span>
+                                        <div v-if="prescription.labo_traitement === 'AUTRE'" class="mt-1">
+                                            <span class="inline-flex text-[9px] font-black px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 uppercase">
+                                                {{ prescription.labo_autre_nom || 'Externe' }}
                                             </span>
-                                            <!-- Custom Tooltip: Always position bottom to avoid header masking when outside v-for -->
-                                            <div :class="[
-                                                'absolute left-1/2 -translate-x-1/2 hidden group-hover/tooltip:block z-[100] w-max max-w-[300px] p-2 bg-slate-900 text-white text-[10px] rounded-lg shadow-2xl border border-slate-700 animate-in fade-in zoom-in duration-200',
-                                                'bottom-full mb-2'
-                                            ]">
-                                                <div class="flex flex-col gap-1.5">
-                                                    <div v-for="(allAnalyse, aIdx) in prescription.analyses" :key="aIdx" class="flex items-start gap-2 border-b border-slate-800 pb-1 last:border-0 last:pb-0">
-                                                        <span class="font-bold text-primary-400 min-w-[40px]">{{ allAnalyse.code }}</span>
-                                                        <span class="text-slate-300">{{ allAnalyse.designation }}</span>
-                                                    </div>
-                                                </div>
-                                                <!-- Arrow direction -->
-                                                <div v-if="idx < 2" class="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-slate-900"></div>
-                                                <div v-else class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900"></div>
-                                            </div>
                                         </div>
-
-                                        <span v-if="prescription.analyses.length === 0" class="text-xs italic text-slate-400">Aucune</span>
                                     </div>
                                 </td>
-                                <td class="px-4 py-3.5"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold" :class="statusClass(prescription.status)">{{ prescription.status_label }}</span></td>
-                                <td class="px-4 py-3.5">
-                                    <div v-if="prescription.paiement" class="flex items-center gap-2.5">
+
+                                <!-- 3. Patient & Prescripteur -->
+                                <td class="px-4 py-4">
+                                    <div class="flex items-center gap-3 overflow-hidden">
+                                        <div class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 font-black text-[11px] shadow-sm">
+                                            {{ initials(prescription) }}
+                                        </div>
+                                        <div class="min-w-0 flex flex-col">
+                                            <span class="truncate text-sm font-bold text-slate-900 dark:text-white leading-none mb-1.5">{{ prescription.patient?.nom_complet || 'N/A' }}</span>
+                                            <span class="text-[11px] text-slate-500 font-medium flex items-center gap-1">
+                                                <em class="ni ni-user text-[10px] text-slate-400"></em>
+                                                <span class="truncate">{{ prescription.prescripteur?.nom || 'Sans prescripteur' }}</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <!-- 4. Analyses -->
+                                <td class="px-4 py-4 text-left">
+                                    <div class="flex items-center gap-2">
+                                        <div class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-primary-50 dark:bg-primary-900/30 border border-primary-100 dark:border-primary-800" title="Total analyses">
+                                            <span class="text-[11px] font-black text-primary-600 dark:text-primary-400">{{ prescription.analyses_count }}</span>
+                                        </div>
+                                        <div class="flex flex-wrap gap-1">
+                                            <span v-for="(analyse, aIdx) in prescription.analyses.slice(0, 2)" :key="aIdx" 
+                                                class="text-[9px] font-black px-1.5 py-0.5 rounded bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 uppercase">
+                                                {{ analyse.code }}
+                                            </span>
+                                            <span v-if="prescription.analyses.length > 2" class="text-[10px] font-bold text-slate-400 self-center">+{{ prescription.analyses.length - 2 }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <!-- 5. Traçabilité (Personnel) -->
+                                <td class="px-4 py-4 text-left">
+                                    <div class="flex flex-col gap-1.5">
+                                        <!-- Saisie -->
+                                        <div class="flex items-center gap-2" :title="'Saisi par : ' + (prescription.secretaire?.name || 'Système')">
+                                            <div class="h-5 w-5 flex-shrink-0 rounded bg-blue-50 text-blue-600 dark:bg-blue-900/30 flex items-center justify-center">
+                                                <em class="icon ni ni-user-alt text-[9px]"></em>
+                                            </div>
+                                            <span class="text-[10px] font-bold text-slate-600 dark:text-slate-400 truncate max-w-[120px]">{{ prescription.secretaire?.name || 'Système' }}</span>
+                                        </div>
+                                        <!-- Traitement (Technicien) -->
+                                        <div v-if="prescription.technicien && ['EN_COURS', 'TERMINE', 'A_REFAIRE', 'VALIDE'].includes(prescription.status)" class="flex items-center gap-2" :title="'Traité par : ' + prescription.technicien.name">
+                                            <div class="h-5 w-5 flex-shrink-0 rounded bg-teal-50 text-teal-600 dark:bg-teal-900/30 flex items-center justify-center">
+                                                <em class="icon ni ni-account-setting-fill text-[9px]"></em>
+                                            </div>
+                                            <span class="text-[10px] font-bold text-slate-600 dark:text-slate-400 truncate max-w-[120px]">{{ prescription.technicien.name }}</span>
+                                        </div>
+                                        <!-- Validation (Biologiste) -->
+                                        <div v-if="prescription.validator && prescription.status === 'VALIDE'" class="flex items-center gap-2" :title="'Validé par : ' + prescription.validator.name">
+                                            <div class="h-5 w-5 flex-shrink-0 rounded bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 flex items-center justify-center">
+                                                <em class="icon ni ni-user-check-fill text-[9px]"></em>
+                                            </div>
+                                            <span class="text-[10px] font-bold text-slate-600 dark:text-slate-400 truncate max-w-[120px]">{{ prescription.validator.name }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <!-- 6. Paiement -->
+                                <td class="px-4 py-4 text-center">
+                                    <div v-if="prescription.paiement" class="flex flex-col items-center gap-1.5">
+                                        <!-- Toggle Switch -->
                                         <button v-if="perm.canEdit" type="button" class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800" :class="prescription.paiement.status ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'" @click="handlePaymentToggle(prescription)">
                                             <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200" :class="prescription.paiement.status ? 'translate-x-4' : 'translate-x-0'"></span>
                                         </button>
-                                        <div>
-                                            <span class="text-xs font-medium" :class="prescription.paiement.status ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'">{{ prescription.paiement.status ? 'Paye' : 'Non paye' }}</span>
-                                            <p v-if="prescription.paiement.status && prescription.paiement.date_paiement" class="text-[11px] text-slate-400">{{ prescription.paiement.date_paiement }}</p>
+                                        <div class="flex flex-col items-center">
+                                            <span class="text-[10px] font-black uppercase tracking-tight" :class="prescription.paiement.status ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">
+                                                {{ prescription.paiement.status ? 'Payé' : 'Impayé' }}
+                                            </span>
+                                            <span v-if="prescription.paiement.status && prescription.paiement.date_paiement" class="text-[9px] text-slate-400 font-bold mt-0.5 leading-none">{{ prescription.paiement.date_paiement }}</span>
                                         </div>
                                     </div>
-                                    <span v-else class="text-xs italic text-slate-400 dark:text-slate-500">Aucun</span>
+                                    <span v-else class="text-[10px] font-bold text-slate-300 italic">—</span>
                                 </td>
-                                <td class="px-4 py-3.5">
-                                    <div>
-                                        <p class="text-sm text-slate-600 dark:text-slate-300">{{ prescription.created_at || 'N/A' }}</p>
-                                        <p class="text-[11px] text-slate-400">{{ prescription.created_at_relative || '' }}</p>
-                                    </div>
+
+                                <!-- 7. Statut -->
+                                <td class="px-4 py-4 text-center">
+                                    <span class="inline-flex rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest shadow-sm border border-transparent whitespace-nowrap" :class="statusClass(prescription.status)">
+                                        {{ prescription.status_label }}
+                                    </span>
                                 </td>
+
+                                <!-- 8. Actions (Placeholder for the next step or keep the old ones if they fit) -->
                                 <td class="px-4 py-3.5">
                                     <div class="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                                         <!-- Edit + Delete: Only on Active tab -->

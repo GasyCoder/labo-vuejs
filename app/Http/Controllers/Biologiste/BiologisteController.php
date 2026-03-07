@@ -22,8 +22,12 @@ class BiologisteController extends Controller
         $baseQuery = Prescription::with([
             'patient:id,nom,prenom',
             'prescripteur:id,nom,prenom',
-            'analyses:id,designation',
+            'secretaire:id,name',
+            'technicien:id,name',
+            'validator:id,name',
+            'analyses:id,code,designation',
         ])
+            ->withCount('analyses')
             ->where('labo_traitement', 'LOCAL')
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($query) use ($search) {
@@ -179,6 +183,33 @@ class BiologisteController extends Controller
             ]);
 
             return back()->with('error', 'Erreur lors du rejet : '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Mettre à jour le commentaire d'une prescription déjà en mode 'A_REFAIRE'
+     */
+    public function updateComment(Request $request, int $id): RedirectResponse
+    {
+        $request->validate([
+            'commentaire' => 'required|string|max:500',
+        ]);
+
+        try {
+            $prescription = Prescription::findOrFail($id);
+
+            if ($prescription->status !== 'A_REFAIRE') {
+                return back()->with('error', 'Le commentaire ne peut être modifié que pour les dossiers à refaire.');
+            }
+
+            $prescription->update([
+                'commentaire_biologiste' => $request->input('commentaire'),
+                'updated_by' => Auth::id(),
+            ]);
+
+            return back()->with('success', 'Commentaire mis à jour avec succès.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Erreur lors de la mise à jour du commentaire.');
         }
     }
 }

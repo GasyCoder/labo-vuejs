@@ -23,7 +23,7 @@ class TechnicienController extends Controller
         $tab = $request->input('tab', 'en_attente');
         $search = $request->input('search', '');
 
-        $baseQuery = Prescription::with(['patient:id,nom,prenom', 'prescripteur:id,nom,prenom', 'analyses:id,code,designation'])
+        $baseQuery = Prescription::with(['patient:id,nom,prenom', 'prescripteur:id,nom,prenom', 'analyses:id,code,designation', 'secretaire:id,name', 'technicien:id,name'])
             ->withCount('analyses')
             ->where('labo_traitement', 'LOCAL')
             ->when($search, function ($q) use ($search) {

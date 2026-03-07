@@ -803,7 +803,7 @@
                             <div v-for="prelevement in prelevementResults" :key="prelevement.id" class="flex items-start justify-between rounded-xl border border-slate-200 p-2.5 transition-colors hover:border-yellow-300 hover:bg-yellow-50/50 dark:border-slate-700 dark:hover:border-yellow-500 dark:hover:bg-slate-700/40" :class="isPrelevementInCart(prelevement.id) ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-600' : ''">
                                 <div class="flex items-start gap-2.5 flex-1">
                                     <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-yellow-500 to-orange-600 text-white">
-                                        <em class="ni ni-flask text-xs"></em>
+                                        <em class="icon ni ni-account-setting-fill text-xs"></em>
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <p class="text-xs font-medium text-slate-800 dark:text-slate-100">{{ prelevement.denomination }}</p>

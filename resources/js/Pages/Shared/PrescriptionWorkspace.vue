@@ -422,7 +422,7 @@ const statusBadge = (status) => {
         <div class="flex flex-col h-full">
             <!-- Header (legacy-faithful) -->
             <div class="bg-white dark:bg-slate-900 shadow-lg border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
-                <div class="px-6 py-4 lg:py-6 space-y-4 lg:space-y-6">
+                <div class="px-2 py-4 lg:px-6 lg:py-6 space-y-4 lg:space-y-6">
                     <!-- Row 1: Reference + Patient Info -->
                     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                         <!-- Reference & Icon -->
@@ -433,8 +433,20 @@ const statusBadge = (status) => {
                                 </svg>
                             </div>
                             <div>
-                                <h1 class="text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100">{{ prescription.reference }}</h1>
-                                <p class="text-slate-600 dark:text-slate-400 text-sm">Détail de la prescription médicale</p>
+                                <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900 dark:text-slate-100">{{ prescription.reference }}</h1>
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                                    <p class="text-slate-600 dark:text-slate-400 text-sm">Détail de la prescription médicale</p>
+                                    <span v-if="prescription.secretaire" class="hidden sm:inline text-slate-300 dark:text-slate-700">|</span>
+                                    <span v-if="prescription.secretaire" class="text-xs font-bold text-primary-600 dark:text-primary-400 flex items-center gap-1">
+                                        <em class="icon ni ni-user-alt text-base"></em>
+                                        Saisi par : {{ prescription.secretaire.name }}
+                                    </span>
+                                    <span v-if="prescription.secretaire && prescription.technicien" class="hidden sm:inline text-slate-300 dark:text-slate-700">|</span>
+                                    <span v-if="prescription.technicien" class="text-xs font-bold text-teal-600 dark:text-teal-400 flex items-center gap-1">
+                                        <em class="icon ni ni-account-setting-fill text-base"></em>
+                                        Traité par : {{ prescription.technicien.name }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                         <!-- Patient Info -->

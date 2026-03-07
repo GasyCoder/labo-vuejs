@@ -37,6 +37,7 @@ const changeTab = (tab) => {
 
 // --- Reject modal ---
 const showRejectModal = ref(false);
+const showEditCommentModal = ref(false);
 const rejectTarget = ref(null);
 const rejectComment = ref('');
 
@@ -44,6 +45,12 @@ const openRejectModal = (p) => {
     rejectTarget.value = p;
     rejectComment.value = '';
     showRejectModal.value = true;
+};
+
+const openEditCommentModal = (p) => {
+    rejectTarget.value = p;
+    rejectComment.value = p.commentaire_biologiste || '';
+    showEditCommentModal.value = true;
 };
 
 const submitReject = () => {
@@ -61,6 +68,25 @@ const submitReject = () => {
         onError: () => {
             actionProcessing.value = null;
             showToast('Erreur lors du rejet', 'error');
+        },
+    });
+};
+
+const submitEditComment = () => {
+    if (!rejectComment.value.trim()) return;
+    actionProcessing.value = 'edit-comment-' + rejectTarget.value.id;
+    router.post(route('biologiste.prescription.update-comment', rejectTarget.value.id), {
+        commentaire: rejectComment.value,
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            showEditCommentModal.value = false;
+            actionProcessing.value = null;
+            showToast('Commentaire mis à jour avec succès', 'success');
+        },
+        onError: () => {
+            actionProcessing.value = null;
+            showToast('Erreur lors de la mise à jour', 'error');
         },
     });
 };
@@ -124,10 +150,10 @@ const emptyMessages = {
 <template>
     <Head title="Validation Biologiste" />
     <AppLayout>
-        <!-- Added pt-6 sm:pt-8 so it's not attached to the top navbar -->
-        <div class="flex flex-col h-full min-h-0 p-4 sm:p-6 lg:p-8">
-            <!-- Wrapped in a modern card container to give a clean separation -->
-            <div class="flex flex-col flex-1 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <!-- Full width on mobile, normal padding on larger screens -->
+        <div class="flex flex-col h-full min-h-0 p-0 sm:p-6 lg:p-8">
+            <!-- Wrapped in a modern card container - remove rounded corners on mobile -->
+            <div class="flex flex-col flex-1 bg-white dark:bg-gray-900 sm:rounded-2xl shadow-sm border-x-0 sm:border-x border-y border-gray-200 dark:border-gray-700 overflow-hidden">
                 
                 <!-- Header section (Shrink-0 so it stays at top while content scrolls below) -->
                 <div class="shrink-0 border-b border-gray-200 dark:border-gray-700 relative z-10">
@@ -176,6 +202,7 @@ const emptyMessages = {
                             :actionProcessing="actionProcessing"
                             @validate="openValidateModal"
                             @reject="openRejectModal"
+                            @edit-comment="openEditCommentModal"
                             @preview="handlePreview"
                             @view="handleView"
                             @treat="handleTreat"
@@ -364,6 +391,72 @@ const emptyMessages = {
                                 <svg v-if="actionProcessing" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
                                 <svg v-else class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
                                 <span>{{ actionProcessing ? 'Validation...' : 'Oui, valider' }}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Transition>
+
+        <!-- Edit Comment Modal -->
+        <Transition
+            enter-active-class="transition ease-out duration-200"
+            enter-from-class="opacity-0"
+            enter-to-class="opacity-100"
+            leave-active-class="transition ease-in duration-150"
+            leave-from-class="opacity-100"
+            leave-to-class="opacity-0"
+        >
+            <div v-if="showEditCommentModal" class="fixed inset-0 z-[1040] flex items-end sm:items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="edit-comment-title">
+                <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="showEditCommentModal = false"></div>
+                <div class="relative bg-white dark:bg-gray-800 w-full sm:max-w-lg sm:rounded-2xl rounded-t-3xl shadow-2xl z-10 safe-bottom">
+                    <!-- Drag handle (mobile) -->
+                    <div class="sm:hidden flex justify-center pt-3 pb-1">
+                        <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+                    </div>
+
+                    <div class="p-6 sm:p-8">
+                        <!-- Icon + Title -->
+                        <div class="flex flex-col items-center text-center mb-6">
+                            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-100 to-indigo-200 dark:from-indigo-900/40 dark:to-indigo-800/30 flex items-center justify-center mb-4 shadow-sm">
+                                <svg class="w-8 h-8 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            </div>
+                            <h3 id="edit-comment-title" class="text-xl font-bold text-gray-900 dark:text-white">Modifier le motif</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                Mise à jour de la raison du renvoi pour <span class="font-semibold text-gray-700 dark:text-gray-300">{{ rejectTarget?.reference }}</span>
+                            </p>
+                        </div>
+
+                        <!-- Textarea -->
+                        <div class="mb-6">
+                            <label for="edit-comment" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                Motif du renvoi <span class="text-red-500">*</span>
+                            </label>
+                            <textarea
+                                id="edit-comment"
+                                v-model="rejectComment"
+                                rows="4"
+                                required
+                                placeholder="Expliquez pourquoi les résultats doivent être refaits..."
+                                class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/70 border-2 border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm resize-none transition-colors"
+                            ></textarea>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="flex items-center justify-end gap-3">
+                            <button
+                                @click="showEditCommentModal = false"
+                                class="h-10 px-5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                @click="submitEditComment"
+                                :disabled="!rejectComment.trim() || actionProcessing !== null"
+                                class="h-10 px-5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 rounded-lg shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                                <svg v-if="actionProcessing" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                <span>{{ actionProcessing ? 'Enregistrement...' : 'Mettre à jour' }}</span>
                             </button>
                         </div>
                     </div>

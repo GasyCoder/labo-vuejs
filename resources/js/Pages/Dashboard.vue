@@ -326,7 +326,7 @@
                 <div class="col-span-full sm:col-span-6 xl:col-span-4 bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
                     <div class="flex items-center">
                         <div class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mr-3">
-                            <em class="ni ni-flask text-indigo-600"></em>
+                            <em class="icon ni ni-account-setting-fill text-indigo-600 text-xl"></em>
                         </div>
                         <div>
                             <div class="text-xs font-semibold text-slate-400 uppercase">Analyses en attente</div>

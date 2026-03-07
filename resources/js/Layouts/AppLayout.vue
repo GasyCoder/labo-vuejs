@@ -8,7 +8,7 @@
                 <Header />
 
                 <!-- pt-24 (96px) : l'équilibre parfait pour une navbar de 64px -->
-                <div id="pagecontent" class="nk-content pt-24 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-900">
+                <div id="pagecontent" class="nk-content pt-24 px-2 sm:px-6 lg:px-8 bg-white dark:bg-slate-900">
                     <div :class="['container', container ? '' : 'max-w-none']">
                         <div class="relative w-full">
                             <!-- Skeleton Overlay -->

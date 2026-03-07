@@ -24,10 +24,10 @@ class ResultatController extends Controller
         try {
             $analyse = Analyse::findOrFail($request->analyse_id);
             $prescription = Prescription::with('patient')->findOrFail($request->prescription_id);
-            
+
             // Validation biologique automatique
             $validation = $analyse->validateValue($request->valeur, $prescription->patient);
-            
+
             // Si c'est critique (BLOCK) et non confirmé explicitement, on bloque
             if ($validation['status'] === 'BLOCK' && ! $request->confirmed) {
                 return response()->json([
@@ -42,7 +42,7 @@ class ResultatController extends Controller
 
             // Détection automatique intelligente
             $suggested = ($validation['status'] === 'OK') ? 'NORMAL' : 'PATHOLOGIQUE';
-            
+
             // On récupère l'ancien résultat pour savoir si l'utilisateur a fait un choix manuel
             $oldResultat = Resultat::where('prescription_id', $request->prescription_id)
                 ->where('analyse_id', $request->analyse_id)
@@ -224,7 +224,10 @@ class ResultatController extends Controller
             }
             $allDone = $this->checkAllAnalysesCompleted($prescription);
             if ($allDone) {
-                $prescription->update(['status' => 'TERMINE']);
+                $prescription->update([
+                    'status' => 'TERMINE',
+                    'technicien_id' => $prescription->technicien_id ?: Auth::id(),
+                ]);
             }
             DB::commit();
 
@@ -274,7 +277,10 @@ class ResultatController extends Controller
             }
             $prescription->resultats()->update(['status' => 'TERMINE']);
             DB::table('prescription_analyse')->where('prescription_id', $prescription->id)->update(['status' => 'TERMINE', 'updated_at' => now()]);
-            $prescription->update(['status' => 'TERMINE']);
+            $prescription->update([
+                'status' => 'TERMINE',
+                'technicien_id' => $prescription->technicien_id ?: Auth::id(),
+            ]);
             DB::commit();
 
             return response()->json(['success' => true, 'message' => 'Prescription finalisée.']);
@@ -336,7 +342,7 @@ class ResultatController extends Controller
     public function getNotes(Analyse $analyse, Request $request): JsonResponse
     {
         $request->validate(['prescription_id' => 'required|integer|exists:prescriptions,id']);
-        
+
         $notes = \App\Models\AnalyseConclusionNote::where('prescription_id', $request->prescription_id)
             ->where('analyse_id', $analyse->id)
             ->with('technicien:id,name')

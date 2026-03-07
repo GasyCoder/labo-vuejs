@@ -47,6 +47,7 @@ class Prescription extends Model
         'date_reprise_traitement',
         'notified_at',
         'commentaire_biologiste',
+        'updated_by',
         'labo_traitement',
         'labo_autre_nom',
     ];
@@ -168,6 +169,11 @@ class Prescription extends Model
     public function prescripteur()
     {
         return $this->belongsTo(Prescripteur::class, 'prescripteur_id');
+    }
+
+    public function validator()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 
     public function analyses()
