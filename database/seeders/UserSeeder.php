@@ -60,6 +60,15 @@ class UserSeeder extends Seeder
         );
 
         $this->createOrUpdateUser(
+            name: 'TECHNICIEN',
+            username: 'technicien',
+            email: 'technicien@labo.com',
+            type: 'technicien',
+            password: '12345678',
+            role: 'technicien'
+        );
+
+        $this->createOrUpdateUser(
             name: 'testsec',
             username: 'testsec',
             email: 'testsec@labo.com',
