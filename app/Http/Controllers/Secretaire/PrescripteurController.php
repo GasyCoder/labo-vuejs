@@ -7,6 +7,7 @@ use App\Models\Prescripteur;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class PrescripteurController extends Controller
@@ -135,7 +136,14 @@ class PrescripteurController extends Controller
         }
 
         $validated = $request->validate([
-            'nom' => 'required|min:2|max:100',
+            'nom' => [
+                'required',
+                'min:2',
+                'max:100',
+                Rule::unique('prescripteurs')->where(function ($query) use ($request) {
+                    return $query->where('prenom', $request->prenom);
+                }),
+            ],
             'prenom' => 'nullable|max:100',
             'grade' => 'nullable|max:20',
             'status' => 'required|in:'.implode(',', array_keys(Prescripteur::getStatusDisponibles())),
@@ -146,6 +154,7 @@ class PrescripteurController extends Controller
         ], [
             'nom.required' => 'Le nom est obligatoire.',
             'nom.min' => 'Le nom doit contenir au moins 2 caractères.',
+            'nom.unique' => 'Un prescripteur avec ce nom et ce prénom existe déjà.',
             'status.required' => 'Le statut est obligatoire.',
             'status.in' => 'Le statut sélectionné n\'est pas valide.',
         ]);
@@ -162,7 +171,14 @@ class PrescripteurController extends Controller
         }
 
         $validated = $request->validate([
-            'nom' => 'required|min:2|max:100',
+            'nom' => [
+                'required',
+                'min:2',
+                'max:100',
+                Rule::unique('prescripteurs')->where(function ($query) use ($request) {
+                    return $query->where('prenom', $request->prenom);
+                })->ignore($prescripteur->id),
+            ],
             'prenom' => 'nullable|max:100',
             'grade' => 'nullable|max:20',
             'status' => 'required|in:'.implode(',', array_keys(Prescripteur::getStatusDisponibles())),
@@ -173,6 +189,7 @@ class PrescripteurController extends Controller
         ], [
             'nom.required' => 'Le nom est obligatoire.',
             'nom.min' => 'Le nom doit contenir au moins 2 caractères.',
+            'nom.unique' => 'Un prescripteur avec ce nom et ce prénom existe déjà.',
             'status.required' => 'Le statut est obligatoire.',
             'status.in' => 'Le statut sélectionné n\'est pas valide.',
         ]);
