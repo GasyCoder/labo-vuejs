@@ -175,6 +175,21 @@ class PermissionMap
             'module' => 'Archives',
             'description' => 'Consulter et gérer les prescriptions archivées',
         ],
+        'archives.voir' => [
+            'label' => 'Voir les détails archivés',
+            'module' => 'Archives',
+            'description' => 'Consulter les détails des dossiers archivés',
+        ],
+        'archives.restaurer' => [
+            'label' => 'Désarchiver des dossiers',
+            'module' => 'Archives',
+            'description' => 'Sortir une prescription des archives pour la rendre à nouveau active',
+        ],
+        'archives.supprimer' => [
+            'label' => 'Supprimer définitivement (Archives)',
+            'module' => 'Archives',
+            'description' => 'Effacer définitivement un dossier présent dans les archives',
+        ],
     ];
 
     /**

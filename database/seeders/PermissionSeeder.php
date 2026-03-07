@@ -45,6 +45,8 @@ class PermissionSeeder extends Seeder
             'corbeille.voir',
             'corbeille.restaurer',
             'archives.acceder',
+            'archives.voir',
+            'archives.restaurer',
             'analyses.listes.voir',
             'laboratoire.gerer',
         ]);
@@ -59,6 +61,7 @@ class PermissionSeeder extends Seeder
             'analyses.prelevements.voir',
             'laboratoire.gerer',
             'archives.acceder',
+            'archives.voir',
         ]);
 
         $biologiste = Role::firstOrCreate(['name' => 'biologiste', 'guard_name' => 'web']);
@@ -70,6 +73,7 @@ class PermissionSeeder extends Seeder
             'analyses.prelevements.voir',
             'laboratoire.gerer',
             'archives.acceder',
+            'archives.voir',
         ]);
     }
 }

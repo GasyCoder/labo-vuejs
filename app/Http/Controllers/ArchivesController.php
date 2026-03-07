@@ -12,6 +12,10 @@ class ArchivesController extends Controller
 {
     public function index(Request $request)
     {
+        if (! Auth::user()->hasPermission('archives.acceder')) {
+            abort(403, 'Vous n\'avez pas la permission d\'accéder aux archives.');
+        }
+
         $search = $request->input('search', '');
         $statusFilter = $request->input('statusFilter', '');
         $dateFilter = $request->input('dateFilter', '');
@@ -97,8 +101,8 @@ class ArchivesController extends Controller
 
     public function unarchive(Request $request, Prescription $prescription)
     {
-        if (! $this->canUnarchive($prescription)) {
-            return back()->with('error', "Vous n'avez pas l'autorisation de désarchiver cette prescription.");
+        if (! Auth::user()->hasPermission('archives.restaurer')) {
+            return back()->with('error', "Vous n'avez pas l'autorisation de désarchiver des dossiers.");
         }
 
         try {
@@ -112,8 +116,8 @@ class ArchivesController extends Controller
 
     public function permanentDelete(Request $request, Prescription $prescription)
     {
-        if (! Auth::user()->hasPermission('archives.acceder')) {
-            return back()->with('error', 'Seuls les administrateurs peuvent supprimer définitivement.');
+        if (! Auth::user()->hasPermission('archives.supprimer')) {
+            return back()->with('error', 'Vous n\'avez pas la permission de supprimer définitivement des dossiers archivés.');
         }
 
         try {
@@ -123,20 +127,5 @@ class ArchivesController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', 'Erreur lors de la suppression : '.$e->getMessage());
         }
-    }
-
-    private function canUnarchive($prescription)
-    {
-        $user = Auth::user();
-
-        if ($user->hasPermission('archives.acceder')) {
-            return true;
-        }
-
-        if ($user->type === 'biologiste' && $prescription->prescripteur_id !== $user->id) {
-            return false;
-        }
-
-        return true;
     }
 }
