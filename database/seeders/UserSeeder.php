@@ -24,49 +24,39 @@ class UserSeeder extends Seeder
         );
 
         $this->createOrUpdateUser(
-            name: 'Suzy VOLAMARY',
-            username: 'SUZY',
-            email: 'suzy@labo.com', // Unique pour éviter conflit avec l'ancien 'secretaire'
+            name: 'Faniriantsoa RAHARIMALALA',
+            username: 'hari',
+            email: 'hari@labo.com', // Unique pour éviter conflit avec l'ancien 'secretaire'
             type: 'secretaire',
-            password: 'password',
+            password: '12345678',
             role: 'secretaire'
         );
 
         $this->createOrUpdateUser(
-            name: 'Technicien Test',
-            username: 'technicien',
-            email: 'technicien@labo.com',
+            name: 'Rodrigue RAKOTONDRAMANANA',
+            username: 'rodrigue',
+            email: 'rodrigue@labo.com',
             type: 'technicien',
-            password: 'password',
+            password: '12345678',
             role: 'technicien'
         );
 
         $this->createOrUpdateUser(
-            name: 'Biologiste Test',
-            username: 'biologiste',
-            email: 'biologiste@labo.com',
+            name: 'Ruffin RAKOTONDRAMANANA',
+            username: 'ruffin',
+            email: 'ruffin@labo.com',
+            type: 'technicien',
+            password: '12345678',
+            role: 'technicien'
+        );
+
+        $this->createOrUpdateUser(
+            name: 'RAKOTOMALALA Rivo',
+            username: 'rivo',
+            email: 'rivo@labo.com',
             type: 'biologiste',
-            password: 'password',
+            password: '12345678',
             role: 'biologiste'
-        );
-
-        // Utilisateurs supplémentaires identifiés
-        $this->createOrUpdateUser(
-            name: 'ORNELLA',
-            username: 'ORNELLA',
-            email: 'ornella@labo.com',
-            type: 'secretaire',
-            password: 'password',
-            role: 'secretaire'
-        );
-
-        $this->createOrUpdateUser(
-            name: 'TECHLNB',
-            username: 'TECHLNB',
-            email: 'techlnb@labo.com',
-            type: 'secretaire',
-            password: 'password',
-            role: 'secretaire'
         );
 
         $this->createOrUpdateUser(
@@ -74,17 +64,8 @@ class UserSeeder extends Seeder
             username: 'testsec',
             email: 'testsec@labo.com',
             type: 'secretaire',
-            password: 'password',
+            password: '12345678',
             role: 'secretaire'
-        );
-
-        $this->createOrUpdateUser(
-            name: 'IRMA',
-            username: 'IRMA',
-            email: 'irma@labo.com',
-            type: 'technicien',
-            password: 'password',
-            role: 'technicien'
         );
     }
 
