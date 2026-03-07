@@ -482,7 +482,7 @@
                         </li>
 
                         <!-- Récapitulatif Partenaires -->
-                        <li v-if="['superadmin', 'admin'].includes($page.props.auth.user.type)"
+                        <li v-if="hasPermission('partenaires.voir_recapitulatif')"
                             :class="['nk-menu-item py-0 group/item', { 'active': route().current('admin.partenaires.*') }]">
                             <Link :href="route('admin.partenaires.recap')"
                                 class="nk-menu-link flex relative items-center align-middle py-2 ps-5 pe-8 font-heading font-bold tracking-snug group">

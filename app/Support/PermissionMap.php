@@ -99,6 +99,13 @@ class PermissionMap
             'description' => 'Mettre en corbeille ou supprimer définitivement des prescripteurs',
         ],
 
+        // ── Partenaires ──────────────────────────────────────
+        'partenaires.voir_recapitulatif' => [
+            'label' => 'Voir le récapitulatif partenaires',
+            'module' => 'Partenaires',
+            'description' => 'Consulter le suivi de la facturation et des prescriptions par partenaire business',
+        ],
+
         // ── Secrétariat ────────────────────────────────────────
         'etiquettes.voir' => [
             'label' => 'Voir les étiquettes',

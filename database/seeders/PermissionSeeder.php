@@ -49,6 +49,7 @@ class PermissionSeeder extends Seeder
             'archives.restaurer',
             'analyses.listes.voir',
             'laboratoire.gerer',
+            'partenaires.voir_recapitulatif',
         ]);
 
         $technicien = Role::firstOrCreate(['name' => 'technicien', 'guard_name' => 'web']);

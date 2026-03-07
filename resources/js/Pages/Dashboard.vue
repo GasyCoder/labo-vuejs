@@ -218,7 +218,7 @@
             </div>
 
             <!-- Section Récapitulatif Partenaires (Pour Secrétaire) -->
-            <div class="bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700 mb-6 overflow-hidden">
+            <div v-if="hasPermission('partenaires.voir_recapitulatif')" class="bg-white dark:bg-slate-800 shadow-lg rounded-xl border border-slate-200 dark:border-slate-700 mb-6 overflow-hidden">
                 <header class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-700/20">
                     <div class="flex items-center">
                         <div class="w-8 h-8 rounded-lg bg-pink-500 flex items-center justify-center mr-3 shadow-pink-200 shadow-lg">
@@ -490,6 +490,10 @@ const props = defineProps({
 const page = usePage();
 const userType = computed(() => page.props.auth.user.type);
 const isAdmin = computed(() => ['superadmin', 'admin'].includes(userType.value));
+
+const hasPermission = (permission) => {
+    return page.props.auth.user?.permissions?.includes(permission);
+};
 
 const filterForm = ref({
     search: props.filters?.search || '',

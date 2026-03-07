@@ -397,13 +397,15 @@ Route::middleware(['auth', 'role:superadmin,admin,secretaire'])->prefix('admin')
     });
 
     // ==== ROUTES ACCESSIBLES AUX ADMINS ET SECRÉTAIRES ====
-    // Export Partenaires
-    Route::get('dashboard/export-partenaires', [DashboardController::class, 'exportPartnerStats'])->name('dashboard.export-partenaires');
+    Route::middleware(['permission:partenaires.voir_recapitulatif'])->group(function () {
+        // Export Partenaires
+        Route::get('dashboard/export-partenaires', [DashboardController::class, 'exportPartnerStats'])->name('dashboard.export-partenaires');
 
-    // Récapitulatif Partenaires (Section Spéciale)
-    Route::prefix('partenaires')->name('partenaires.')->group(function () {
-        Route::get('recapitulatif', [PartnerRecapController::class, 'index'])->name('recap');
-        Route::get('export', [PartnerRecapController::class, 'export'])->name('export');
+        // Récapitulatif Partenaires (Section Spéciale)
+        Route::prefix('partenaires')->name('partenaires.')->group(function () {
+            Route::get('recapitulatif', [PartnerRecapController::class, 'index'])->name('recap');
+            Route::get('export', [PartnerRecapController::class, 'export'])->name('export');
+        });
     });
 
     // Abonnement et Quotas (Accessible par Admin et Secrétaire)
